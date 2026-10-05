@@ -1,0 +1,14 @@
+{
+  "default": {
+    "context_ceiling": 150000,
+    "context_hard": 200000,
+    "worktree_expected": false,
+    "memory_edit_rate": [0.10, 0.40],
+    "corrective_markers": [],
+    "metrics_file": "session-review-metrics.md"
+  },
+  "profiles": {
+    "code-repo": { "worktree_expected": true },
+    "docs-repo": { "worktree_expected": false }
+  }
+}

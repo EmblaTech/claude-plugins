@@ -1,0 +1,92 @@
+pipelines:
+  custom:
+    ai-develop:
+      - step:
+          name: AI Autonomous Dev
+          image: node:24
+          clone: { depth: full }
+          script:
+            - |
+              set -e
+              mkdir -p docs/reviews
+              REPORTED=0
+              post_jira_comment() {
+                printf 'user = "%s:%s"\n' "$BITBUCKET_EMAIL" "$ATLASSIAN_API_TOKEN" | curl -s -K - \
+                  -X POST -H "Content-Type: application/json" \
+                  -o /dev/null -w "Jira comment: HTTP %{http_code}\n" \
+                  "https://$ATLASSIAN_SITE_NAME.atlassian.net/rest/api/2/issue/$JIRA_ISSUE_KEY/comment" \
+                  -d "$1"
+              }
+              report_and_exit() {
+                CODE="$1"
+                if [ "$REPORTED" = "1" ]; then exit "$CODE"; fi
+                REPORTED=1
+                apt-get update -qq >/dev/null 2>&1 && apt-get install -y -qq jq >/dev/null 2>&1 || { apt-get update -qq && apt-get install -y -qq jq || echo "jq install failed — fallback comment may not be postable, continuing anyway"; }
+                RUN_IS_ERROR="false"
+                RUN_SUBTYPE=""
+                RUN_RESULT=""
+                if [ -f docs/reviews/develop-auto-cost.json ] && jq -e . docs/reviews/develop-auto-cost.json >/dev/null 2>&1; then
+                  RUN_IS_ERROR=$(jq -r '.is_error // false' docs/reviews/develop-auto-cost.json 2>/dev/null)
+                  RUN_SUBTYPE=$(jq -r '.subtype // "unknown"' docs/reviews/develop-auto-cost.json 2>/dev/null)
+                  RUN_RESULT=$(jq -r '.result // empty' docs/reviews/develop-auto-cost.json 2>/dev/null | head -c 4000)
+                  if [ "$RUN_IS_ERROR" != "true" ]; then
+                    # develop-auto ran to completion (success or its own graceful abort) and
+                    # already posted whatever Jira comment was appropriate itself. Its own exit
+                    # code only reflects harness completion, not which of those two happened —
+                    # develop-auto-result.json carries that verdict; trust it when present.
+                    if [ -f docs/reviews/develop-auto-result.json ] && jq -e '.exit_code' docs/reviews/develop-auto-result.json >/dev/null 2>&1; then
+                      RESULT_EXIT=$(jq -r '.exit_code' docs/reviews/develop-auto-result.json)
+                      case "$RESULT_EXIT" in 0|1) CODE="$RESULT_EXIT" ;; esac
+                    fi
+                    exit "$CODE"
+                  fi
+                  echo "AI Autonomous Dev: claude reported is_error=true (subtype: $RUN_SUBTYPE) — the run crashed before develop-auto's own Jira comment logic could run. Posting a fallback Jira comment."
+                fi
+                if [ -n "$RUN_RESULT" ]; then
+                  BODY=$(jq -n --arg result "$RUN_RESULT" --arg code "$CODE" '{body: ("⚠ AI Autonomous Dev pipeline crashed before develop-auto could report its own outcome (exit " + $code + ").\n\n```\n" + $result + "\n```\n\nCheck the pipeline build log for details.")}')
+                else
+                  BODY=$(jq -n --arg text "⚠ AI Autonomous Dev pipeline failed before develop-auto could report its own outcome (exit $CODE). Check the pipeline build log." '{body: $text}')
+                fi
+                post_jira_comment "$BODY" || echo "Fallback Jira comment failed to post"
+                exit "$CODE"
+              }
+              trap 'RC=$?; report_and_exit "$RC"' ERR
+            - |
+              if ! [[ "$JIRA_ISSUE_KEY" =~ ^[A-Z][A-Z0-9]+-[0-9]+$ ]]; then
+                echo "JIRA_ISSUE_KEY ('$JIRA_ISSUE_KEY') does not match the expected Jira key format (e.g. EM-1234). Refusing to interpolate it into the claude invocation — aborting with no Jira comment attempt, since the key isn't confirmed valid."
+                exit 1
+              fi
+              if ! [[ "$COMMENTER_ACCOUNT_ID" =~ ^[A-Za-z0-9:_-]*$ ]]; then
+                echo "COMMENTER_ACCOUNT_ID contains unexpected characters. Refusing to interpolate it into the claude invocation — aborting with no Jira comment attempt."
+                exit 1
+              fi
+              if ! [[ "$SPRINT_NUMBER" =~ ^[0-9]*$ ]]; then
+                echo "SPRINT_NUMBER contains unexpected characters. Refusing to interpolate it into the claude invocation — aborting with no Jira comment attempt."
+                exit 1
+              fi
+            - npm install -g @anthropic-ai/claude-code@2.1.207
+            - useradd -m claudeuser
+            - git -c credential.helper='!f() { echo "username=$BITBUCKET_USERNAME"; echo "password=$BITBUCKET_API_TOKEN"; }; f' clone https://bitbucket.org/emblaftdev/embla-claude-plugins.git /tmp/plugins
+            - git -C /tmp/plugins checkout 3878e57bfea98e68f50432090563311a7d303ae9
+            - |
+              cat > /home/claudeuser/.pipeline-env <<PIPELINE_ENV
+              export HOME=/home/claudeuser
+              export ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY@Q}
+              export BITBUCKET_API_TOKEN=${BITBUCKET_API_TOKEN@Q}
+              export BITBUCKET_USERNAME=${BITBUCKET_USERNAME@Q}
+              export BITBUCKET_WORKSPACE=${BITBUCKET_WORKSPACE@Q}
+              export BITBUCKET_EMAIL=${BITBUCKET_EMAIL@Q}
+              export BITBUCKET_DEFAULT_WORKSPACE=${BITBUCKET_WORKSPACE@Q}
+              export ATLASSIAN_SITE_NAME=${ATLASSIAN_SITE_NAME@Q}
+              export ATLASSIAN_API_TOKEN=${ATLASSIAN_API_TOKEN@Q}
+              git config --global user.name "AI Autonomous Dev"
+              git config --global user.email "ai-autonomous-dev@noreply.embla.asia"
+              git config --global credential.helper '!f() { echo "username=\$BITBUCKET_USERNAME"; echo "password=\$BITBUCKET_API_TOKEN"; }; f'
+              PIPELINE_ENV
+              chmod 600 /home/claudeuser/.pipeline-env
+            - chown -R claudeuser:claudeuser . /home/claudeuser /tmp/plugins
+            - apt-get remove -y wget python3 netcat-traditional 2>/dev/null || true
+            - |
+              su claudeuser -c ". /home/claudeuser/.pipeline-env && rm -f /home/claudeuser/.pipeline-env && claude -p \"/embla-core:develop-auto $JIRA_ISSUE_KEY $COMMENTER_ACCOUNT_ID $SPRINT_NUMBER\" --output-format json --plugin-dir /tmp/plugins/plugins/embla-core --mcp-config .mcp.json --allowedTools 'Bash(git:*),Bash(npm:*),Bash(npx:*),Bash(mvn:*),Bash(./gradlew:*),Bash(pytest:*),Bash(python:*),Read,Write,Edit,Grep,Glob,mcp__bitbucket__bb_get,mcp__bitbucket__bb_post,mcp__atlassian__jira_get,mcp__atlassian__jira_post,mcp__atlassian__jira_put' --model claude-sonnet-5" | tee docs/reviews/develop-auto-cost.json
+              DEV_EXIT=${PIPESTATUS[0]}
+              report_and_exit "$DEV_EXIT"

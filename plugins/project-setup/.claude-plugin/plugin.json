@@ -1,0 +1,5 @@
+{
+  "name": "project-setup",
+  "version": "0.3.0",
+  "description": "Get a project's Claude Code setup right: configures and audits settings placement, permissions, plugin health, and stack coverage, flagging gaps before they cause silent failures."
+}

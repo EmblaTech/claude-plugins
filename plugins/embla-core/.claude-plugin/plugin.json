@@ -1,0 +1,5 @@
+{
+  "name": "embla-core",
+  "version": "1.5.1",
+  "description": "End-to-end Embla development lifecycle: Complete workflow from business goal and brainstorm through atomic task breakdown, planning, UI design, development, multi-mode code review, quality assurance, deployment, bug fixes, and automated task/repository management"
+}

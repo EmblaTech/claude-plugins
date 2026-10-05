@@ -1,0 +1,28 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-settings.json",
+  "enabledPlugins": {
+    "superpowers@claude-plugins-official": true,
+    "skill-creator@claude-plugins-official": true,
+    "code-review@claude-plugins-official": true,
+    "atlassian@claude-plugins-official": true,
+    "frontend-design@claude-code-plugins": true,
+    "plugin-dev@claude-plugins-official": true,
+    "mcp-server-dev@claude-plugins-official": true,
+    "hookify@claude-plugins-official": true,
+    "agent-sdk-dev@claude-plugins-official": true,
+    "commit-commands@claude-plugins-official": true,
+    "security-guidance@claude-plugins-official": true,
+    "context7@claude-plugins-official": true,
+    "claude-code-setup@claude-plugins-official": true,
+    "claude-md-management@claude-plugins-official": true
+  },
+  "enableAllProjectMcpServers": true,
+  "permissions": {
+    "deny": [
+      "Read(./.env)",
+      "Read(./.env.*)",
+      "Edit(./.env)",
+      "Edit(./.env.*)"
+    ]
+  }
+}

@@ -1,0 +1,6 @@
+{
+  "name": "grc-gdpr",
+  "version": "1.0.3",
+  "description": "GDPR compliance assistant — code and system audits, privacy notice drafting, DPAs, DPIAs, data flow reviews, and authoritative article-cited Q&A. Vendored from Sushegaad/Claude-Skills-Governance-Risk-and-Compliance (MIT) — see docs/grc-upstream.md.",
+  "license": "MIT"
+}

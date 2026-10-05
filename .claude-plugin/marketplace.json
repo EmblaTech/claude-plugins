@@ -1,0 +1,22 @@
+{
+  "name": "embla-claude-plugins",
+  "owner": { "name": "Embla FTDev" },
+  "metadata": { "description": "Shared Claude Code skills for Embla repos" },
+  "plugins": [
+    {
+      "name": "embla-core",
+      "source": "./plugins/embla-core",
+      "description": "Embla-specific workflows: Jira conventions, AI code review"
+    },
+    {
+      "name": "project-setup",
+      "source": "./plugins/project-setup",
+      "description": "Configure and audit a project's Claude Code setup: project config, settings/permissions, plugin/skill coverage, and CLAUDE.md health"
+    },
+    {
+      "name": "grc-gdpr",
+      "source": "./plugins/grc-gdpr",
+      "description": "GDPR compliance: code and system audits, privacy notices, DPAs, DPIAs, data flow reviews, article-cited Q&A"
+    }
+  ]
+}
