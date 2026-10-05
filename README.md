@@ -86,7 +86,7 @@ Plugins auto-update when their `version` changes in this repo.
 
 **Conventions enforced:**
 
-- Branches: `s{sprint}/feature/{JIRA-ID}/short-description`, `s{sprint}/patch/{JIRA-ID}/short-description`, `release/{version}`
+- Branches: `feature/{JIRA-ID}/short-description`, `patch/{JIRA-ID}/short-description`, `release/{version}` (formats are configurable per project in `embla.json`)
 - Commits: Conventional Commits, e.g. `feat(scope/EM-1234): short description`
 
 ### `project-setup`
@@ -129,5 +129,5 @@ Contributor guidance lives in [`.claude/CLAUDE.md`](.claude/CLAUDE.md). The rule
 - **New skill in an existing plugin:** add `skills/<name>/SKILL.md` and bump the version. `marketplace.json` doesn't change.
 - **New plugin:** add `plugins/<name>/.claude-plugin/plugin.json`, at least one working skill, and a `marketplace.json` entry, all in the same PR. Placeholder stubs aren't accepted.
 - **CI pins:** generated pipelines clone this repo at a pinned commit. If a change to `pr-review` or `develop-auto` should reach existing pipelines, bump the pin in that skill's pipeline template. See the `pipeline` skill's `pipeline-templates.md`.
-- **Use the right authoring skill:** `/skill-creator` for new skills, `/superpowers:writing-skills` for edits, `/plugin-dev:create-plugin` for new plugins.
+- **Use the right authoring skill:** `/writing-for-agents` (from mattpocock-skills) for new and edited skills, `/plugin-dev:create-plugin` for new plugins.
 - **PR descriptions** follow the format in CLAUDE.md: Summary, Motivation, Test Plan, Jira Ticket.
