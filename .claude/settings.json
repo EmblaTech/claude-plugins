@@ -1,8 +1,16 @@
 {
   "$schema": "https://json.schemastore.org/claude-code-settings.json",
+  "permissions": {
+    "deny": [
+      "Read(./.env)",
+      "Read(./.env.*)",
+      "Edit(./.env)",
+      "Edit(./.env.*)"
+    ]
+  },
+  "enableAllProjectMcpServers": true,
   "enabledPlugins": {
     "superpowers@claude-plugins-official": true,
-    "skill-creator@claude-plugins-official": true,
     "code-review@claude-plugins-official": true,
     "atlassian@claude-plugins-official": true,
     "frontend-design@claude-code-plugins": true,
@@ -14,15 +22,15 @@
     "security-guidance@claude-plugins-official": true,
     "context7@claude-plugins-official": true,
     "claude-code-setup@claude-plugins-official": true,
-    "claude-md-management@claude-plugins-official": true
+    "claude-md-management@claude-plugins-official": true,
+    "mattpocock-skills@mattpocock": true
   },
-  "enableAllProjectMcpServers": true,
-  "permissions": {
-    "deny": [
-      "Read(./.env)",
-      "Read(./.env.*)",
-      "Edit(./.env)",
-      "Edit(./.env.*)"
-    ]
+  "extraKnownMarketplaces": {
+    "mattpocock": {
+      "source": {
+        "source": "git",
+        "url": "https://github.com/mattpocock/skills.git"
+      }
+    }
   }
 }
