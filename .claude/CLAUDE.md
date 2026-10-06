@@ -148,6 +148,20 @@ Invoke the skill before touching files.
 
 `/mattpocock-skills:writing-for-agents` is the single authoring guide for skills and agents here; its rules take precedence over `superpowers:writing-skills` and `plugin-dev:skill-development` when those also match. The `SKILL.md` frontmatter `description` decides when Claude Code auto-triggers the skill — keep it precise and trigger-phrase-rich.
 
+### Skill authoring best practices
+
+`docs/best-practices/` condenses Anthropic's skill-authoring guide for this repo. Before creating or editing a `SKILL.md`, reference file, agent definition, or plugin/marketplace description, read the file for each part of the work:
+
+| Working on | Read |
+|---|---|
+| `name`, `description`, plugin/agent descriptions | `docs/best-practices/frontmatter-and-naming.md` |
+| SKILL.md layout, splitting into `references/`, progressive disclosure | `docs/best-practices/structure-and-references.md` |
+| Steps, workflows, templates, examples | `docs/best-practices/writing-instructions.md` |
+| Bundled scripts, dependencies, MCP tool names | `docs/best-practices/scripts-and-tools.md` |
+| Testing a new or changed skill | `docs/best-practices/evaluation.md` |
+
+The work is done when every item in `docs/best-practices/checklist.md` is ticked or marked N/A.
+
 **Every change to a plugin** (skill content, `plugin.json`, its `marketplace.json` description) bumps `version` in `plugins/<plugin-name>/.claude-plugin/plugin.json`. Auto-update pulls a plugin only when its version changes; an unbumped version leaves consumers on the old copy.
 
 - **New skill in an existing plugin:** create `skills/<new-skill>/SKILL.md` (+ `references/`), bump the plugin version. `marketplace.json` stays unchanged — it points to plugins, not skills.
@@ -161,6 +175,4 @@ A **major change** is any change that leaves this file wrong or incomplete:
 - a change to this repo's workflow: hosting, issue tracking, branch/commit/PR conventions, or the tool used for an artifact type
 - a change to a cross-skill rule documented here (watermark, CI plugin pin, `embla.json` resolution order)
 
-Before opening the PR for a major change, run `/claude-md-management:revise-claude-md` and commit its edits on the same branch. The step is done when every section that mentions what changed matches the new state.
-
-All CLAUDE.md edits go through the `claude-md-management` plugin (`/claude-md-management:revise-claude-md` to update, `claude-md-improver` to audit), even when `writing-for-agents` also matches. Keep this file under 200 lines.
+Edit this file only through `claude-md-management` (`/claude-md-management:revise-claude-md` to update, `claude-md-improver` to audit), even when `writing-for-agents` matches: before a major change's PR, run `revise-claude-md` and commit its edits on the same branch until every section mentioning the change matches the new state, keeping the file under 200 lines.
