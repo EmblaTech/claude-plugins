@@ -29,29 +29,6 @@ New plugins are added only when they ship at least one working skill — no plac
 
 GRC frameworks ship one plugin per framework so consumers only pay context for what they install; `docs/grc-upstream.md` covers the source commit, patches to re-apply, adding a framework, and re-sync.
 
-## Enabled plugins (settings.json)
-
-Each plugin in `.claude/settings.json` was added deliberately — understand its role before touching the settings.
-
-| Plugin | Fires | Why we use it |
-|---|---|---|
-| `security-guidance` | Passive, on every `Edit`/`Write` | Plugins execute shell and process external input — early warning on dangerous patterns |
-| `superpowers` | Auto — almost every non-trivial task | Core discipline: brainstorming, planning, TDD, debugging, worktrees |
-| `context7` | Auto — when library/SDK docs are needed | Keeps API references current |
-| `atlassian` | Auto — any Jira/Confluence operation | Testing `embla-core` skills against projects whose `embla.json` uses Jira |
-| `frontend-design` | Auto — UI or artifact output | Design direction |
-| `code-review` | Auto — reviewing a PR or diff | Reviewing our own plugin PRs |
-| `claude-code-setup` | Auto — "set up/optimize Claude Code", "what automations would help" | Read-only scan recommending MCP servers, hooks, skills, subagents |
-| `claude-md-management` | Auto (`claude-md-improver`) + `/claude-md-management:revise-claude-md` | Grades CLAUDE.md files A–F; captures session learnings |
-| `plugin-dev` | Command only: `/plugin-dev:create-plugin` | Scaffold and quality gate (plugin-validator, skill-reviewer agents) for new plugins |
-| `mcp-server-dev` | Command only: `/mcp-server-dev:build-mcp-server` | When a plugin exposes MCP tools or wraps an external API |
-| `agent-sdk-dev` | Command only: `/agent-sdk-dev:new-sdk-app` | When a plugin needs a standalone Agent SDK app |
-| `hookify` | Command only: `/hookify`, `:list`, `:configure` | Hook generation from conversation patterns |
-| `commit-commands` | Command only: `/commit`, `/commit-push-pr`, `/clean_gone` | Commit and PR workflow |
-| `mattpocock-skills` | `/mattpocock-skills:writing-for-agents` | Authoring guide for skills and agents (see "Adding or editing a skill") |
-
-Personal preferences go in `CLAUDE.local.md` (gitignored, repo root).
-
 ## embla-core skills (the primary plugin)
 
 Invoked as `/embla-core:<skill>` unless noted.

@@ -28,8 +28,8 @@
   "extraKnownMarketplaces": {
     "mattpocock": {
       "source": {
-        "source": "git",
-        "url": "https://github.com/mattpocock/skills.git"
+        "source": "github",
+        "repo": "mattpocock/skills"
       }
     }
   }
