@@ -1,0 +1,14 @@
+{
+  "mcpServers": {
+    "bitbucket": {
+      "type": "stdio",
+      "command": "npx",
+      "args": ["-y", "@aashari/mcp-server-atlassian-bitbucket@3.1.0"],
+      "env": {
+        "ATLASSIAN_USER_EMAIL": "${BITBUCKET_EMAIL}",
+        "ATLASSIAN_API_TOKEN": "${BITBUCKET_API_TOKEN}",
+        "BITBUCKET_DEFAULT_WORKSPACE": "${BITBUCKET_WORKSPACE}"
+      }
+    }
+  }
+}

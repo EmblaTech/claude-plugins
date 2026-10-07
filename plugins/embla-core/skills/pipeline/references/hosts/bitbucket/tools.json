@@ -1,0 +1,56 @@
+{
+  "host": "bitbucket",
+  "operations": {
+    "get_pr": {
+      "method": "mcp",
+      "tool": "mcp__bitbucket__bb_get",
+      "args": {
+        "path": "/repositories/{workspace}/{repo}/pullrequests/{PR_ID}",
+        "jq": "{id: id, state: state, draft: draft, title: title, description: description, source_branch: source.branch.name, target_branch: destination.branch.name, last_commit: source.commit.hash}"
+      },
+      "fields": {
+        "id": "id", "state": "state", "draft": "draft", "title": "title", "description": "description",
+        "source_branch": "source_branch", "target_branch": "target_branch", "last_commit": "last_commit"
+      }
+    },
+    "list_commits": {
+      "method": "mcp",
+      "tool": "mcp__bitbucket__bb_get",
+      "args": {
+        "path": "/repositories/{workspace}/{repo}/pullrequests/{PR_ID}/commits",
+        "queryParams": { "pagelen": "100" },
+        "jq": "values[*].{hash: hash, date: date}"
+      },
+      "fields": { "hash": "hash", "date": "date" }
+    },
+    "list_comments": {
+      "method": "mcp",
+      "tool": "mcp__bitbucket__bb_get",
+      "args": {
+        "path": "/repositories/{workspace}/{repo}/pullrequests/{PR_ID}/comments",
+        "queryParams": { "pagelen": "100" },
+        "jq": "values[*].{id: id, raw: content.raw, path: inline.path, line: inline.to, date: created_on, resolved: resolved}"
+      },
+      "fields": { "id": "id", "raw": "raw", "path": "path", "line": "line", "date": "date", "resolved": "resolved" }
+    },
+    "post_inline_comment": {
+      "method": "mcp",
+      "tool": "mcp__bitbucket__bb_post",
+      "args": {
+        "path": "/repositories/{workspace}/{repo}/pullrequests/{PR_ID}/comments",
+        "body": { "content": { "raw": "{body}" }, "inline": { "path": "{path}", "to": "{line}" } }
+      },
+      "fields": { "id": "id", "url": "links.html.href" }
+    },
+    "post_comment": {
+      "method": "mcp",
+      "tool": "mcp__bitbucket__bb_post",
+      "args": {
+        "path": "/repositories/{workspace}/{repo}/pullrequests/{PR_ID}/comments",
+        "body": { "content": { "raw": "{body}" } }
+      },
+      "fields": { "id": "id", "url": "links.html.href" }
+    }
+  },
+  "tracker": { "provider": "jira", "method": "prefetch" }
+}

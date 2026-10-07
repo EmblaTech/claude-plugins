@@ -1,0 +1,24 @@
+{
+  "host": "github",
+  "operations": {
+    "get_pr": {
+      "method": "mcp",
+      "tool": "mcp__github__pull_request_read",
+      "args": { "method": "get", "owner": "{owner}", "repo": "{repo}", "pullNumber": "{PR_ID}" },
+      "fields": {
+        "id": "number", "state": "state", "draft": "draft", "title": "title", "description": "body",
+        "source_branch": "head.ref", "target_branch": "base.ref", "last_commit": "head.sha"
+      }
+    },
+    "list_commits": {
+      "method": "mcp",
+      "tool": "mcp__github__pull_request_read",
+      "args": { "method": "get_commits", "owner": "{owner}", "repo": "{repo}", "pullNumber": "{PR_ID}", "perPage": 100 },
+      "fields": { "hash": "sha", "date": "author.date" }
+    },
+    "list_comments": { "method": "files" },
+    "post_inline_comment": { "method": "outbox" },
+    "post_comment": { "method": "outbox" }
+  },
+  "tracker": { "provider": "jira", "method": "prefetch" }
+}
