@@ -1,6 +1,6 @@
 ---
 name: pr-review
-description: Use when invoked as /embla-core:pr-review to analyze a Bitbucket pull request with 7 parallel agents (code-quality, security, performance, risk, coverage, dependency, requirement) in dev/lead/pipeline mode. Use /embla-core:pr-review <PR_ID> accept|reject to transition Jira after review.
+description: Reviews a pull request with up to 7 parallel agents (code-quality, security, performance, risk, coverage, dependency, requirement) and posts the findings as PR comments. dev and lead mode review a Bitbucket pull request live; pipeline mode runs unattended in CI on any code host configured by embla-core:pipeline. Use when invoked as /embla-core:pr-review <PR_ID> [--mode=dev|lead|pipeline], or as /embla-core:pr-review <PR_ID> accept|reject to transition Jira after review.
 ---
 
 ## Invocation
@@ -12,7 +12,7 @@ description: Use when invoked as /embla-core:pr-review to analyze a Bitbucket pu
 ```
 
 - If no PR_ID given: stop with error `"Error: PR ID required. Usage: /embla-core:pr-review <PR_ID> [--mode=dev|lead|pipeline]"`
-- `accept` and `reject` skip all phases — see [accept / reject Sub-Commands](#accept--reject-sub-commands)
+- `accept` and `reject` skip all phases — see [accept-reject.md](references/accept-reject.md)
 
 ---
 
@@ -25,8 +25,8 @@ Resolve all values at skill start. Never hardcode. Produce this table before pro
 | Workspace | `git remote get-url origin` → parse org segment |
 | Repository | `git remote get-url origin` → parse repo segment, strip `.git` |
 | Jira project key | Parse current branch `([A-Z]{2,})-\d+`; fallback `.claude/embla.json → tracker.jira.projectKey`; fallback `.claude/settings.json → jiraProjectKey` |
-| Jira cloud ID | `.claude/embla.json → tracker.jira.cloudId` — fallback: `.claude/settings.json → jiraCloudId` — required, stop if both missing |
-| Jira site URL | `.claude/embla.json → tracker.jira.siteUrl` — fallback: `.claude/settings.json → jiraSiteUrl` — required, stop if both missing |
+| Jira cloud ID | `.claude/embla.json → tracker.jira.cloudId` — fallback: `.claude/settings.json → jiraCloudId` — required in dev/lead mode, stop if both missing; pipeline mode leaves it unresolved |
+| Jira site URL | `.claude/embla.json → tracker.jira.siteUrl` — fallback: `.claude/settings.json → jiraSiteUrl` — required in dev/lead mode, stop if both missing; pipeline mode leaves it unresolved |
 | Reviewer mode | `--mode` flag → `REVIEW_MODE` env var → `.claude/embla.json → reviewerMode` → `.claude/settings.json → reviewerMode` → `"dev"` |
 | pr-size threshold | `REVIEW_SIZE_THRESHOLD` env var → `.claude/embla.json → prSizeGateThreshold` → `.claude/settings.json → prSizeGateThreshold` → `300` |
 | Coverage threshold | `REVIEW_COVERAGE_THRESHOLD` env var → `.claude/embla.json → testCoverageThreshold` → `.claude/settings.json → testCoverageThreshold` → `80` |
@@ -76,6 +76,8 @@ The subagent makes 3 API calls:
 2. `GET /repositories/{workspace}/{repo}/pullrequests/{PR_ID}/commits` → values[*].{hash, date}
 3. `GET /repositories/{workspace}/{repo}/pullrequests/{PR_ID}/comments` (pagelen: 100) → values[*].{raw, created_on}
 
+**pipeline mode:** the three calls become the `get_pr`, `list_commits` and `list_comments` operations. Resolve each one's entry per [pipeline-mode.md](references/pipeline-mode.md) → "Host access" and pass the subagent those entries plus that section's "Read fallback" rule; it reads the normalized fields (`state`, `draft`, comment `raw` and `date`) and returns any fallback notes with its verdict.
+
 Skip conditions:
 - `state != OPEN` → SKIP
 - `draft == true` → SKIP
@@ -102,12 +104,13 @@ Perform all sub-steps in parallel where possible.
 `bb_get /diff` silently truncates responses for large PRs. Do NOT rely on it as the primary source. Instead:
 
 1. Fetch file list: `mcp__bitbucket__bb_get` on `/repositories/{workspace}/{repo}/pullrequests/{PR_ID}/diffstat` with `queryParams: {"pagelen": "100"}`, `jq` filter `values[*].{status: status, old: old.path, new: new.path, lines_added: lines_added, lines_removed: lines_removed}`.
+   **pipeline mode:** build the same shape from `git diff --numstat origin/<dest_branch>...origin/<source_branch>` after the fetch in item 2 — see [pipeline-mode.md](references/pipeline-mode.md) → "File list from git".
 2. Fetch the whole diff in **one** Bash call — never one call per file:
    ```bash
    git fetch origin <source_branch> && git diff origin/<dest_branch>...origin/<source_branch>
    ```
    Then split that output into per-file chunks yourself, in this same step: a chunk starts at a `diff --git a/<path> b/<path>` line and runs until the next one. This is text partitioning of output you already hold — do not spend a turn per file re-fetching what the single command already returned.
-3. If local `git fetch` is unavailable, fall back to `bb_get /pullrequests/{PR_ID}/diff` with `queryParams: {"path": "<file_path>"}` per file. This per-file fallback is unchanged — it exists precisely because the single-command path isn't possible without a local clone.
+3. dev/lead mode: if local `git fetch` is unavailable, fall back to `bb_get /pullrequests/{PR_ID}/diff` with `queryParams: {"path": "<file_path>"}` per file. This per-file fallback is unchanged — it exists precisely because the single-command path isn't possible without a local clone.
 4. **Never** silently drop files if the diff response was truncated. Flag explicitly.
 
 Store as `file_list` (diffstat) and `file_diffs` (per-file diffs).
@@ -132,7 +135,9 @@ Why: a single dependency bump can add thousands of lines of generated resolution
 
 `mcp__bitbucket__bb_get` on `/repositories/{workspace}/{repo}/pullrequests/{PR_ID}/comments` with `queryParams: {"pagelen": "100"}`, `jq` filter `values[*].{raw: content.raw, path: inline.path, line: inline.to, date: created_on, resolved: resolved}`.
 
-Split using Bitbucket's own `resolved` boolean field — do not guess from comment text:
+**pipeline mode:** resolve the `list_comments` operation per [pipeline-mode.md](references/pipeline-mode.md) → "Host access"; its normalized items carry the same fields.
+
+Split using the host's own `resolved` boolean field — do not guess from comment text:
 - `resolved == true` → `resolved_comments`
 - `resolved == false` or missing → `open_comments` (treat a missing/null field as open — never silently treat something as resolved when the platform didn't say so)
 
@@ -144,12 +149,7 @@ Read the root `CLAUDE.md` and any `CLAUDE.md` in directories containing touched 
 
 ### 2.4 — Jira issue
 
-**Pipeline mode — read the pre-fetched file. No Jira MCP tool is available.**
-
-The CI wrapper fetches the issue with `curl` before the review session starts, so the session carries no Jira MCP server at all (see [pipeline-mode.md](pipeline-mode.md) → "Pre-fetched Jira context").
-
-- `Read` `docs/reviews/jira-issue.json`. If present and parseable, use it as `jira_context`. It carries `key`, `summary`, `description`, `issuetype`, `status`, `labels`, `parent` (key + summary, or `null`), and every populated `customfield_*` under `custom` — acceptance criteria included, since AC lives in a custom field.
-- If the file is absent or unparseable, treat Jira as unavailable: `jira_context` is empty, proceed. The wrapper already logged why in the build log — do not attempt a Jira call to compensate, there is no tool for it.
+**pipeline mode:** resolve `jira_context` from the `get_ticket` operation by its `tracker.method` (`prefetch` reads `docs/reviews/ticket.json`) — follow [pipeline-mode.md](references/pipeline-mode.md) → "Ticket context". An absent or unparseable result leaves `jira_context` empty; proceed.
 
 **dev / lead mode — fetch live:**
 
@@ -345,11 +345,11 @@ Note: "postable issues" here (in both lead mode's options and pipeline mode's St
 
 Step B matters beyond formatting: the `### 🤖 Review Report` comment it posts is the marker Phase 1's re-review skip check keys off. Skipping Step B means a lead-mode-reviewed PR is never recognized as already reviewed on a later run.
 
-**pipeline mode**: no prompt — executes in sequence:
-1. **Step A** — Post all postable issues as inline Bitbucket comments
+**pipeline mode**: no prompt — executes in sequence, each write routed by its operation's method in `.claude/pr-review-tools.json` (live post, or `docs/reviews/outbox.json` for the CI script to post — see [pipeline-mode.md](references/pipeline-mode.md) → "Pipeline Posting Sequence"):
+1. **Step A** — Post all postable issues as inline PR comments
 2. **Step B** — Post full report as PR summary comment
 
-**Step A does not post directly.** You compose every comment body — line validation, inline-vs-general, footer, voice — then dispatch a single call to the named **`embla-core:poster`** subagent (tools scoped to `mcp__bitbucket__bb_post` only — never `general-purpose`) with the finished bodies and nothing else, and build `comment_map` from the hrefs it returns. Never issue a `bb_post` per comment from this phase: at Phase 6 your context is the largest it gets in the whole run, and posting needs none of it. **Step B you post yourself**, so the `report-comment-id.txt` contract stays here.
+**Step A does not post directly.** You compose every comment body — line validation, inline-vs-general, footer, voice — then dispatch a single call to the named **`embla-core:poster`** subagent (tools scoped to the host post tools only — never `general-purpose`) with the finished bodies and nothing else, and build `comment_map` from the URLs it returns. Never issue a post call per comment from this phase: at Phase 6 your context is the largest it gets in the whole run, and posting needs none of it. **Step B you post yourself**, so the `report-comment-id.txt` contract stays here.
 
 This applies in lead mode too, whenever the user approves posting.
 
@@ -372,6 +372,7 @@ Template:
 # 🤖 Review Report — PR #{PR_ID}: {title}
 **Branch:** {source_branch} → {target_branch}
 **Reviewed:** {date} | **Agents:** {agents that ran, formatted per output-format.md → "Agents Field Format"}
+**Notes:** {fallback notes, pipeline mode only — see pipeline-mode.md → "Host access"}
 
 ## Summary
 | Severity | Count |
@@ -415,6 +416,7 @@ Notes:
 - Omit "## Still Open" section if no issues matched an open comment
 - Omit "## Filtered" section if no issues were filtered
 - Omit "## Lead Actions" section in dev and pipeline modes
+- Omit the `**Notes:**` line when the run recorded no fallback notes
 
 **Pipeline mode only:** after writing the local review file, also write `docs/reviews/gate-result.json` with the pipeline's exit-code verdict — see [pipeline-mode.md](references/pipeline-mode.md) → "Exit Code Logic" for the exact shape and field meanings.
 
@@ -422,84 +424,7 @@ Notes:
 
 ## accept / reject Sub-Commands
 
-Both share the same runtime resolution as the main skill (workspace, repo, Jira key, cloud ID). All phases are skipped — these are standalone Jira + Bitbucket actions.
-
-### accept
-
-```
-/embla-core:pr-review <PR_ID> accept
-```
-
-1. Fetch PR: `GET /repositories/{workspace}/{repo}/pullrequests/{PR_ID}` → `author.account_id`, `author.display_name`
-2. Resolve deployment engineer (see below)
-3. `getTransitionsForJiraIssue` → find "Ready for Deployment" (case-insensitive). If not found: list available transitions and ask user to pick.
-4. `transitionJiraIssue`
-5. `editJiraIssue` → `{ "fields": { "assignee": { "accountId": "{deploymentEngineerAccountId}" } } }`
-6. Post marker comment to PR:
-   ```
-   mcp__bitbucket__bb_post /repositories/{workspace}/{repo}/pullrequests/{PR_ID}/comments
-   body: { "content": { "raw": "🤖 review: accepted — Jira {ISSUE_KEY} → Ready for Deployment, assigned to {deploymentEngineerDisplayName}" } }
-   ```
-
-**Output:**
-```
-✓ PR #{PR_ID} accepted
-  Jira {ISSUE_KEY}: → Ready for Deployment
-  Assigned to: {deploymentEngineerDisplayName}
-```
-
-#### Deployment Engineer Resolution
-
-Priority order:
-
-1. `.claude/embla.json → deploymentEngineerAccountId` + `deploymentEngineerDisplayName`. Fallback: `.claude/settings.json → deploymentEngineerAccountId` + `deploymentEngineerDisplayName`. If both fields are found at the first source that has them, confirm: `"I'll assign to {name} as deployment engineer — OK? (yes / change)"`. On yes: skip to assignment. On change: ask for name → `lookupJiraAccountId`.
-
-2. Run 3 JQL searches in parallel (`pagelen: 5`):
-
-   | Search | JQL |
-   |---|---|
-   | Deployed tickets | `status in ({deployedStatuses}) ORDER BY updated DESC` |
-   | Deployment issue types | `issuetype in ({deploymentIssueTypes}) ORDER BY updated DESC` |
-   | Deployment labels | `labels in ({deploymentLabels}) ORDER BY updated DESC` |
-
-   Config read with fallback chain:
-   - `deployedStatuses`: `.claude/embla.json → tracker.jira.statuses.deployed` → `.claude/settings.json → deployedStatuses` → `["Deployed", "Released"]`
-   - `deploymentIssueTypes`: `.claude/settings.json → deploymentIssueTypes` → `["Deployment", "Release"]`
-   - `deploymentLabels`: `.claude/settings.json → deploymentLabels` → `["deploy"]`
-
-3. Collect `assignee.accountId` + `assignee.displayName` from all results. Tally by `accountId`. Pick highest frequency.
-
-4. If winner found: `"I found {displayName} as the most frequent deployment engineer — assign to them? (yes / change)"`. On change: ask for name → `lookupJiraAccountId`.
-
-5. If no results across all 3 searches: `"Could not detect deployment engineer. Who should I assign this to?"` → `lookupJiraAccountId`.
-
-6. Save to `.claude/embla.json`: `deploymentEngineerAccountId` + `deploymentEngineerDisplayName` at the top level (alongside `reviewerMode`, `publishThreshold` etc.).
-
----
-
-### reject
-
-```
-/embla-core:pr-review <PR_ID> reject
-```
-
-1. Fetch PR: `GET /repositories/{workspace}/{repo}/pullrequests/{PR_ID}` → `author.account_id`, `author.display_name`
-2. Resolve Jira issue key: parse current branch `([A-Z]{2,})-\d+`; fallback: fetch PR source branch from Bitbucket, apply same regex; fallback: ask user
-3. `getTransitionsForJiraIssue` → find "In Progress" (case-insensitive). If not found: list available transitions and ask user to pick.
-4. `transitionJiraIssue`
-5. `editJiraIssue` → `{ "fields": { "assignee": { "accountId": "{author.account_id}" } } }`
-6. Post marker comment to PR:
-   ```
-   mcp__bitbucket__bb_post /repositories/{workspace}/{repo}/pullrequests/{PR_ID}/comments
-   body: { "content": { "raw": "🤖 review: rejected — Jira {ISSUE_KEY} → In Progress, assigned back to {author.display_name}" } }
-   ```
-
-**Output:**
-```
-✓ PR #{PR_ID} rejected
-  Jira {ISSUE_KEY}: → In Progress
-  Assigned back to: {author.display_name}
-```
+When the second argument is `accept` or `reject`, skip every phase and follow [accept-reject.md](references/accept-reject.md): it transitions the Jira issue, reassigns it, and posts a marker comment on the Bitbucket PR.
 
 ---
 

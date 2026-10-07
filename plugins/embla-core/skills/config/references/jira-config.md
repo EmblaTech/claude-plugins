@@ -3,6 +3,14 @@
 Collect repository details and task management provider config. This domain covers:
 `repo`, `tracker.provider`, and all `tracker.jira.*` fields.
 
+## Contents
+- Step 1 — Repository
+- Step 2 — Task Management Provider
+- Step 3 — Jira Site & Project (auto-detected)
+- Step 4 — Custom Fields
+- Step 5 — Jira Statuses
+- Step 6 — Issue Types & Summary Formats
+
 ---
 
 ## Step 1 — Repository
@@ -21,9 +29,12 @@ Which version control provider does this project use?
   1. bitbucket   (e.g. bitbucket.org/workspace/repo)
   2. github      (e.g. github.com/org/repo)
   3. azure-devops
+  Or type any other host name (e.g. gitlab)
 
 → Default: bitbucket
 ```
+
+Store the answer as typed, lowercase.
 
 **Workspace / Organisation:**
 ```
@@ -46,6 +57,7 @@ What is the repository slug (name)?
 | bitbucket | `https://bitbucket.org/{workspace}/{slug}` |
 | github | `https://github.com/{workspace}/{slug}` |
 | azure-devops | `https://dev.azure.com/{workspace}/{slug}` |
+| any other | Ask for the repository URL, with `git remote get-url origin` as the default |
 
 ---
 
@@ -57,6 +69,7 @@ Which task management tool does this project use?
   2. github-issues (GitHub Issues)
   3. linear        (Linear)
   4. azure-devops  (Azure DevOps Boards)
+  Or type any other tracker name
 
 → Default: jira
 ```

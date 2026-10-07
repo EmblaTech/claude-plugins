@@ -1,5 +1,14 @@
 # Output Format, Voice, and Errors
 
+## Contents
+- Terminal Display (Phase 5)
+- PR Comment Formats (Phase 6)
+- Full Review Report Comment (Step B)
+- Posting Order (lead mode on approval, and pipeline mode)
+- Voice & Tone
+- Error Handling
+- Implementation Notes
+
 ## Terminal Display (Phase 5)
 
 Produce terminal output in exactly this format:
@@ -65,7 +74,7 @@ Omit annotations entirely when Phase 2.7 excluded nothing — a PR where judgmen
 
 ---
 
-## Bitbucket Comment Formats (Phase 6)
+## PR Comment Formats (Phase 6)
 
 Every posted comment must end with the footer `🤖 review`.
 
@@ -110,23 +119,30 @@ to: null
 
 ### Step A execution
 
-Rank postable issues HIGH → MED → LOW and apply the cap (pipeline mode: `REVIEW_PIPELINE_MAX_COMMENTS`, default 10; lead mode: uncapped within the chosen option). Compose every body as above, then dispatch **one** call to the named `embla-core:poster` subagent — never `general-purpose` — with a data-only prompt and nothing else:
+Rank postable issues HIGH → MED → LOW and apply the cap (pipeline mode: `REVIEW_PIPELINE_MAX_COMMENTS`, default 10; lead mode: uncapped within the chosen option). Compose every body as above, then resolve each into a poster item `{i, operation, tool, args, fields}` — `post_inline_comment` when `path`/`to` are set, `post_comment` when they are `null`, with `{body}` = `raw`, `{path}` = `path`, `{line}` = `to`:
+
+- **lead mode** — Bitbucket, exactly as today: `tool` is `mcp__bitbucket__bb_post`, `args` is `{"path": "/repositories/{workspace}/{repo}/pullrequests/{PR_ID}/comments", "body": {"content": {"raw": "{body}"}, "inline": {"path": "{path}", "to": "{line}"}}}` (no `inline` key for `post_comment`; `"{line}"` becomes the number), and `fields` is `{"id": "id", "url": "links.html.href"}`. `on_error` is `continue`.
+- **pipeline mode** — `tool`, `args` and `fields` come from the operation's entry in `.claude/pr-review-tools.json`, resolved per [pipeline-mode.md](pipeline-mode.md) → "Host access"; only `mcp` items are dispatched. `on_error` is `stop`.
+
+Then dispatch **one** call to the named `embla-core:poster` subagent — never `general-purpose` — with a data-only prompt and nothing else:
 
 ```
-Agent(subagent_type: "embla-core:poster", prompt: "workspace: {workspace}
-repo: {repo}
-pr_id: {PR_ID}
-items: [{\"i\": 0, \"path\": \"src/auth.ts\", \"to\": 42, \"raw\": \"[HIGH] ...\\n\\n🤖 review\"},
-        {\"i\": 1, \"path\": null, \"to\": null, \"raw\": \"[MED] [src/x.ts:9] ...\\n\\n🤖 review\"}]")
+Agent(subagent_type: "embla-core:poster", prompt: "on_error: continue
+items: [{\"i\": 0, \"operation\": \"post_inline_comment\", \"tool\": \"mcp__bitbucket__bb_post\",
+         \"args\": {\"path\": \"/repositories/emb/web/pullrequests/42/comments\", \"body\": {\"content\": {\"raw\": \"[HIGH] ...\\n\\n🤖 review\"}, \"inline\": {\"path\": \"src/auth.ts\", \"to\": 42}}},
+         \"fields\": {\"id\": \"id\", \"url\": \"links.html.href\"}},
+        {\"i\": 1, \"operation\": \"post_comment\", \"tool\": \"mcp__bitbucket__bb_post\",
+         \"args\": {\"path\": \"/repositories/emb/web/pullrequests/42/comments\", \"body\": {\"content\": {\"raw\": \"[MED] [src/x.ts:9] ...\\n\\n🤖 review\"}}},
+         \"fields\": {\"id\": \"id\", \"url\": \"links.html.href\"}}]")
 ```
 
-The subagent's own system prompt (baked into [`agents/poster.md`](../../../agents/poster.md)) already covers the item schema, the byte-for-byte posting rule, and the untrusted-content notice — do not repeat any of that here, only supply `workspace`, `repo`, `PR_ID`, and `items`.
+The subagent's own system prompt (baked into [`agents/poster.md`](../../../agents/poster.md)) already covers the item schema, the byte-for-byte posting rule, and the untrusted-content notice — do not repeat any of that here, only supply `on_error` and `items`.
 
-Why a named agent, not `general-purpose`: `poster.md` scopes `tools:` to `mcp__bitbucket__bb_post` only — the same pattern the other seven agents use — so the subagent handling data derived from a reviewed PR's diff cannot reach any tool beyond the one it needs, regardless of what its prompt says or what a `raw` value contains. Its system prompt also carries an explicit untrusted-content notice, matching the guard `SKILL.md` Phase 2 applies to the orchestrator itself.
+Why a named agent, not `general-purpose`: `poster.md` scopes `tools:` to the host post tools only — the same pattern the other seven agents use — so the subagent handling data derived from a reviewed PR's diff cannot reach any tool beyond the ones it needs, regardless of what its prompt says or what a body contains. Its system prompt also carries an explicit untrusted-content notice, matching the guard `SKILL.md` Phase 2 applies to the orchestrator itself.
 
-Why delegate at all: the orchestrator's context at Phase 6 is the fattest in the run — SKILL.md, every reference file, the full diff, all comments, CLAUDE.md, all seven agents' findings — and it was re-sent on every one of up to 10 sequential `bb_post` turns. Posting requires no review judgement, so it runs in a ~1.5k-token context on the cheapest model instead.
+Why delegate at all: the orchestrator's context at Phase 6 is the fattest in the run — SKILL.md, every reference file, the full diff, all comments, CLAUDE.md, all seven agents' findings — and it was re-sent on every one of up to 10 sequential post turns. Posting requires no review judgement, so it runs in a ~1.5k-token context on the cheapest model instead.
 
-**On the subagent's return:** map each `i` back to its issue by index — this is the only linkage, so never reorder the payload after dispatch. Build `comment_map`: `"{file}:{line}" → "{href}"` for every entry that returned an `href`. Entries that returned an `error`: log the failure, omit from `comment_map`, and let Step B render those issues unlinked (same treatment as "Post HIGH only" leaves MED/LOW). A failed post never aborts the review.
+**On the subagent's return:** map each `i` back to its issue by index — this is the only linkage, so never reorder the payload after dispatch. Build `comment_map`: `"{file}:{line}" → "{url}"` for every entry that returned a `url`. Entries that returned an `error`: in lead mode, log the failure, omit from `comment_map`, and let Step B render those issues unlinked (same treatment as "Post HIGH only" leaves MED/LOW); in pipeline mode, the write fallback in [pipeline-mode.md](pipeline-mode.md) → "Host access" sends them to the outbox. A failed post never aborts the review.
 
 **Step B is posted by the orchestrator itself, not the subagent** — one call, keeping the `report-comment-id.txt` contract below in the same place it has always lived.
 
@@ -136,13 +152,13 @@ After Step A, always follow with Step B (below) as a single summary comment — 
 
 ## Full Review Report Comment (Step B)
 
-Posted as a single Bitbucket comment after Step A's inline/general comments — in **lead mode**, when the user approves posting ("Post all" or "Post HIGH only"); in **pipeline mode**, always, automatically. Use a general comment (no `inline` field).
+Posted as a single PR comment after Step A's inline/general comments — in **lead mode**, when the user approves posting ("Post all" or "Post HIGH only"), with the Bitbucket call below; in **pipeline mode**, always, automatically, through the `post_comment` operation or the outbox (see [pipeline-mode.md](pipeline-mode.md) → "Pipeline Posting Sequence"). Use a general comment (no `inline` field). The `raw` body below is the same in both modes.
 
 This is also the marker Phase 1's re-review skip check looks for (`### 🤖 Review Report`) — skipping this comment means the PR is never recognized as reviewed.
 
 **Do not use `<details>` or any HTML tags** — Bitbucket renders them as raw text in PR comments. Use plain markdown only.
 
-`comment_map` is built from the poster subagent's returned `href` values — see "Step A execution" above: `"{file}:{line}" → "{href}"`. Pass to Step B.
+`comment_map` is built from the poster subagent's returned `url` values — see "Step A execution" above: `"{file}:{line}" → "{url}"`, or `{{comment:N}}` for a pipeline item sent to the outbox. Pass to Step B.
 
 ```
 mcp__bitbucket__bb_post
@@ -153,6 +169,7 @@ mcp__bitbucket__bb_post
         ### 🤖 Review Report — PR #{PR_ID}: {title}
         **Branch:** {source_branch} → {target_branch}
         **Reviewed:** {date} | **Agents:** {agents that ran, formatted per "Agents Field Format" above}
+        **Notes:** {fallback notes — pipeline-mode.md → "Host access"}
 
         #### Summary
         | Severity | Count |
@@ -185,12 +202,13 @@ mcp__bitbucket__bb_post
         🤖 Generated with Claude Code
 ```
 
-**After this post succeeds**, write the response's `id` field to `docs/reviews/report-comment-id.txt` — the bare numeric id only, no label, quotes, or surrounding text (distinct from the `href` values the poster subagent returns for `comment_map`, which aren't usable as an API path parameter). The CI wrapper validates this file is purely numeric before trusting it, so any extra text makes it treated as absent.
+**After this post succeeds**, write the response's `id` field (pipeline mode: the path `fields.id` names) to `docs/reviews/report-comment-id.txt` — the bare numeric id only, no label, quotes, or surrounding text (distinct from the `url` values the poster subagent returns for `comment_map`, which aren't usable as an API path parameter). The CI wrapper validates this file is purely numeric before trusting it, so any extra text makes it treated as absent.
 
-This is needed because total review cost isn't known until the whole session ends, well after this comment has already posted — the CI wrapper (see [pipeline-mode.md](pipeline-mode.md) → "Cost Reporting") uses this file afterward to find this same comment and patch the cost line into it, rather than posting a separate one. Applies whenever this step actually posts — lead mode on approval, or pipeline mode automatically — not only in pipeline mode; the file is simply unused outside CI.
+This is needed because total review cost isn't known until the whole session ends, well after this comment has already posted — the CI wrapper (see [pipeline-mode.md](pipeline-mode.md) → "Cost Reporting") uses this file afterward to find this same comment and patch the cost line into it, rather than posting a separate one. Applies whenever this step actually posts live — lead mode on approval, or pipeline mode automatically — not only in pipeline mode; the file is simply unused outside CI. When the report goes to the outbox instead, the file stays unwritten: the CI script appends the cost line before posting.
 
 **Link rules:**
-- Issues posted as inline comments (present in `comment_map`): use `[{file}:{line}]({comment_url})` — clicking navigates to the exact comment in the diff.
+- Issues posted as inline comments (present in `comment_map`): use `[{file}:{line}]({comment_url})` — clicking navigates to the exact comment in the diff. An outbox item uses its `{{comment:N}}` placeholder as `{comment_url}`.
+- Omit the `**Notes:**` line when the run recorded no fallback notes (always, outside pipeline mode).
 - Postable issues NOT in `comment_map` (e.g. "Post HIGH only" was chosen, so MED/LOW were never individually posted): use `` `{file}:{line}` — {description} `` (plain, no link) — same treatment as filtered issues.
 - General issues (`file == ""`): use `— {description}` (no file/line to link).
 - Filtered issues (not posted): use `` `{file}:{line}` `` (plain, no link).
@@ -207,8 +225,8 @@ After posting, report the comment count and the PR URL.
 ## Posting Order (lead mode on approval, and pipeline mode)
 
 Execute in order:
-1. Inline and general comments (Step A) — postable issues, HIGH first. Pipeline mode caps at `REVIEW_PIPELINE_MAX_COMMENTS`; lead mode posts all issues covered by the chosen option ("Post all" or "Post HIGH only") uncapped. Composed by the orchestrator, transmitted by the poster subagent.
-2. Full Review Report comment (Step B) — always follows Step A, never posted alone. Posted by the orchestrator directly.
+1. Inline and general comments (Step A) — postable issues, HIGH first. Pipeline mode caps at `REVIEW_PIPELINE_MAX_COMMENTS`; lead mode posts all issues covered by the chosen option ("Post all" or "Post HIGH only") uncapped. Composed by the orchestrator, transmitted by the poster subagent (pipeline mode: or written to the outbox).
+2. Full Review Report comment (Step B) — always follows Step A, never posted alone. Posted by the orchestrator directly (pipeline mode: or written to the outbox).
 
 In pipeline mode this runs automatically with no `AskUserQuestion`. In lead mode it runs only after the user picks "Post all" or "Post HIGH only"; "Write to markdown only" and "Don't post" skip both steps (Phase 7 still writes the local file either way).
 
@@ -229,7 +247,7 @@ Comments must match the project's review culture:
 
 ## Error Handling
 
-- If the Bitbucket API returns an error, show it and stop. Do not fabricate results.
+- If the Bitbucket API returns an error, show it and stop. Do not fabricate results. In pipeline mode, a failed host call first takes the read or write fallback in [pipeline-mode.md](pipeline-mode.md) → "Host access".
 - If a subagent fails, continue with the agents that succeeded — do not abort the whole review.
 - If no Jira issue can be extracted and Phase 2.7 judges `requirement` excludable, it synthesizes the "no Jira linked" low-severity issue without spawning the agent at all; this note about skipping the agent's deeper checks (still returning the low-severity issue) only applies when judgment includes the agent anyway despite the empty context, and it takes its own empty-`jira_context` branch.
 - If `getJiraIssue` fails (issue deleted, permission denied), note it and skip alignment check.

@@ -1,10 +1,6 @@
-# Pipeline Variable Checklist
+# Bitbucket variable checklist
 
-Printed by `setup` after writing both files.
-
----
-
-Print this table, filling the "Suggested value" column with whatever was auto-resolved for that field in Phase 1 (`embla.json` only). Leave it as `—` when nothing was resolved. **Never fill in a suggested value for `BITBUCKET_API_TOKEN` or `ATLASSIAN_API_TOKEN`** — those two rows always show `set manually`, even if a token happened to be found locally, because the pipeline needs its own credential set directly in Bitbucket, not whatever is configured for the local session:
+Printed by `setup` after writing the files. Fill "Suggested value" from `embla.json` only, `—` when nothing resolved. Token rows always show `set manually`, even when a token exists locally: the pipeline needs its own credential in Bitbucket. Append the tracker's rows (e.g. `trackers/jira/variables.md`) before the optional `REVIEW_*` rows.
 
 ```
 Next: Set these variables in Bitbucket repo settings → Pipelines → Variables:
@@ -12,12 +8,10 @@ Next: Set these variables in Bitbucket repo settings → Pipelines → Variables
 │ Variable                        │ Required │ Suggested value  │ Notes                              │
 ├─────────────────────────────────┼──────────┼──────────────────┼────────────────────────────────────┤
 │ ANTHROPIC_API_KEY               │ ✅       │ —                │ From console.anthropic.com         │
-│ BITBUCKET_USERNAME              │ ✅       │ <resolved/—>     │ Account username (NOT email) — e.g. peter1. Used only for git authentication; @ in email breaks it │
-│ BITBUCKET_EMAIL                 │ ✅       │ <resolved/—>     │ Account email — e.g. peterG@embla.asia. Used by the bitbucket MCP server as ATLASSIAN_USER_EMAIL, and by the step's Jira pre-fetch │
-│ BITBUCKET_API_TOKEN             │ ✅       │ set manually     │ Bitbucket App Password with scopes: pullrequest:read, repository:read, pullrequest:write. NOT an Atlassian API token — different credential │
+│ BITBUCKET_EMAIL                 │ ✅       │ <resolved/—>     │ Atlassian account email, e.g. peterG@embla.asia. Used for REST Basic auth (pre-fetch, outbox, report) and by the bitbucket MCP server as ATLASSIAN_USER_EMAIL │
+│ BITBUCKET_API_TOKEN             │ ✅       │ set manually     │ Bitbucket App Password with scopes: pullrequest:read, repository:read, pullrequest:write — nothing broader (C4). NOT an Atlassian API token — different credential │
 │ BITBUCKET_WORKSPACE             │ ✅       │ <resolved/—>     │ Workspace slug (e.g. emblaftdev)   │
-│ ATLASSIAN_API_TOKEN             │ ✅       │ set manually     │ Atlassian API token from id.atlassian.com, separate from BITBUCKET_API_TOKEN. Used by the AI PR Review step's Jira pre-fetch, and also by the atlassian MCP server when the ai-develop pipeline is installed │
-│ ATLASSIAN_SITE_NAME             │ ✅       │ <resolved/—>     │ Jira domain prefix only — e.g. emblaftdev (not the full URL). From your Jira URL: {this}.atlassian.net. Used by the AI PR Review step's Jira pre-fetch, and also by the atlassian MCP server when the ai-develop pipeline is installed │
+│ <tracker rows>                  │          │                  │                                    │
 │ REVIEW_MODE                     │ ✅       │ pipeline         │ Set to: pipeline                   │
 │ REVIEW_SIZE_GATE                │ optional │ —                │ warn / fail / skip (default: warn) │
 │ REVIEW_COVERAGE_GATE            │ optional │ —                │ warn / fail / skip (default: fail) │
@@ -27,7 +21,9 @@ Next: Set these variables in Bitbucket repo settings → Pipelines → Variables
 │ REVIEW_PIPELINE_MAX_COMMENTS    │ optional │ —                │ integer (default: 10)              │
 └─────────────────────────────────┴──────────┴──────────────────┴────────────────────────────────────┘
 
-Mark all variables as "Secured" in Bitbucket so they are masked in build logs — including the ones with a suggested value shown above, since Bitbucket variables are separate from anything on this machine.
+Mark every variable "Secured" so Bitbucket masks it in build logs (C3).
 
-The optional gate variables are read at pipeline runtime from Bitbucket's variable store — do not add them to .mcp.json or embla.json.
+BITBUCKET_USERNAME is no longer needed: the plugin repo is cloned from public GitHub without credentials (S2). Keep it only if the ai-develop pipeline is installed — that pipeline still uses it.
+
+The optional gate variables are read at pipeline runtime from Bitbucket's variable store — keep them out of .mcp.json and embla.json.
 ```
