@@ -21,7 +21,7 @@ Activates when `--mode=pipeline` is passed or `REVIEW_MODE=pipeline` environment
 |---|---|---|---|
 | Interactive prompts | AskUserQuestion | AskUserQuestion | Never |
 | Gate breach handling | Ask user | Ask user | Env var (warn/fail/skip) |
-| Host access | Live Bitbucket MCP | Live Bitbucket MCP | `.claude/pr-review-tools.json` mapping, with file fallback |
+| Host access | Live Bitbucket MCP | Live Bitbucket MCP | Host mapping, with file fallback |
 | PR comment posting | None | Ask user | Automatic (all postable) |
 | PR summary report comment | No | On approval ("Post all"/"Post HIGH only") | Yes |
 | Local review file | Always written | Always written | Always written |
@@ -36,9 +36,12 @@ Because pipeline mode is unattended, the one-line exclusion reasoning Phase 2.7 
 
 ## Host access
 
-Pipeline mode reaches the code host only through the operations mapped in `.claude/pr-review-tools.json`, which `embla-core:pipeline` writes for the project's host. dev and lead mode never read this file.
+Pipeline mode reaches the code host only through the operations in the **host mapping**. dev and lead mode never read it.
 
-**Load the mapping** once, at the first operation the run needs:
+**Load the host mapping** once, at the first operation the run needs, from the first source that exists:
+
+1. `.claude/embla.json → pipeline.hostMapping` — written by `embla-core:pipeline` for a generated host (one with no ready-made profile).
+2. This plugin's profile for `embla.json → repo.provider`: `../pipeline/references/hosts/<provider>/tools.json`, relative to this skill's base directory. In CI that is the plugin checkout the pipeline pinned with `--plugin-dir`, so the mapping always matches the pinned skill.
 
 ```json
 {
@@ -49,12 +52,11 @@ Pipeline mode reaches the code host only through the operations mapped in `.clau
     "list_comments":       { "method": "mcp", "…": "…" },
     "post_inline_comment": { "method": "mcp", "…": "…" },
     "post_comment":        { "method": "outbox" }
-  },
-  "tracker": { "provider": "jira", "method": "prefetch" }
+  }
 }
 ```
 
-If the file is missing or not valid JSON, run every read as `files` and every write as `outbox`, and record `host: pr-review-tools.json missing — reads via files, writes via outbox` (or `invalid`) in the notes. The mapping is loaded when every operation below has a method.
+Neither source exists, or the one found is not valid JSON → run every read as `files` and every write as `outbox`, and record `host: no mapping for <provider> — reads via files, writes via outbox` (or `invalid mapping`) in the notes. The host mapping is loaded when every operation below has a method.
 
 | Operation | Phase | Normalized result | Fallback |
 |---|---|---|---|
@@ -95,10 +97,10 @@ The file list is ready when every `diff --git` header in the full diff has one e
 
 ## Ticket context
 
-Phase 2.4 resolves `jira_context` by `tracker.method` in `.claude/pr-review-tools.json` (`prefetch` when the mapping is missing):
+Phase 2.4 resolves `jira_context` by the **tracker mapping**: `.claude/embla.json → pipeline.trackerMapping` when present (written by `embla-core:pipeline` for a tracker other than Jira); otherwise `{"method": "prefetch"}` when `tracker.provider` is `jira`, and `{"method": "none"}` for anything else. Run it by `method`:
 
 - `prefetch` — `Read` `docs/reviews/ticket.json`. The CI wrapper resolves the key from the PR title or source branch, fetches the issue with `curl` while curl is still installed, and writes the normalized object there. This is the Jira path.
-- `mcp` — resolve the key from the PR title, then the source branch, and run `get_ticket` per "Host access", with `docs/reviews/ticket.json` as its read fallback.
+- `mcp` — resolve the key with the tracker mapping's `key_pattern` from the PR title, then the source branch, and run `get_ticket` with its `tool`, `args`, and `fields` per "Host access", with `docs/reviews/ticket.json` as its read fallback.
 - `none` — no ticket source; `jira_context` is empty.
 
 An absent or unparseable result leaves `jira_context` empty and the review proceeds; the requirement agent (or Phase 2.7's synthesized issue) reports the missing link, exactly as it does for a PR with no ticket.

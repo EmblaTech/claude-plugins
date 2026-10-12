@@ -345,7 +345,7 @@ Note: "postable issues" here (in both lead mode's options and pipeline mode's St
 
 Step B matters beyond formatting: the `### 🤖 Review Report` comment it posts is the marker Phase 1's re-review skip check keys off. Skipping Step B means a lead-mode-reviewed PR is never recognized as already reviewed on a later run.
 
-**pipeline mode**: no prompt — executes in sequence, each write routed by its operation's method in `.claude/pr-review-tools.json` (live post, or `docs/reviews/outbox.json` for the CI script to post — see [pipeline-mode.md](references/pipeline-mode.md) → "Pipeline Posting Sequence"):
+**pipeline mode**: no prompt — executes in sequence, each write routed by its operation's method in the host mapping (live post, or `docs/reviews/outbox.json` for the CI script to post — see [pipeline-mode.md](references/pipeline-mode.md) → "Pipeline Posting Sequence"):
 1. **Step A** — Post all postable issues as inline PR comments
 2. **Step B** — Post full report as PR summary comment
 

@@ -51,6 +51,5 @@
       },
       "fields": { "id": "id", "url": "links.html.href" }
     }
-  },
-  "tracker": { "provider": "jira", "method": "prefetch" }
+  }
 }

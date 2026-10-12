@@ -122,7 +122,7 @@ to: null
 Rank postable issues HIGH → MED → LOW and apply the cap (pipeline mode: `REVIEW_PIPELINE_MAX_COMMENTS`, default 10; lead mode: uncapped within the chosen option). Compose every body as above, then resolve each into a poster item `{i, operation, tool, args, fields}` — `post_inline_comment` when `path`/`to` are set, `post_comment` when they are `null`, with `{body}` = `raw`, `{path}` = `path`, `{line}` = `to`:
 
 - **lead mode** — Bitbucket, exactly as today: `tool` is `mcp__bitbucket__bb_post`, `args` is `{"path": "/repositories/{workspace}/{repo}/pullrequests/{PR_ID}/comments", "body": {"content": {"raw": "{body}"}, "inline": {"path": "{path}", "to": "{line}"}}}` (no `inline` key for `post_comment`; `"{line}"` becomes the number), and `fields` is `{"id": "id", "url": "links.html.href"}`. `on_error` is `continue`.
-- **pipeline mode** — `tool`, `args` and `fields` come from the operation's entry in `.claude/pr-review-tools.json`, resolved per [pipeline-mode.md](pipeline-mode.md) → "Host access"; only `mcp` items are dispatched. `on_error` is `stop`.
+- **pipeline mode** — `tool`, `args` and `fields` come from the operation's entry in the host mapping, loaded and resolved per [pipeline-mode.md](pipeline-mode.md) → "Host access"; only `mcp` items are dispatched. `on_error` is `stop`.
 
 Then dispatch **one** call to the named `embla-core:poster` subagent — never `general-purpose` — with a data-only prompt and nothing else:
 

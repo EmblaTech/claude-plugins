@@ -18,7 +18,7 @@ Host-specific facts for `setup` and `check` when `repo.provider` is `github`. Ra
 |---|---|---|
 | `template.yml` | `.github/workflows/ai-pr-review.yml` | A whole workflow file of our own (see "Merge rules") |
 | `mcp.json` | `.mcp.json` (repo root) | Server block added only if the `github` key is missing |
-| `tools.json` | `.claude/pr-review-tools.json` | Written with `tracker` set for this project; an existing file is left unchanged and reported |
+| `tools.json` | not written | `pr-review` reads it from the pinned plugin checkout at run time; its `mcp` tools are the template's `--allowedTools` MCP entries (I5) |
 | `variables.md` | printed | Checklist with tracker rows appended |
 
 Built-in values the template relies on: `github.event.pull_request.number`, `github.event.pull_request.head.sha` (the PR head, not `GITHUB_SHA`, which is the merge commit), `github.repository`, `secrets.GITHUB_TOKEN`. Secret store: Settings → Secrets and variables → Actions.

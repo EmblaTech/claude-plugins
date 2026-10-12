@@ -50,8 +50,8 @@ Each rule has a **statement**, a **verify** (how to confirm it on a file), and a
 - Verify: the remove line runs after every pre-fetch (D1) and before the `su … claude` line.
 - Why: guards against prompt injection exfiltrating data through those tools. Reinstalling `curl`/`jq` in the finish path (R2) is safe because `claude` has already exited; no live session remains to abuse them.
 
-**I5** `--allowedTools` is exactly `Bash(git fetch:*),Bash(git diff:*),Grep,Write,Read` plus the MCP tools named in `.claude/pr-review-tools.json`, and nothing else.
-- Verify: parse the `--allowedTools` value; the MCP entries equal the set of `tool` values in `pr-review-tools.json` (operations with `"method": "mcp"`). No bare `Bash`, no `bypassPermissions`.
+**I5** `--allowedTools` is exactly `Bash(git fetch:*),Bash(git diff:*),Grep,Write,Read` plus the MCP tools named in the host mapping and tracker mapping, and nothing else.
+- Verify: parse the `--allowedTools` value; the MCP entries equal the set of `tool` values with `"method": "mcp"` in the host mapping (`embla.json → pipeline.hostMapping`, else `hosts/<provider>/tools.json`) and in `embla.json → pipeline.trackerMapping`. No bare `Bash`, no `bypassPermissions`.
 - Why: a prompt injection in a reviewed PR can't get an arbitrary command run. `--allowedTools` is a permission filter, not a loading filter: every tool schema of every server in `.mcp.json` still enters context, which is why unused servers are left out of `.mcp.json` entirely.
 
 ## C — Credentials

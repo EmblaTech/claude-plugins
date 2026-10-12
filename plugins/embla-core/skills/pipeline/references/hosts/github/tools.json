@@ -19,6 +19,5 @@
     "list_comments": { "method": "files" },
     "post_inline_comment": { "method": "outbox" },
     "post_comment": { "method": "outbox" }
-  },
-  "tracker": { "provider": "jira", "method": "prefetch" }
+  }
 }

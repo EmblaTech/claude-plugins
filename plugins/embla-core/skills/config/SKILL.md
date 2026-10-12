@@ -260,6 +260,10 @@ Never claim config was written without a confirmed successful file write.
   "reviewerMode": "dev",
   "prSizeGateThreshold": 300,
   "testCoverageThreshold": 80,
-  "publishThreshold": 60
+  "publishThreshold": 60,
+  "pipeline": {                     // written only by embla-core:pipeline — never ask
+    "hostMapping": {},              // generated hosts only; bitbucket/github read the plugin's hosts/<provider>/tools.json
+    "trackerMapping": {}            // trackers other than jira only; jira → prefetch, none → none
+  }
 }
 ```
