@@ -1,0 +1,25 @@
+Embla Claude Plugins
+Copyright 2026 Embla
+
+This product includes software developed at Embla
+(https://github.com/EmblaTech/claude-plugins), licensed under the
+Apache License, Version 2.0 (see LICENSE).
+
+--------------------------------------------------------------------------
+
+Third-party code
+
+plugins/project-setup/skills/session-review/scripts/sessions.mjs
+  Derived from analyze-sessions.mjs in Anthropic's session-report plugin
+  (https://github.com/anthropics/claude-plugins-official, path
+  plugins/session-report/skills/session-report/analyze-sessions.mjs),
+  licensed under the Apache License, Version 2.0. Upstream carries no
+  copyright line of its own. Kept from upstream: the entry-parsing loop,
+  subagent-sidecar discovery, and uuid dedup across resume/compaction.
+  Modified by Embla; the rest of the file is new.
+
+plugins/grc-gdpr/
+  Vendored from Sushegaad/Claude-Skills-Governance-Risk-and-Compliance
+  by Hemant Naik, licensed under the MIT License. The MIT license text
+  ships with the plugin at plugins/grc-gdpr/LICENSE and governs those
+  files. See docs/grc-upstream.md.
