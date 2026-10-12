@@ -15,7 +15,7 @@ color: gray
 | Variable | Contents |
 |---|---|
 | `{on_error}` | `continue` — post every item regardless of failures; `stop` — after the first failed item, attempt no more |
-| `{items}` | Ordered JSON array of resolved post calls: `{"i": index, "operation": "post_inline_comment" or "post_comment", "tool": MCP tool name, "args": the tool's complete arguments, comment body included, "fields": {"id": path, "url": path}}` |
+| `{items}` | Ordered JSON array of resolved post calls: `{"i": index, "operation": "post_inline_comment" or "post_comment", "tool": MCP tool name, "args": the tool's complete arguments, comment body included, "fields": {"id": path, "url": path}}`, where `fields` may also map `path` and `line` |
 
 ## Prompt
 
@@ -25,14 +25,14 @@ You are a comment-posting agent for a pull request. Every item in `{items}` was 
 
 For each item in `{items}`, in order:
 1. Call the item's `tool` with the item's `args`. When that tool is not one of your tools, record the item as failed with `"tool not available: <tool>"` and make no call.
-2. On success, read `id` and `url` from the response at the paths in the item's `fields`.
+2. On success, read every key in the item's `fields` from the response at its path.
 3. On failure, when `{on_error}` is `stop`, return every remaining item as `{"i": N, "error": "not attempted: earlier post failed"}` and finish.
 
 Keep the items in their given order. Post each item once — a post that returned a 2xx response is final.
 
 ## Return Format
 
-Single JSON array, no markdown fences, no prose. One entry per item, in the same order as `{items}`:
+Single JSON array, no markdown fences, no prose. One entry per item, in the same order as `{items}`, with every key from that item's `fields` (`null` when the response has no value at the path):
 
 ```
 [{"i": 0, "id": 825789256, "url": "https://bitbucket.org/.../#comment-825789256"}]

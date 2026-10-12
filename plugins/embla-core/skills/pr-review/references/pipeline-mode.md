@@ -21,7 +21,7 @@ Activates when `--mode=pipeline` is passed or `REVIEW_MODE=pipeline` environment
 |---|---|---|---|
 | Interactive prompts | AskUserQuestion | AskUserQuestion | Never |
 | Gate breach handling | Ask user | Ask user | Env var (warn/fail/skip) |
-| Host access | Live Bitbucket MCP | Live Bitbucket MCP | Host mapping, with file fallback |
+| Host access | Live Bitbucket MCP | Live Bitbucket MCP | Allowed MCP tools, with file and outbox fallback |
 | PR comment posting | None | Ask user | Automatic (all postable) |
 | PR summary report comment | No | On approval ("Post all"/"Post HIGH only") | Yes |
 | Local review file | Always written | Always written | Always written |
@@ -30,58 +30,38 @@ Activates when `--mode=pipeline` is passed or `REVIEW_MODE=pipeline` environment
 
 ## Agent Relevance Judgment Applies Identically
 
-Phase 2.7's agent relevance judgment (`pr-review/SKILL.md`) runs the same way in `dev`, `lead`, and `pipeline` mode — there is no pipeline-specific carve-out. `dependency_diff`, `jira_context`, and `file_list` are resolved identically across all three modes (pipeline mode's only difference is *how* they are resolved — via the host mapping and the pre-fetched files below, not a live Bitbucket or Jira call — not whether they're empty).
+Phase 2.7's agent relevance judgment (`pr-review/SKILL.md`) runs the same way in `dev`, `lead`, and `pipeline` mode — there is no pipeline-specific carve-out. `dependency_diff`, `jira_context`, and `file_list` are resolved identically across all three modes (pipeline mode's only difference is *how* they are resolved — via the allowed MCP tools and the pre-fetched files below, not a live Bitbucket or Jira call — not whether they're empty).
 
 Because pipeline mode is unattended, the one-line exclusion reasoning Phase 2.7 records for every agent it leaves out (see SKILL.md → Phase 2.7 → "Record why") is the only audit trail anyone gets for why an agent didn't run on that build — there's no lead reviewing the run in real time to catch a bad call. Never skip recording that reasoning just because pipeline mode has no prompt to show it to; it still surfaces in the "Agents Field Format" section of the posted report.
 
 ## Host access
 
-Pipeline mode reaches the code host only through the operations in the **host mapping**. dev and lead mode never read it.
-
-**Load the host mapping** once, at the first operation the run needs, from the first source that exists:
-
-1. `.claude/embla.json → pipeline.hostMapping` — written by `embla-core:pipeline` for a generated host (one with no ready-made profile).
-2. This plugin's profile for `embla.json → repo.provider`: `../pipeline/references/hosts/<provider>/tools.json`, relative to this skill's base directory. In CI that is the plugin checkout the pipeline pinned with `--plugin-dir`, so the mapping always matches the pinned skill.
-
-```json
-{
-  "host": "github",
-  "operations": {
-    "get_pr":              { "method": "mcp", "tool": "mcp__github__<tool>", "args": { "…": "{PR_ID}" }, "fields": { "state": "<path>", "…": "…" } },
-    "list_commits":        { "method": "mcp", "list": "<path>", "…": "…" },
-    "list_comments":       { "method": "mcp", "…": "…" },
-    "post_inline_comment": { "method": "mcp", "…": "…" },
-    "post_comment":        { "method": "outbox" }
-  }
-}
-```
-
-Neither source exists, or the one found is not valid JSON → run every read as `files` and every write as `outbox`, and record `host: no mapping for <provider> — reads via files, writes via outbox` (or `invalid mapping`) in the notes. The host mapping is loaded when every operation below has a method.
+Pipeline mode reaches the code host through the six **operations** below. dev and lead mode never use this section.
 
 | Operation | Phase | Normalized result | Fallback |
 |---|---|---|---|
 | `get_pr` | 1 | `{id, state: "OPEN"\|"CLOSED"\|"MERGED", draft, title, description, source_branch, target_branch, last_commit}` | `docs/reviews/pr-context.json` → `pr` |
 | `list_commits` | 1 | `[{hash, date}]` (ISO-8601) | `pr-context.json` → `commits` |
-| `list_comments` | 1, 2.2 | `[{id, raw, path, line, date, resolved}]` — a missing `resolved` means open | `pr-context.json` → `comments` |
+| `list_comments` | 1, 2.2 | `[{id, raw, path, line, date, resolved}]` — every comment on the PR, general and inline; a missing `resolved` means open | `pr-context.json` → `comments` |
 | `post_inline_comment` | 6 Step A | in `{path, line, body}` → out `{id, url}` | outbox `inline` |
 | `post_comment` | 6 Step A, B | in `{body}` → out `{id, url}` | outbox `general`, `report` |
 | `get_ticket` | 2.4 | `{key, summary, description, issuetype, status, labels, parent, custom}` | `docs/reviews/ticket.json` |
 
-**Run an operation** by its `method`:
+**Run an operation** by the first route that fits:
 
-- `mcp` — call `tool` with `args`, after these rules:
-  1. **Placeholders.** Substitute `{PR_ID}`, `{workspace}` (alias `{owner}`), `{repo}` from Runtime Resolution; `{path}`, `{line}`, `{body}` from the composed comment; `{key}` (the ticket key) for `get_ticket`. Placeholders always sit inside JSON strings: a string that is exactly `"{line}"` or `"{PR_ID}"` becomes the number; every other placeholder, including one inside a longer string such as a path, is substituted as text, with `{body}` JSON-escaped. Every other part of `args` passes to the tool as-is — a Bitbucket `jq` key included, since that filter already shapes the result.
-  2. **Fields.** `fields` maps each normalized field to a path in the (filtered) result. For list operations the paths are relative to each list element; the result is the list itself unless a `"list": "<path>"` key names where the array lives. A normalized field with no mapping is `null`.
-  3. **State.** Normalize `get_pr.state` the same way for MCP results and `pr-context.json`: case-insensitive `open` → `OPEN`, `merged` → `MERGED`, anything else (`DECLINED`, `SUPERSEDED`, `closed`) → `CLOSED`.
-  4. **Write results.** For `post_inline_comment` and `post_comment`, `fields` maps `id` and `url`.
-- `files` (reads) — read the operation's fallback from the table above.
-- `outbox` (writes) — add the item to `docs/reviews/outbox.json` (see "Outbox").
+1. **MCP** — an allowed MCP tool can perform it. The pipeline's `--allowedTools` is the complete set of MCP tools you may call, and their schemas say what each does: choose the tool and arguments from them, using `{workspace}`, `{repo}`, and `{PR_ID}` from Runtime Resolution, and build the normalized result from the response.
+2. **File** (reads) — no allowed tool can read it: read the operation's fallback.
+3. **Outbox** (writes) — no allowed tool can post it: add the item to `docs/reviews/outbox.json` (see "Outbox").
+
+Normalize `get_pr.state` the same way on every route: case-insensitive `open` → `OPEN`, `merged` → `MERGED`, anything else (`DECLINED`, `SUPERSEDED`, `closed`) → `CLOSED`.
 
 An operation is done when the phase holds its normalized result, or the item sits in the outbox.
 
-**Read fallback.** When an `mcp` read's tool is not loaded, returns an error, or yields no parseable result, read the same data from its fallback file and record `host: <operation> via files (mcp error: <short reason>)`. When the fallback file is also missing, `get_ticket` leaves `jira_context` empty; any other read shows its error and stops the run, exactly as a failed Bitbucket call does in dev mode — the CI wrapper then reports the run as incomplete.
+**Inline placement.** A misplaced inline comment still returns success, so after each MCP `post_inline_comment`, compare the file and line in the response with the intended `path` and `line`. A mismatch, or a comment that landed as a general comment, is a failed post: correct the call and post once more; a second miss triggers the write fallback, and the note records the misplaced comment's URL.
 
-**Write fallback.** Once any `mcp` write fails, that write and every later write in the run — Step B included — go to the outbox. Comments already posted keep their real URLs. Record `host: <operation> via outbox (mcp error: <short reason>)`.
+**Read fallback.** When an MCP read returns an error or yields no parseable result, read the same data from its fallback file and record `host: <operation> via files (mcp error: <short reason>)`. When the fallback file is also missing, `get_ticket` leaves `jira_context` empty; any other read shows its error and stops the run, exactly as a failed Bitbucket call does in dev mode — the CI wrapper then reports the run as incomplete.
+
+**Write fallback.** Once any MCP write fails, that write and every later write in the run — Step B included — go to the outbox. Comments already posted keep their real URLs. Record `host: <operation> via outbox (mcp error: <short reason>)`.
 
 **Notes line.** Every recorded note appears, `; `-separated, on the `**Notes:**` line of the Step B report and the Phase 7 local file. A run with no notes omits the line.
 
@@ -97,11 +77,11 @@ The file list is ready when every `diff --git` header in the full diff has one e
 
 ## Ticket context
 
-Phase 2.4 resolves `jira_context` by the **tracker mapping**: `.claude/embla.json → pipeline.trackerMapping` when present (written by `embla-core:pipeline` for a tracker other than Jira); otherwise `{"method": "prefetch"}` when `tracker.provider` is `jira`, and `{"method": "none"}` for anything else. Run it by `method`:
+Phase 2.4 resolves `jira_context` by the first source that exists:
 
-- `prefetch` — `Read` `docs/reviews/ticket.json`. The CI wrapper resolves the key from the PR title or source branch, fetches the issue with `curl` while curl is still installed, and writes the normalized object there. This is the Jira path.
-- `mcp` — resolve the key with the tracker mapping's `key_pattern` from the PR title, then the source branch, and run `get_ticket` with its `tool`, `args`, and `fields` per "Host access", with `docs/reviews/ticket.json` as its read fallback.
-- `none` — no ticket source; `jira_context` is empty.
+1. `docs/reviews/ticket.json` — the CI wrapper resolved the key from the PR title or source branch, fetched the issue with `curl` while curl was still installed, and wrote the normalized object there. This is the Jira path.
+2. An allowed MCP tool that reads issues from `embla.json → tracker.provider` — find the ticket key in the PR title, then the source branch, and run `get_ticket` per "Host access".
+3. Neither — `jira_context` is empty.
 
 An absent or unparseable result leaves `jira_context` empty and the review proceeds; the requirement agent (or Phase 2.7's synthesized issue) reports the missing link, exactly as it does for a PR with no ticket.
 
@@ -115,16 +95,16 @@ After Phase 4 (scoring), pipeline mode executes in order:
 
 **Step A — Post inline comments**
 
-Take the postable issues — this already excludes any issue Phase 4 flagged `is_duplicate_of_open` (the "Still Open" bucket), regardless of severity — **capped at `REVIEW_PIPELINE_MAX_COMMENTS`** (default: 10). Rank HIGH first, then MED, then LOW — drop from the bottom when over the cap. The orchestrator composes every comment body (line validation, inline-vs-general, footer, voice); each item then goes by its operation's method:
+Take the postable issues — this already excludes any issue Phase 4 flagged `is_duplicate_of_open` (the "Still Open" bucket), regardless of severity — **capped at `REVIEW_PIPELINE_MAX_COMMENTS`** (default: 10). Rank HIGH first, then MED, then LOW — drop from the bottom when over the cap. The orchestrator composes every comment body (line validation, inline-vs-general, footer, voice); each item then takes its route per "Host access":
 
-- `mcp` items go in one dispatch to the named `embla-core:poster` subagent with `on_error: stop`, resolved per "Host access" (payload: [output-format.md](output-format.md) → "Step A execution"). An item returning an `error` triggers the write fallback: it and every item after it go to the outbox.
-- `outbox` items go straight to the outbox; the poster is not dispatched when no item is `mcp`.
+- MCP items go in one dispatch to the named `embla-core:poster` subagent with `on_error: stop` (payload: [output-format.md](output-format.md) → "Step A execution"), then each inline item's returned placement is checked per "Inline placement". An item returning an `error` triggers the write fallback: it and every item after it go to the outbox.
+- Outbox items go straight to the outbox; the poster is not dispatched when no item has an MCP route.
 
 `comment_map` maps each posted item to its returned `url`, and each outbox item to `{{comment:N}}` (see "Outbox"). Step A is done when every capped issue is either in `comment_map` with a URL or placeholder, or logged as failed.
 
 **Step B — Post full report as PR summary comment**
 
-Compose the report with `comment_map` (see [output-format.md](output-format.md) → "Full Review Report Comment (Step B)"). If `post_comment` is `mcp` and no write has failed this run, post it yourself with the resolved tool and write its `id` to `docs/reviews/report-comment-id.txt`. Otherwise put it in the outbox as `report` and leave `report-comment-id.txt` unwritten — the CI script appends the cost line and posts it.
+Compose the report with `comment_map` (see [output-format.md](output-format.md) → "Full Review Report Comment (Step B)"). If an allowed tool can post a general comment and no write has failed this run, post it yourself with that tool and write its `id` to `docs/reviews/report-comment-id.txt`. Otherwise put it in the outbox as `report` and leave `report-comment-id.txt` unwritten — the CI script appends the cost line and posts it.
 
 Note: lead mode runs this same Step A/B sequence when the user approves posting ("Post all" or "Post HIGH only") — see SKILL.md Phase 6 — always as live Bitbucket posts.
 

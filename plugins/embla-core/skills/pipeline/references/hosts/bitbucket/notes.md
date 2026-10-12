@@ -16,7 +16,6 @@ Host-specific facts for `setup` and `check` when `repo.provider` is `bitbucket`.
 |---|---|---|
 | `template.yml` | `bitbucket-pipelines.yml` (repo root) | Merged per "Merge rules" below |
 | `mcp.json` | `.mcp.json` (repo root) | Server block added only if the `bitbucket` key is missing |
-| `tools.json` | not written | `pr-review` reads it from the pinned plugin checkout at run time; its `mcp` tools are the template's `--allowedTools` MCP entries (I5) |
 | `variables.md` | printed | Checklist with tracker rows appended |
 
 Built-in variables the template relies on: `BITBUCKET_PR_ID`, `BITBUCKET_REPO_SLUG`. Secret store: Repository settings → Pipelines → Repository variables, "Secured".

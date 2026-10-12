@@ -1,6 +1,6 @@
 # Generating a pipeline for an unknown host
 
-Followed by `setup` when `references/hosts/<repo.provider>/` does not exist (e.g. `gitlab`, `azure-devops`). The output is a pipeline file, a `.mcp.json` block, and a host mapping (stored in `embla.json → pipeline.hostMapping`, since the plugin ships no profile for this host) that pass every rule in `pipeline-rules.md`. Nothing is written until the developer approves the full draft.
+Followed by `setup` when `references/hosts/<repo.provider>/` does not exist (e.g. `gitlab`, `azure-devops`). The output is a pipeline file and a `.mcp.json` block that pass every rule in `pipeline-rules.md`. Nothing is written until the developer approves the full draft.
 
 The generated pipeline is a **port** of the reference implementation, not a fresh design: every rule-bearing line survives, and only host plumbing changes.
 
@@ -8,7 +8,7 @@ The generated pipeline is a **port** of the reference implementation, not a fres
 - 1. Read the rules and both reference templates
 - 2. Confirm host facts from official docs
 - 3. Draft the pipeline file
-- 4. Choose the read MCP server and build the host mapping
+- 4. Choose the read MCP server and its allowed tools
 - 5. Check every rule
 - 6. Present the draft and get an explicit yes
 - 7. Write the files with the header stamp
@@ -21,7 +21,7 @@ Generate for <provider>:
 - [ ] 1. Read the rules and both reference templates
 - [ ] 2. Confirm host facts from official docs
 - [ ] 3. Draft the pipeline file
-- [ ] 4. Choose the read MCP server and build the host mapping
+- [ ] 4. Choose the read MCP server and its allowed tools
 - [ ] 5. Check every rule (max 3 rounds per rule)
 - [ ] 6. Present the draft and get an explicit yes
 - [ ] 7. Write the files with the header stamp
@@ -68,23 +68,21 @@ The tracker marker is replaced by the tracker block exactly as for a known host.
 
 Done when the draft is a complete file and each change above maps to a host fact from step 2.
 
-## 4. Choose the read MCP server and build the host mapping
+## 4. Choose the read MCP server and its allowed tools
 
-The host mapping has the shape of `hosts/bitbucket/tools.json`: `host` plus one entry per operation.
-
-Writes are always `"method": "outbox"` on a generated host (`post_inline_comment`, `post_comment`); the pipeline script posts them.
+Writes always go through the outbox on a generated host: no write tool is allowed, and the pipeline script posts them.
 
 For the three reads (`get_pr`, `list_commits`, `list_comments`), choose a server under M1–M8, starting from any host server already in the project's `.mcp.json`. For each candidate, collect the M6 evidence: package or image, exact version, publisher, source URL, last release date, the tool names you will allow, the token env var and its minimum scope, and a pass/fail per M-rule.
-- A candidate passes → map each read: `"method": "mcp"`, the `mcp__<server>__<tool>` name, `args` with `{PR_ID}`/`{workspace}`/`{repo}` placeholders, and `fields` paths into the tool's result (list operations add `"list": "<path>"` when the array is nested).
-- No candidate passes → all three reads use `"method": "files"` (M7), `.mcp.json` gets no host block, and you record which rule failed.
+- A candidate passes → for each read it serves, name the `mcp__<server>__<tool>` that performs it. `pr-review` chooses the arguments from the tool's schema at run time.
+- No candidate passes → no host tool is allowed, so all three reads come from the pre-fetched files (M7); `.mcp.json` gets no host block, and you record which rule failed.
 
-Take the tracker mapping as `setup` step 4 decided. Then set `--allowedTools` in the draft to the base set plus exactly the `mcp` tools in the host mapping and tracker mapping (I5).
+Take the tracker tool as `setup` step 4 decided. Then set `--allowedTools` in the draft to the base set plus exactly these host tools and the tracker tool (I5).
 
-Done when every operation has a `method` and every `mcp` operation has `tool`, `args`, and `fields`.
+Done when each read has a named tool or is explicitly left to the pre-fetched file.
 
 ## 5. Check every rule
 
-Walk `pipeline-rules.md` top to bottom and run each rule's **verify** against the draft, the `.mcp.json` block, and the host mapping. Include any host-specific rules you identified (e.g. a trigger that can expose secrets to fork code gets its own `<HOST>1` rule).
+Walk `pipeline-rules.md` top to bottom and run each rule's **verify** against the draft and the `.mcp.json` block. Include any host-specific rules you identified (e.g. a trigger that can expose secrets to fork code gets its own `<HOST>1` rule).
 
 On a failure, fix the draft and re-check that rule. After three failed rounds on the same rule, stop: print `Cannot generate a compliant pipeline for <provider>: rule <ID> — <reason>. No files were written.` and end setup.
 
@@ -95,7 +93,7 @@ Done when every rule ID has a ✅.
 Show, in this order:
 1. the full pipeline file;
 2. the `.mcp.json` block (or "none — reads use files");
-3. the host mapping (and tracker mapping, if any);
+3. each read's allowed tool, or "pre-fetched file";
 4. the M6 evidence block for the chosen server;
 5. one line per rule ID: `✅ S1 — @anthropic-ai/claude-code@2.1.207`, citing the line that satisfies it.
 
@@ -113,7 +111,7 @@ The pipeline file's first line is exactly:
 # Generated by embla-core:pipeline for <provider> — rules-version <N>
 ```
 
-with `<N>` from `pipeline-rules.md`. `check` uses this line to recognise a generated host. Merge into an existing pipeline file under P1/P2, write `.mcp.json` (add the block only if its key is missing), and set `pipeline.hostMapping` (plus any tracker mapping as `pipeline.trackerMapping`) in `.claude/embla.json`, leaving every other key untouched.
+with `<N>` from `pipeline-rules.md`. `check` uses this line to recognise a generated host. Merge into an existing pipeline file under P1/P2, and write `.mcp.json` (add the block only if its key is missing).
 
 ## 8. Print the variable checklist
 

@@ -18,7 +18,6 @@ Host-specific facts for `setup` and `check` when `repo.provider` is `github`. Ra
 |---|---|---|
 | `template.yml` | `.github/workflows/ai-pr-review.yml` | A whole workflow file of our own (see "Merge rules") |
 | `mcp.json` | `.mcp.json` (repo root) | Server block added only if the `github` key is missing |
-| `tools.json` | not written | `pr-review` reads it from the pinned plugin checkout at run time; its `mcp` tools are the template's `--allowedTools` MCP entries (I5) |
 | `variables.md` | printed | Checklist with tracker rows appended |
 
 Built-in values the template relies on: `github.event.pull_request.number`, `github.event.pull_request.head.sha` (the PR head, not `GITHUB_SHA`, which is the merge commit), `github.repository`, `secrets.GITHUB_TOKEN`. Secret store: Settings → Secrets and variables → Actions.
@@ -75,14 +74,13 @@ The template has two marker pairs:
 - Script units: the `run:` block is one string; split it into units at blank lines and at top-level commands, then apply the same missing/modified/extra matching as Bitbucket.
 - Cite `GH1`–`GH3` for trigger, permissions, and single-step drift.
 
-## Why reads are partly files and writes are outbox
+## Why writes go through the outbox
 
-The official server (`github/github-mcp-server` v2.0.0) shapes the profile:
-- **`list_comments` → `files`.** Its comment reads split review threads (`get_review_comments`, with no numeric comment id) from general comments (`get_comments`), and an operation maps to one tool. Eligibility needs both, including the previous Review Report, so the D1 pre-fetch merges both REST lists into `pr-context.json`.
-- **`post_inline_comment` and `post_comment` → `outbox`.** Inline comments are only possible through a pending review (`pull_request_review_write` → `add_comment_to_pending_review` → submit), which returns neither id nor URL, so `{{comment:N}}` links can't be filled. A report posted live while its inline comments wait in the outbox couldn't be linked either, so both writes go to the outbox and the pipeline posts them by REST (D2). The server runs `--read-only`, which also keeps M3 trivially true.
-- **`get_pr`, `list_commits` → `mcp`** via `pull_request_read` (`method: get` / `get_commits`).
+The official server (`github/github-mcp-server` v2.0.0) shapes what is allowed:
+- **Reads** go through `pull_request_read`. Its comment reads split review threads (`get_review_comments`) from general comments (`get_comments`); `list_comments` needs both, and the D1 pre-fetch merges both REST lists into `pr-context.json` as the fallback.
+- **Writes go to the outbox.** Inline comments are only possible through a pending review (`pull_request_review_write` → `add_comment_to_pending_review` → submit), which returns neither id nor URL, so `{{comment:N}}` links can't be filled. A report posted live while its inline comments wait in the outbox couldn't be linked either, so both writes go to the outbox and the pipeline posts them by REST (D2). The server runs `--read-only`, so no write tool is allowed and `pr-review` routes every write to the outbox; this also keeps M3 trivially true.
 
-When a later server release returns ids and URLs for inline comments, move the writes to `mcp` and add the post tools to `agents/poster.md`'s `tools:`.
+When a later server release returns ids and URLs for inline comments, allow its post tools in `--allowedTools` and add them to `agents/poster.md`'s `tools:`.
 
 ## Verified facts
 
@@ -96,6 +94,6 @@ Checked 2026-10-07 against the release and its source; re-verify when bumping th
 | Read-only / toolsets | `--read-only`, `--toolsets pull_requests` | README |
 | Fork PRs | read-only `GITHUB_TOKEN`, no secrets | docs.github.com → Events that trigger workflows |
 
-Not yet verified end-to-end (spec test 1): the server accepting the Actions `GITHUB_TOKEN` (`ghs_` installation token) for `pull_request_read`. If it fails, `pr-review` falls back to `pr-context.json` per read and notes it; to stop paying the server's start-up cost, set `get_pr` and `list_commits` to `files` and drop the `github` block.
+Not yet verified end-to-end (spec test 1): the server accepting the Actions `GITHUB_TOKEN` (`ghs_` installation token) for `pull_request_read`. If it fails, `pr-review` falls back to `pr-context.json` per read and notes it; to stop paying the server's start-up cost, remove `mcp__github__pull_request_read` from `--allowedTools` and drop the `github` block.
 
-To bump the server: update the version and checksum in `template.yml`, re-check the tool names and `fields` paths in `tools.json`, and update this table.
+To bump the server: update the version and checksum in `template.yml`, re-check the tool names in `--allowedTools`, and update this table.

@@ -31,7 +31,7 @@ Every pipeline, on every host, satisfies [references/pipeline-rules.md](referenc
 
 A **profile** is the set of canonical files for one host or tracker. Resolve the host profile from `embla.json → repo.provider`:
 
-- **Known host** — `references/hosts/<provider>/` exists (`bitbucket`, `github`). Read every file in it: `notes.md` (paths, discovery, merge and check specifics), `template.yml`, `mcp.json`, `tools.json` (the **host mapping** `pr-review` reads from the pinned plugin checkout at run time — never copied into the project), `variables.md`. On Bitbucket, when discovery finds a self-hosted runner, also follow [references/pipeline-runner-detection.md](references/pipeline-runner-detection.md).
+- **Known host** — `references/hosts/<provider>/` exists (`bitbucket`, `github`). Read every file in it: `notes.md` (paths, discovery, merge and check specifics), `template.yml`, `mcp.json`, `variables.md`. On Bitbucket, when discovery finds a self-hosted runner, also follow [references/pipeline-runner-detection.md](references/pipeline-runner-detection.md).
 - **Generated host** — any other provider. Follow [references/generate-for-host.md](references/generate-for-host.md), which drafts a port of the Bitbucket template, checks it rule by rule, and writes only on the developer's explicit yes.
 
 Tracker profiles live in `references/trackers/<provider>/`; today only `jira` ([prefetch.sh.md](references/trackers/jira/prefetch.sh.md), [variables.md](references/trackers/jira/variables.md)).
@@ -76,28 +76,26 @@ Done when every non-secret row has a value or an explicit `—`.
 
 ### 4. Tracker
 
-Decide the D1 ticket pre-fetch and the **tracker mapping**. `pr-review` derives the mapping for Jira and for no tracker, so `embla.json → pipeline.trackerMapping` is written only for other trackers:
+Decide how the review gets the ticket. Nothing about it is stored in the project: `pr-review` reads `docs/reviews/ticket.json` when the pre-fetch wrote it, otherwise uses an allowed tracker MCP tool.
 
-| `tracker.provider` | Pre-fetch block | `pipeline.trackerMapping` |
+| `tracker.provider` | Pre-fetch block | Tracker MCP tool in `--allowedTools` |
 |---|---|---|
-| `jira` | `trackers/jira/prefetch.sh.md` | not written (derived: `prefetch`) |
-| any other | generated (below), when the tracker has a REST API | `{"provider": "<p>", "method": "mcp", …}` or `"prefetch"` |
-| other, no passing server and no REST API | none | `{"provider": "<p>", "method": "none"}` |
-| not configured | none | not written (derived: `none`) |
+| `jira` | `trackers/jira/prefetch.sh.md` | none |
+| any other | generated (below), when the tracker has a REST API | the approved server's ticket-read tool, if one passed |
+| not configured | none | none |
 
 **Other trackers:**
-1. Choose an MCP server under M1–M8, starting from any tracker server already in the project's `.mcp.json`. Show the M6 evidence and get an explicit yes. On a pass, the tracker mapping gets `"method": "mcp"`, `tool`, `args` (with `{key}` for the ticket key), `fields` mapping into the `get_ticket` shape (`key, summary, description, issuetype, status, labels, parent, custom`), and `key_pattern` (the regex that finds a key in the PR title or branch).
-2. If the tracker has a REST API, generate a pre-fetch block shaped like the Jira one (reads `pr-context.json`, extracts the key with `grep -oE`, fetches under C1/C2, writes `ticket.json` only after `jq -e '.key'`). It is the fallback for an MCP failure, or the only path when no server passed (`"method": "prefetch"`). Show it to the developer with the M6 evidence.
-3. Neither → `"method": "none"`; the review reports "no ticket linked". Say why.
+1. Choose an MCP server under M1–M8, starting from any tracker server already in the project's `.mcp.json`. Show the M6 evidence and get an explicit yes. On a pass, its ticket-read tool joins `--allowedTools` (I5).
+2. If the tracker has a REST API, generate a pre-fetch block shaped like the Jira one (reads `pr-context.json`, extracts the key with `grep -oE`, fetches under C1/C2, writes `ticket.json` only after `jq -e '.key'`). It is the fallback for an MCP failure, or the only path when no server passed. Show it to the developer with the M6 evidence.
+3. Neither → no ticket source; the review reports "no ticket linked". Say why.
 
-Done when the tracker mapping (or "not written") and the pre-fetch block (or none) are decided.
+Done when the pre-fetch block and the tracker tool are each decided, or explicitly none.
 
 ### 5. Write files
 
 For a known host, using the paths in `notes.md` → "Files":
-1. **Pipeline file** — take `template.yml`, replace the entry between the `# >>> tracker pre-fetch` and `# <<< tracker pre-fetch` markers with the step 4 block (re-indented to the script list; keep the marker entry as is when there is no block), apply any resolved image, then merge into `base_pipeline` per `notes.md` → "Merge rules" (P1/P2). Compute the full result in memory, write it, and print `Wrote <file>:` followed by the full contents. No confirmation gate: the write touches only the local working tree and is reversible with `git checkout`.
+1. **Pipeline file** — take `template.yml`, replace the entry between the `# >>> tracker pre-fetch` and `# <<< tracker pre-fetch` markers with the step 4 block (re-indented to the script list; keep the marker entry as is when there is no block), apply any resolved image, add any approved tracker tool to `--allowedTools`, then merge into `base_pipeline` per `notes.md` → "Merge rules" (P1/P2). Compute the full result in memory, write it, and print `Wrote <file>:` followed by the full contents. No confirmation gate: the write touches only the local working tree and is reversible with `git checkout`.
 2. **`.mcp.json`** — existing file that isn't valid JSON → stop: `Cannot parse existing .mcp.json — fix manually before retrying.` Otherwise add each server block from `mcp.json` (plus an approved tracker server) only when its key is missing, copying `${VAR}` placeholders verbatim (C3); print which servers were skipped.
-3. **`.claude/embla.json`** — only when step 4 produced a tracker mapping: set `pipeline.trackerMapping`, leaving every other key untouched, and add its MCP tool to `--allowedTools` (I5). An existing `pipeline.trackerMapping` is left unchanged; print `pipeline.trackerMapping already present — no changes made.`
 
 Done when each file is written or reported as skipped.
 
@@ -139,7 +137,7 @@ Print `✅ <file>` for each file written and `⏭ <file> (unchanged)` for each s
 
 ## check
 
-Audits the project's pipeline file, `.mcp.json`, and the `embla.json → pipeline` mappings against the rules. Read-only: report, never fix.
+Audits the project's pipeline file and `.mcp.json` against the rules. Read-only: report, never fix.
 
 **1. Identify the host.** Pipeline file from `notes.md` → "Files" for a known host. Otherwise find the file whose first line is `# Generated by embla-core:pipeline for <provider> — rules-version <N>`; that is a generated host. No pipeline file → report `AI PR Review pipeline not found` and run only the `.mcp.json` checks.
 
@@ -153,10 +151,8 @@ Audits the project's pipeline file, `.mcp.json`, and the `embla.json → pipelin
 
 **4. Cross-file checks (every host).**
 - `.mcp.json` exists and parses.
-- The host mapping resolves: `embla.json → pipeline.hostMapping` parses, or `references/hosts/<provider>/tools.json` exists. Neither → note that pipeline mode will use `files` for reads and `outbox` for writes.
-- `.claude/pr-review-tools.json` present → **obsolete**: pipeline mode no longer reads it. Report: `On a generated host, move its operations (with "host") into embla.json → pipeline.hostMapping, and a non-Jira "tracker" entry into pipeline.trackerMapping. Delete the file once the pipeline's plugin pin is at or past the commit that dropped it — an older pin still reads it.`
-- Every `mcp` operation's tool belongs to a server present in `.mcp.json`.
-- `--allowedTools` contains every mapped `mcp` tool and no other MCP tool (I5).
+- Every MCP tool in `--allowedTools` belongs to a server present in `.mcp.json`, and the list matches I5.
+- `.claude/pr-review-tools.json` present → **obsolete**: `pr-review` now works from `--allowedTools` alone. Report: `Delete .claude/pr-review-tools.json once the pipeline's plugin pin is at or past the commit that stopped reading it — an older pin still reads it.`
 - `.mcp.json` env values are `${VAR}` placeholders (C3); servers are pinned (S3).
 
 **5. ai-develop (Bitbucket).** Only when a `pipelines: custom: ai-develop:` block exists — absence is never drift. Diff it against [references/bitbucket-pipelines-ai-develop-template.yml](references/bitbucket-pipelines-ai-develop-template.yml) with the same algorithm as 2, citing [references/ai-develop-notes.md](references/ai-develop-notes.md) for the reason. Then the `atlassian` server:
@@ -177,12 +173,9 @@ bitbucket-pipelines.yml
        Why: a stale pin lets a later push change what this pipeline runs.
   ❌ script: MODIFIED — --allowedTools adds mcp__bitbucket__bb_delete (I5)
 
-Host mapping
-  ✅ plugin profile hosts/bitbucket/tools.json; 5 operations; tracker jira → prefetch
-  ✅ every mapped tool's server is in .mcp.json
-
 .mcp.json
   ✅ bitbucket server present, pinned, placeholders only
+  ✅ every allowed MCP tool's server is present
   ✅ no atlassian server (no ai-develop step — not needed)
 
 2 issues found. Fix them manually, then run /embla-core:pipeline check again.

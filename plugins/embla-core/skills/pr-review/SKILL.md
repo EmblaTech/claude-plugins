@@ -76,7 +76,7 @@ The subagent makes 3 API calls:
 2. `GET /repositories/{workspace}/{repo}/pullrequests/{PR_ID}/commits` → values[*].{hash, date}
 3. `GET /repositories/{workspace}/{repo}/pullrequests/{PR_ID}/comments` (pagelen: 100) → values[*].{raw, created_on}
 
-**pipeline mode:** the three calls become the `get_pr`, `list_commits` and `list_comments` operations. Resolve each one's entry per [pipeline-mode.md](references/pipeline-mode.md) → "Host access" and pass the subagent those entries plus that section's "Read fallback" rule; it reads the normalized fields (`state`, `draft`, comment `raw` and `date`) and returns any fallback notes with its verdict.
+**pipeline mode:** the three calls become the `get_pr`, `list_commits` and `list_comments` operations. Pass the subagent the "Host access" section of [pipeline-mode.md](references/pipeline-mode.md) — operations, routes, and "Read fallback" — with the allowed MCP tool names; it reads the normalized fields (`state`, `draft`, comment `raw` and `date`) and returns any fallback notes with its verdict.
 
 Skip conditions:
 - `state != OPEN` → SKIP
@@ -135,7 +135,7 @@ Why: a single dependency bump can add thousands of lines of generated resolution
 
 `mcp__bitbucket__bb_get` on `/repositories/{workspace}/{repo}/pullrequests/{PR_ID}/comments` with `queryParams: {"pagelen": "100"}`, `jq` filter `values[*].{raw: content.raw, path: inline.path, line: inline.to, date: created_on, resolved: resolved}`.
 
-**pipeline mode:** resolve the `list_comments` operation per [pipeline-mode.md](references/pipeline-mode.md) → "Host access"; its normalized items carry the same fields.
+**pipeline mode:** run the `list_comments` operation per [pipeline-mode.md](references/pipeline-mode.md) → "Host access"; its normalized items carry the same fields.
 
 Split using the host's own `resolved` boolean field — do not guess from comment text:
 - `resolved == true` → `resolved_comments`
@@ -149,7 +149,7 @@ Read the root `CLAUDE.md` and any `CLAUDE.md` in directories containing touched 
 
 ### 2.4 — Jira issue
 
-**pipeline mode:** resolve `jira_context` from the `get_ticket` operation by its `tracker.method` (`prefetch` reads `docs/reviews/ticket.json`) — follow [pipeline-mode.md](references/pipeline-mode.md) → "Ticket context". An absent or unparseable result leaves `jira_context` empty; proceed.
+**pipeline mode:** resolve `jira_context` from `docs/reviews/ticket.json` or an allowed tracker tool — follow [pipeline-mode.md](references/pipeline-mode.md) → "Ticket context". An absent or unparseable result leaves `jira_context` empty; proceed.
 
 **dev / lead mode — fetch live:**
 
@@ -345,7 +345,7 @@ Note: "postable issues" here (in both lead mode's options and pipeline mode's St
 
 Step B matters beyond formatting: the `### 🤖 Review Report` comment it posts is the marker Phase 1's re-review skip check keys off. Skipping Step B means a lead-mode-reviewed PR is never recognized as already reviewed on a later run.
 
-**pipeline mode**: no prompt — executes in sequence, each write routed by its operation's method in the host mapping (live post, or `docs/reviews/outbox.json` for the CI script to post — see [pipeline-mode.md](references/pipeline-mode.md) → "Pipeline Posting Sequence"):
+**pipeline mode**: no prompt — executes in sequence, each write posted live when an allowed MCP tool can post it, otherwise queued in `docs/reviews/outbox.json` for the CI script to post (see [pipeline-mode.md](references/pipeline-mode.md) → "Pipeline Posting Sequence"):
 1. **Step A** — Post all postable issues as inline PR comments
 2. **Step B** — Post full report as PR summary comment
 

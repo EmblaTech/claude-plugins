@@ -2,7 +2,7 @@
 
 The D1 ticket half for `tracker.provider: jira` (see `pipeline-rules.md`). Setup replaces the tracker marker entry in the host template with the block below, re-indented to that template's script indentation (a host whose script is one `run:` block, like GitHub, takes only the lines under `- |`). Copy it verbatim; it is host-neutral because it reads the PR title and source branch from `docs/reviews/pr-context.json`, which the host's own pre-fetch writes first.
 
-Jira needs no `embla.json → pipeline.trackerMapping`: pipeline mode treats `tracker.provider: jira` as `prefetch`.
+`pr-review` reads the ticket from the `docs/reviews/ticket.json` this block writes; Jira needs no MCP tool in `--allowedTools`.
 
 ```yaml
 - |

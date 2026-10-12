@@ -50,8 +50,8 @@ Each rule has a **statement**, a **verify** (how to confirm it on a file), and a
 - Verify: the remove line runs after every pre-fetch (D1) and before the `su … claude` line.
 - Why: guards against prompt injection exfiltrating data through those tools. Reinstalling `curl`/`jq` in the finish path (R2) is safe because `claude` has already exited; no live session remains to abuse them.
 
-**I5** `--allowedTools` is exactly `Bash(git fetch:*),Bash(git diff:*),Grep,Write,Read` plus the MCP tools named in the host mapping and tracker mapping, and nothing else.
-- Verify: parse the `--allowedTools` value; the MCP entries equal the set of `tool` values with `"method": "mcp"` in the host mapping (`embla.json → pipeline.hostMapping`, else `hosts/<provider>/tools.json`) and in `embla.json → pipeline.trackerMapping`. No bare `Bash`, no `bypassPermissions`.
+**I5** `--allowedTools` is exactly `Bash(git fetch:*),Bash(git diff:*),Grep,Write,Read` plus the MCP tools setup approved for `pr-review`'s operations (its `references/pipeline-mode.md` → "Host access") and the tracker, and nothing else. This list is the only thing that tells `pr-review` which host tools exist; it picks calls from their schemas at run time.
+- Verify: parse the `--allowedTools` value. Known host: the MCP entries equal the canonical `template.yml`'s, plus an approved tracker tool. Generated host: each MCP entry appears in setup's M6 evidence. No bare `Bash`, no `bypassPermissions`.
 - Why: a prompt injection in a reviewed PR can't get an arbitrary command run. `--allowedTools` is a permission filter, not a loading filter: every tool schema of every server in `.mcp.json` still enters context, which is why unused servers are left out of `.mcp.json` entirely.
 
 ## C — Credentials
@@ -99,7 +99,7 @@ Each rule has a **statement**, a **verify** (how to confirm it on a file), and a
 
 **D1** Before I4 runs, the pipeline writes `docs/reviews/pr-context.json` = `{"pr": …, "commits": […], "comments": […]}` and, if a ticket key resolves, `docs/reviews/ticket.json`, in the normalized shapes `pr-review` defines (its `references/pipeline-mode.md`). This happens on every run.
 - Verify: a pre-fetch block runs inside `( set +e … ) || true`, writes to `/tmp` first, and moves into `docs/reviews/` only after `jq -e` confirms the payload parsed.
-- Why: these files are `pr-review`'s fallback when an MCP read fails, and the only read path on hosts mapped to `files`. The subshell with `set +e` and `|| true` keeps the `ERR` trap from firing: a 404, a revoked token, or a missing ticket degrades the review to less context and never fails the build. Normalized `state` is `OPEN`, `MERGED`, or `CLOSED`.
+- Why: these files are `pr-review`'s fallback when an MCP read fails, and the only read path for an operation no allowed tool performs. The subshell with `set +e` and `|| true` keeps the `ERR` trap from firing: a 404, a revoked token, or a missing ticket degrades the review to less context and never fails the build. Normalized `state` is `OPEN`, `MERGED`, or `CLOSED`.
 
 **D2** After `claude` exits, the pipeline posts every entry in `docs/reviews/outbox.json` (`inline`, then `general`), fills `report.body`'s links of the form `[{file}:{line}]({{comment:N}})` — `({{comment:N}})` becomes `(<url>)`, or, where that post failed, the whole link becomes `` `{file}:{line}` ``, appends the R6 cost line, and posts the report.
 - Verify: `report_and_exit` contains an outbox branch that runs when `outbox.json` parses; each post uses C1/C2; a failed post logs the HTTP status and continues.
@@ -114,11 +114,11 @@ Applies to the host server and to non-Jira tracker servers.
 
 **M1** The host's official server comes first. A community server qualifies only if no official one exists, it has public source, it is actively maintained (release within the last 6 months), and it is widely used.
 **M2** Pinned per S3.
-**M3** Only the tools for the mapped operations are allowed (I5). No tool that can merge, delete, push, or change settings is listed.
-**M4** The token scope is the minimum the mapped operations need (C4).
+**M3** Only tools that perform one of `pr-review`'s operations are allowed (I5). No tool that can merge, delete, push, or change settings is listed.
+**M4** The token scope is the minimum those operations need (C4).
 **M5** Tokens reach the server only through `${VAR}` env placeholders (C3).
 **M6** Before writing, Claude shows the developer the package, version, publisher, source URL, allowed tools and a per-rule pass, and gets an explicit yes.
-**M7** No candidate passes → that operation uses `"method": "files"` (reads) or `"outbox"` (writes), and setup says which rule failed.
+**M7** No candidate passes → no MCP tool is allowed for that operation, so `pr-review` reads the pre-fetched file or writes to the outbox, and setup says which rule failed.
 **M8** The server works headless with a token from a pipeline variable. No browser/OAuth login and no claude.ai connector.
 
 - Verify: the M6 evidence block lists a ✅ per M-rule for the chosen server.
