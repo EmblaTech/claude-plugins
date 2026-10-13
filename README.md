@@ -10,14 +10,15 @@ A [Claude Code](https://docs.claude.com/en/docs/claude-code) **plugin marketplac
 - [Plugin reference](#plugin-reference)
 - [Repository layout](#repository-layout)
 - [Contributing](#contributing)
+- [License](#license)
 
 ## Plugins
 
 | Plugin | Version | What it gives you |
 |---|---|---|
-| [`embla-core`](plugins/embla-core) | 1.5.1 | End-to-end dev lifecycle: Jira, story development, PR review, deploy, sprint planning, CI pipelines |
-| [`project-setup`](plugins/project-setup) | 0.3.0 | Audit a project's Claude Code setup, review session history, set up OpenWiki |
-| [`grc-gdpr`](plugins/grc-gdpr) | 1.0.3 | GDPR compliance: code/system audits, privacy notices, DPAs, DPIAs, article-cited Q&A (vendored, MIT) |
+| [`embla-core`](plugins/embla-core) | 1.5.2 | End-to-end dev lifecycle: Jira, story development, PR review, deploy, sprint planning, CI pipelines |
+| [`project-setup`](plugins/project-setup) | 0.3.1 | Audit a project's Claude Code setup, review session history, set up OpenWiki |
+| [`grc-gdpr`](plugins/grc-gdpr) | 1.0.4 | GDPR compliance: code/system audits, privacy notices, DPAs, DPIAs, article-cited Q&A (vendored, MIT) |
 
 Install only the plugins you need. Each one adds its skill descriptions to every session's context.
 
@@ -111,6 +112,8 @@ This plugin is vendored from an MIT-licensed upstream with local citation patche
 
 ```
 .claude-plugin/marketplace.json      Marketplace manifest (lists all plugins)
+LICENSE                              Apache-2.0 license for the repo
+NOTICE                               Attribution for third-party code
 plugins/<plugin-name>/
   .claude-plugin/plugin.json         Plugin name, version, description
   agents/*.md                        Named subagents (e.g. pr-review's 7 reviewers)
@@ -131,3 +134,12 @@ Contributor guidance lives in [`.claude/CLAUDE.md`](.claude/CLAUDE.md). The rule
 - **CI pins:** generated pipelines clone this repo at a pinned commit. If a change to `pr-review` or `develop-auto` should reach existing pipelines, bump the pin in that skill's pipeline template: every `hosts/*/template.yml` for `pr-review`, `bitbucket-pipelines-ai-develop-template.yml` for `develop-auto`. See "Updating the pinned plugin commit" in the `pipeline` skill's `references/hosts/bitbucket/notes.md`.
 - **Use the right authoring skill:** `/writing-for-agents` (from mattpocock-skills) for new and edited skills, `/plugin-dev:create-plugin` for new plugins.
 - **PR descriptions** follow the format in CLAUDE.md: Summary, Motivation, Test Plan, Jira Ticket.
+
+## License
+
+Licensed under the [Apache License, Version 2.0](LICENSE). Copyright 2026 Embla.
+
+Two parts come from third parties, as credited in [`NOTICE`](NOTICE):
+
+- `plugins/project-setup/skills/session-review/scripts/sessions.mjs` is adapted from Anthropic's `session-report` plugin (Apache-2.0).
+- `plugins/grc-gdpr/` is vendored from an upstream project under the MIT License, which still applies to those files. See [`plugins/grc-gdpr/LICENSE`](plugins/grc-gdpr/LICENSE).

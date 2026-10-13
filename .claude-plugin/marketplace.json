@@ -6,17 +6,20 @@
     {
       "name": "embla-core",
       "source": "./plugins/embla-core",
-      "description": "Embla-specific workflows: Jira conventions, AI code review"
+      "description": "Embla-specific workflows: Jira conventions, AI code review",
+      "license": "Apache-2.0"
     },
     {
       "name": "project-setup",
       "source": "./plugins/project-setup",
-      "description": "Configure and audit a project's Claude Code setup: project config, settings/permissions, plugin/skill coverage, and CLAUDE.md health"
+      "description": "Configure and audit a project's Claude Code setup: project config, settings/permissions, plugin/skill coverage, and CLAUDE.md health",
+      "license": "Apache-2.0"
     },
     {
       "name": "grc-gdpr",
       "source": "./plugins/grc-gdpr",
-      "description": "GDPR compliance: code and system audits, privacy notices, DPAs, DPIAs, data flow reviews, article-cited Q&A"
+      "description": "GDPR compliance: code and system audits, privacy notices, DPAs, DPIAs, data flow reviews, article-cited Q&A",
+      "license": "MIT"
     }
   ]
 }
