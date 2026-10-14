@@ -165,13 +165,11 @@ pipelines:
                 }
                 API="https://api.bitbucket.org/2.0/repositories/$BITBUCKET_WORKSPACE/$BITBUCKET_REPO_SLUG/pullrequests/$BITBUCKET_PR_ID"
                 bb_get "$API" > /tmp/pr.json
-                bb_get "$API/commits?pagelen=100" > /tmp/commits.json
                 bb_get "$API/comments?pagelen=100" > /tmp/comments.json
-                jq -n --slurpfile pr /tmp/pr.json --slurpfile c /tmp/commits.json --slurpfile m /tmp/comments.json '{
+                jq -n --slurpfile pr /tmp/pr.json --slurpfile m /tmp/comments.json '{
                   pr: ($pr[0] | {id, state: (if .state == "OPEN" then "OPEN" elif .state == "MERGED" then "MERGED" else "CLOSED" end),
                        draft: (.draft // false), title, description, source_branch: .source.branch.name,
                        target_branch: .destination.branch.name, last_commit: .source.commit.hash}),
-                  commits: [($c[0].values // [])[] | {hash, date}],
                   comments: [($m[0].values // [])[] | {id, raw: .content.raw, path: .inline.path, line: .inline.to,
                        date: .created_on, resolved: ((.resolution != null) or (.resolved == true))}]
                 }' > /tmp/pr-context.json 2>/dev/null

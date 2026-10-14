@@ -201,14 +201,12 @@ jobs:
               printf 'header = "Authorization: Bearer %s"\n' "$GITHUB_TOKEN" | curl -s -K - -H "Accept: application/vnd.github+json" "$1"
             }
             gh_get "$API/pulls/$PR_NUMBER" > /tmp/pr.json
-            gh_get "$API/pulls/$PR_NUMBER/commits?per_page=100" > /tmp/commits.json
             gh_get "$API/pulls/$PR_NUMBER/comments?per_page=100" > /tmp/review-comments.json
             gh_get "$API/issues/$PR_NUMBER/comments?per_page=100" > /tmp/issue-comments.json
-            jq -n --slurpfile pr /tmp/pr.json --slurpfile c /tmp/commits.json --slurpfile rc /tmp/review-comments.json --slurpfile ic /tmp/issue-comments.json '{
+            jq -n --slurpfile pr /tmp/pr.json --slurpfile rc /tmp/review-comments.json --slurpfile ic /tmp/issue-comments.json '{
               pr: ($pr[0] | {id: .number, state: (if .state == "open" then "OPEN" elif .merged then "MERGED" else "CLOSED" end),
                    draft: (.draft // false), title, description: .body, source_branch: .head.ref,
                    target_branch: .base.ref, last_commit: .head.sha}),
-              commits: [($c[0] | if type == "array" then .[] else empty end) | {hash: .sha, date: .commit.author.date}],
               comments: ([($rc[0] | if type == "array" then .[] else empty end) | {id, raw: .body, path, line, date: .created_at}]
                        + [($ic[0] | if type == "array" then .[] else empty end) | {id, raw: .body, path: null, line: null, date: .created_at}])
             }' > /tmp/pr-context.json 2>/dev/null

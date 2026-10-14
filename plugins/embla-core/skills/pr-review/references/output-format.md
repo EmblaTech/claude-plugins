@@ -154,7 +154,7 @@ After Step A, always follow with Step B (below) as a single summary comment — 
 
 Posted as a single PR comment after Step A's inline/general comments — in **lead mode**, when the user approves posting ("Post all" or "Post HIGH only"), with the Bitbucket call below; in **pipeline mode**, always, automatically, through the `post_comment` operation or the outbox (see [pipeline-mode.md](pipeline-mode.md) → "Pipeline Posting Sequence"). Use a general comment (no `inline` field). The `raw` body below is the same in both modes.
 
-This is also the marker Phase 1's re-review skip check looks for (`### 🤖 Review Report`) — skipping this comment means the PR is never recognized as reviewed.
+This is also the marker Phase 1's re-review skip check looks for: the `### 🤖 Review Report` heading plus the `**Commit:**` value, which is the `last_commit` Phase 1 returned, written in full exactly as the host gave it. Without this comment, or with a wrong `**Commit:**`, the same head is reviewed again on the next run.
 
 **Do not use `<details>` or any HTML tags** — Bitbucket renders them as raw text in PR comments. Use plain markdown only.
 
@@ -167,7 +167,7 @@ mcp__bitbucket__bb_post
     content:
       raw: |
         ### 🤖 Review Report — PR #{PR_ID}: {title}
-        **Branch:** {source_branch} → {target_branch}
+        **Branch:** {source_branch} → {target_branch} | **Commit:** `{last_commit}`
         **Reviewed:** {date} | **Agents:** {agents that ran, formatted per "Agents Field Format" above}
         **Notes:** {fallback notes — pipeline-mode.md → "Host access"}
 

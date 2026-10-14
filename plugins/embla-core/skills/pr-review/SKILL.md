@@ -70,20 +70,21 @@ Phase 7    Write Local Review File
 
 Dispatch a subagent via the Agent tool with `subagent_type: general-purpose, model: haiku`. Pass resolved `workspace` and `repo` explicitly.
 
-The subagent makes 3 API calls:
+The subagent makes 2 API calls:
 
-1. `GET /repositories/{workspace}/{repo}/pullrequests/{PR_ID}` → state, draft, title, description, source_branch, destination.branch.name (target_branch), last_commit
-2. `GET /repositories/{workspace}/{repo}/pullrequests/{PR_ID}/commits` → values[*].{hash, date}
-3. `GET /repositories/{workspace}/{repo}/pullrequests/{PR_ID}/comments` (pagelen: 100) → values[*].{raw, created_on}
+1. `GET /repositories/{workspace}/{repo}/pullrequests/{PR_ID}` → state, draft, title, description, source_branch, destination.branch.name (target_branch), source.commit.hash (last_commit)
+2. `GET /repositories/{workspace}/{repo}/pullrequests/{PR_ID}/comments` (pagelen: 100) → values[*].content.raw
 
-**pipeline mode:** the three calls become the `get_pr`, `list_commits` and `list_comments` operations. Pass the subagent the "Host access" section of [pipeline-mode.md](references/pipeline-mode.md) — operations, routes, and "Read fallback" — with the allowed MCP tool names; it reads the normalized fields (`state`, `draft`, comment `raw` and `date`) and returns any fallback notes with its verdict.
+**pipeline mode:** the two calls become the `get_pr` and `list_comments` operations. Pass the subagent the "Host access" section of [pipeline-mode.md](references/pipeline-mode.md) — operations, routes, and "Read fallback" — with the allowed MCP tool names; it reads the normalized fields (`state`, `draft`, `last_commit`, comment `raw`) and returns any fallback notes with its verdict.
 
 Skip conditions:
 - `state != OPEN` → SKIP
 - `draft == true` → SKIP
-- A comment starting with `### 🤖 Review Report` exists AND no commit date is strictly newer than that comment's `created_on` → SKIP
+- A comment starting with `### 🤖 Review Report` has a `**Commit:**` value matching `last_commit` → SKIP: the PR's current head is already reviewed. Two hashes match when one is a prefix of the other, since a host can return an abbreviated hash. A report without a `**Commit:**` value matches nothing.
 
-Return: `ELIGIBLE` or `SKIP: <reason>` plus PR title, description, source branch, target branch, last commit hash and date.
+Why the hash, not dates: amend, rebase, and cherry-pick give a new commit the old author date, so a date comparison reads unreviewed code as already reviewed. Any push of new code changes the head hash.
+
+Return: `ELIGIBLE` or `SKIP: <reason>` plus PR title, description, source branch, target branch, and `last_commit`.
 
 ---
 
@@ -107,8 +108,9 @@ Perform all sub-steps in parallel where possible.
    **pipeline mode:** build the same shape from `git diff --numstat origin/<dest_branch>...origin/<source_branch>` after the fetch in item 2 — see [pipeline-mode.md](references/pipeline-mode.md) → "File list from git".
 2. Fetch the whole diff in **one** Bash call — never one call per file:
    ```bash
-   git fetch origin <source_branch> && git diff origin/<dest_branch>...origin/<source_branch>
+   git fetch origin <source_branch> <dest_branch> && git diff origin/<dest_branch>...origin/<source_branch>
    ```
+   Fetch both branches: the diff reads the local `origin/<dest_branch>` snapshot, and a stale one moves the merge-base back, so target-branch commits the PR merged in would be reviewed as PR changes.
    Then split that output into per-file chunks yourself, in this same step: a chunk starts at a `diff --git a/<path> b/<path>` line and runs until the next one. This is text partitioning of output you already hold — do not spend a turn per file re-fetching what the single command already returned.
 3. dev/lead mode: if local `git fetch` is unavailable, fall back to `bb_get /pullrequests/{PR_ID}/diff` with `queryParams: {"path": "<file_path>"}` per file. This per-file fallback is unchanged — it exists precisely because the single-command path isn't possible without a local clone.
 4. **Never** silently drop files if the diff response was truncated. Flag explicitly.
@@ -370,7 +372,7 @@ Template:
 
 ```markdown
 # 🤖 Review Report — PR #{PR_ID}: {title}
-**Branch:** {source_branch} → {target_branch}
+**Branch:** {source_branch} → {target_branch} | **Commit:** `{last_commit}`
 **Reviewed:** {date} | **Agents:** {agents that ran, formatted per output-format.md → "Agents Field Format"}
 **Notes:** {fallback notes, pipeline mode only — see pipeline-mode.md → "Host access"}
 

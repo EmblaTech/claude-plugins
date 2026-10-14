@@ -97,7 +97,7 @@ Each rule has a **statement**, a **verify** (how to confirm it on a file), and a
 
 ## D — Data flow
 
-**D1** Before I4 runs, the pipeline writes `docs/reviews/pr-context.json` = `{"pr": …, "commits": […], "comments": […]}` and, if a ticket key resolves, `docs/reviews/ticket.json`, in the normalized shapes `pr-review` defines (its `references/pipeline-mode.md`). This happens on every run.
+**D1** Before I4 runs, the pipeline writes `docs/reviews/pr-context.json` = `{"pr": …, "comments": […]}` and, if a ticket key resolves, `docs/reviews/ticket.json`, in the normalized shapes `pr-review` defines (its `references/pipeline-mode.md`). This happens on every run.
 - Verify: a pre-fetch block runs inside `( set +e … ) || true`, writes to `/tmp` first, and moves into `docs/reviews/` only after `jq -e` confirms the payload parsed.
 - Why: these files are `pr-review`'s fallback when an MCP read fails, and the only read path for an operation no allowed tool performs. The subshell with `set +e` and `|| true` keeps the `ERR` trap from firing: a 404, a revoked token, or a missing ticket degrades the review to less context and never fails the build. Normalized `state` is `OPEN`, `MERGED`, or `CLOSED`.
 

@@ -46,7 +46,7 @@ Look each fact up via context7 or the host's official documentation; record the 
 | Built-in variables: PR id, repo/project, source and target branch | `github.event.pull_request.number`, … |
 | Secret store and how to mark a value masked | Repository secrets |
 | A built-in or minimal-scope token for PR comments (C4) | `GITHUB_TOKEN` + `permissions:` |
-| REST endpoints: get PR, list commits, list comments, post inline comment, post comment, edit comment | `GET /repos/{o}/{r}/pulls/{n}`, … |
+| REST endpoints: get PR, list comments, post inline comment, post comment, edit comment | `GET /repos/{o}/{r}/pulls/{n}`, … |
 | Auth header for those endpoints | `Authorization: Bearer <token>` |
 | A container image option so I1–I4 run as in Bitbucket | `container: node:24` |
 
@@ -58,7 +58,7 @@ Start from `hosts/bitbucket/template.yml` and change only:
 - the trigger and job/step wrapper (keep one shell for the whole sequence);
 - built-in variable names (`$BITBUCKET_PR_ID` → the host's PR id, etc.);
 - API base URLs and the auth line inside `curl -K -` (C1);
-- the D1 pre-fetch `jq` mapping from the host's PR, commit, and comment JSON into the normalized `pr-context.json` shape (state normalized to `OPEN`/`MERGED`/`CLOSED`);
+- the D1 pre-fetch `jq` mapping from the host's PR and comment JSON into the normalized `pr-context.json` shape (state normalized to `OPEN`/`MERGED`/`CLOSED`);
 - the D2 outbox `jq` mapping from outbox items into the host's comment-create payloads, and the posted-URL path in the response;
 - the fallback comment's payload shape (R3);
 - the `.pipeline-env` exports: `ANTHROPIC_API_KEY` plus whatever env the chosen MCP server reads (I2);
@@ -72,9 +72,9 @@ Done when the draft is a complete file and each change above maps to a host fact
 
 Writes always go through the outbox on a generated host: no write tool is allowed, and the pipeline script posts them.
 
-For the three reads (`get_pr`, `list_commits`, `list_comments`), choose a server under M1–M8, starting from any host server already in the project's `.mcp.json`. For each candidate, collect the M6 evidence: package or image, exact version, publisher, source URL, last release date, the tool names you will allow, the token env var and its minimum scope, and a pass/fail per M-rule.
+For the two reads (`get_pr`, `list_comments`), choose a server under M1–M8, starting from any host server already in the project's `.mcp.json`. For each candidate, collect the M6 evidence: package or image, exact version, publisher, source URL, last release date, the tool names you will allow, the token env var and its minimum scope, and a pass/fail per M-rule.
 - A candidate passes → for each read it serves, name the `mcp__<server>__<tool>` that performs it. `pr-review` chooses the arguments from the tool's schema at run time.
-- No candidate passes → no host tool is allowed, so all three reads come from the pre-fetched files (M7); `.mcp.json` gets no host block, and you record which rule failed.
+- No candidate passes → no host tool is allowed, so both reads come from the pre-fetched files (M7); `.mcp.json` gets no host block, and you record which rule failed.
 
 Take the tracker tool as `setup` step 4 decided. Then set `--allowedTools` in the draft to the base set plus exactly these host tools and the tracker tool (I5).
 

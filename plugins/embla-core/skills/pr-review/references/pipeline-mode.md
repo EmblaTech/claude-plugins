@@ -36,12 +36,11 @@ Because pipeline mode is unattended, the one-line exclusion reasoning Phase 2.7 
 
 ## Host access
 
-Pipeline mode reaches the code host through the six **operations** below. dev and lead mode never use this section.
+Pipeline mode reaches the code host through the five **operations** below. dev and lead mode never use this section.
 
 | Operation | Phase | Normalized result | Fallback |
 |---|---|---|---|
 | `get_pr` | 1 | `{id, state: "OPEN"\|"CLOSED"\|"MERGED", draft, title, description, source_branch, target_branch, last_commit}` | `docs/reviews/pr-context.json` → `pr` |
-| `list_commits` | 1 | `[{hash, date}]` (ISO-8601) | `pr-context.json` → `commits` |
 | `list_comments` | 1, 2.2 | `[{id, raw, path, line, date, resolved}]` — every comment on the PR, general and inline; a missing `resolved` means open | `pr-context.json` → `comments` |
 | `post_inline_comment` | 6 Step A | in `{path, line, body}` → out `{id, url}` | outbox `inline` |
 | `post_comment` | 6 Step A, B | in `{body}` → out `{id, url}` | outbox `general`, `report` |
