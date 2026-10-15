@@ -1,19 +1,19 @@
 # ai-develop pipeline notes
 
-Read by `setup` Phase 2.5 and by `check` when a `pipelines: custom: ai-develop:` block exists. ai-develop is Bitbucket-only and unchanged by the multi-provider work: its template still clones the plugins from Bitbucket with credentials and carries its own pin, and it is the only consumer of the `atlassian` block in `mcp-template.json`.
+Read by `setup` step 6 and by `check` step 5 when a `pipelines: custom: ai-develop:` block exists. ai-develop is Bitbucket-only and unchanged by the multi-provider work: its template still clones the plugins from Bitbucket with credentials and carries its own pin, and it is the only consumer of the `atlassian` block in `workflows/ai-develop/mcp.json`.
 
 ## Contents
-- `bitbucket-pipelines-ai-develop-template.yml`
+- `template.yml`
 - `.mcp.json` `atlassian` block
 
-## `bitbucket-pipelines-ai-develop-template.yml`
+## `template.yml`
 
-Read the exact content to write from [references/bitbucket-pipelines-ai-develop-template.yml](bitbucket-pipelines-ai-develop-template.yml) — it's the raw file, copy it verbatim, do not retype it from memory. This defines a `custom` pipeline (`pipelines: custom: ai-develop:`), triggered manually or by a Jira automation rule — not a `pull-requests:` pattern like `AI PR Review` — so it is written as its own separate pipeline block, never merged into the `pull-requests:` block.
+Read the exact content to write from [template.yml](template.yml) — it's the raw file, copy it verbatim, do not retype it from memory. This defines a `custom` pipeline (`pipelines: custom: ai-develop:`), triggered manually or by a Jira automation rule — not a `pull-requests:` pattern like `AI PR Review` — so it is written as its own separate pipeline block, never merged into the `pull-requests:` block.
 
 **Why this step exists (differences from the `bitbucket-pipelines.yml` / `AI PR Review` template):**
 - `curl`/`jq` are **not** removed before the `claude` invocation here — unlike `pr-review`'s `apt-get remove -y curl wget python3 netcat-traditional`, this template only removes `wget python3 netcat-traditional`. `develop-auto` itself needs `git push` and the live `atlassian`/`bitbucket` MCP servers for the whole autonomous-dev session, not a one-shot read, and this template's own `report_and_exit` fallback needs `curl`/`jq` available immediately if a crash happens *before* `develop-auto` gets a chance to report its own outcome. `curl` was never removed in the first place, so there's nothing to reinstall for it; `jq` *is* installed inside `report_and_exit` itself (it isn't present on the base `node:24` image at all, removed or not) — unlike `pr-review`'s template, which only ever reinstalls what it earlier removed.
 - `wget`/`python3`/`netcat-traditional` are still removed — same reasoning as `pr-review`: the Jira ticket body and its comments are untrusted content the agent reads over the life of the session, so the same prompt-injection/exfiltration attack-surface reduction still applies.
-- The `atlassian` MCP server (`@aashari/mcp-server-atlassian-jira`, added to `mcp-template.json` — see below) is loaded here, unlike `pr-review`, which pre-fetches the Jira issue once via `curl` and never starts a Jira MCP server at all. `develop-auto` isn't a single read — over the life of an autonomous dev session it fetches the story, posts comments, transitions status, and updates fields — so a live MCP server is the right shape here, not a one-shot pre-fetch.
+- The `atlassian` MCP server (`@aashari/mcp-server-atlassian-jira`, `mcp.json` in this folder — see below) is loaded here, unlike `pr-review`, which pre-fetches the Jira issue once via `curl` and never starts a Jira MCP server at all. `develop-auto` isn't a single read — over the life of an autonomous dev session it fetches the story, posts comments, transitions status, and updates fields — so a live MCP server is the right shape here, not a one-shot pre-fetch.
 - `report_and_exit`'s `is_error != true` branch does two things, since `develop-auto` already posts its own Jira comment for both outcomes it can reach unassisted — a successful run and a graceful, deliberate abort (e.g. missing `SPRINT_NUMBER`) — and this wrapper must relay Bitbucket a verdict without posting a second, generic one on top:
   1. Decides whether to trust that comment was posted at all, via `is_error` — not just whether the file parses, since `claude --output-format json` still writes a valid envelope on a hard crash (max turns, context exhaustion, an API failure) with `is_error: true` and the explanation in `.result`. Skip posting only when `is_error` is `false` or absent (older `claude`); otherwise fall back to `post_jira_comment`, folding `.result` (truncated to 4000 chars) in, same as `pr-review`'s own fallback
   2. Overwrites `CODE` with `docs/reviews/develop-auto-result.json`'s `exit_code` when present — `is_error` alone can't tell success from abort, since both end in a normal `end_turn`; this file, written by `develop-auto` itself as the last thing it does either way, can. Missing leaves `CODE` as the raw `DEV_EXIT`
@@ -32,7 +32,7 @@ Read the exact content to write from [references/bitbucket-pipelines-ai-develop-
 
 ## `.mcp.json` `atlassian` block
 
-`mcp-template.json` is a two-block catalogue. AI PR Review takes its `bitbucket` block from `hosts/bitbucket/mcp.json`; the `atlassian` block (`@aashari/mcp-server-atlassian-jira`) is added only by Phase 2.5's `yes` path, merged only if missing, never overwriting an existing `atlassian` block. Copy it verbatim with its `${VAR}` placeholders (C3).
+AI PR Review takes its `bitbucket` block from `hosts/bitbucket/mcp.json`; the `atlassian` block in [mcp.json](mcp.json) (`@aashari/mcp-server-atlassian-jira`) is added only by `setup` step 6's `yes` path, merged only if missing, never overwriting an existing `atlassian` block. Copy it verbatim with its `${VAR}` placeholders (C3).
 
 When an `atlassian` block already exists:
 - `ai_develop_present` true → leave it; this is what ai-develop needs.

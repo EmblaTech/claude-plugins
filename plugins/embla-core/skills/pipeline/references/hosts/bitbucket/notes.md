@@ -27,7 +27,7 @@ Read `bitbucket-pipelines.yml` from the project root (the working directory only
 - Not found → `base_pipeline = new`; print `No existing bitbucket-pipelines.yml found. Creating from scratch.`
 
 When `base_pipeline` is not `new`:
-- **Self-hosted runner:** if top-level `options → runs-on` contains `self.hosted`, follow `pipeline-runner-detection.md` to resolve the step image. Only the pipeline-wide default matters: our step declares no `runs-on` of its own.
+- **Self-hosted runner:** if top-level `options → runs-on` contains `self.hosted`, follow [runner-detection.md](runner-detection.md) to resolve the step image. Only the pipeline-wide default matters: our step declares no `runs-on` of its own.
 - **ai-develop:** set `ai_develop_present` = whether a top-level `pipelines: custom: ai-develop:` block exists. Print `Found existing ai-develop custom pipeline.` when it does.
 
 Every later step operates on the in-memory `base_pipeline` captured here.
@@ -76,4 +76,4 @@ Otherwise (P1, P2):
 2. Update the pin in `hosts/bitbucket/template.yml` and every other `hosts/*/template.yml` in the same PR. This only affects future `setup` runs; `check` compares generated hosts' S2 pin against the Bitbucket template.
 3. Existing consumers keep their pin (`setup` stops when the step exists). `/embla-core:pipeline check` reports the stale pin as **modified**; each repo updates its pipeline file by hand.
 
-The ai-develop template carries an independent pin and still clones from Bitbucket; bump it only for `develop-auto` changes (see `ai-develop-notes.md`).
+The ai-develop template carries an independent pin and still clones from Bitbucket; bump it only for `develop-auto` changes (see `workflows/ai-develop/notes.md`).

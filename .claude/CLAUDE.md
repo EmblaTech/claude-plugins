@@ -51,7 +51,7 @@ Invoked as `/embla-core:<skill>` unless noted.
 Generated pipelines clone this repo at a pinned commit for `--plugin-dir`, not `main`, so they never pick up unreviewed changes. Two independent pins, both under `plugins/embla-core/skills/pipeline/references/`:
 
 - **AI PR Review:** `hosts/<host>/template.yml` (`bitbucket`, `github`) share one pin — bump every host template together when a change touches `pr-review`'s files or `agents/`. Process: "Updating the pinned plugin commit" in `hosts/bitbucket/notes.md`.
-- **ai-develop:** `bitbucket-pipelines-ai-develop-template.yml` — bump only when a change touches `develop-auto`'s files. See `ai-develop-notes.md`.
+- **ai-develop:** `workflows/ai-develop/template.yml` — bump only when a change touches `develop-auto`'s files. See `workflows/ai-develop/notes.md`.
 
 ### pr-review architecture
 

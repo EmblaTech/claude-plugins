@@ -131,7 +131,7 @@ Contributor guidance lives in [`.claude/CLAUDE.md`](.claude/CLAUDE.md). The rule
 - **Always bump the plugin version.** Any change to a plugin must bump `version` in its `plugin.json`. Without the bump, consumers keep the old copy.
 - **New skill in an existing plugin:** add `skills/<name>/SKILL.md` and bump the version. `marketplace.json` doesn't change.
 - **New plugin:** add `plugins/<name>/.claude-plugin/plugin.json`, at least one working skill, and a `marketplace.json` entry, all in the same PR. Placeholder stubs aren't accepted.
-- **CI pins:** generated pipelines clone this repo at a pinned commit. If a change to `pr-review` or `develop-auto` should reach existing pipelines, bump the pin in that skill's pipeline template: every `hosts/*/template.yml` for `pr-review`, `bitbucket-pipelines-ai-develop-template.yml` for `develop-auto`. See "Updating the pinned plugin commit" in the `pipeline` skill's `references/hosts/bitbucket/notes.md`.
+- **CI pins:** generated pipelines clone this repo at a pinned commit. If a change to `pr-review` or `develop-auto` should reach existing pipelines, bump the pin in that skill's pipeline template: every `hosts/*/template.yml` for `pr-review`, `workflows/ai-develop/template.yml` for `develop-auto`. See "Updating the pinned plugin commit" in the `pipeline` skill's `references/hosts/bitbucket/notes.md`.
 - **Use the right authoring skill:** `/writing-for-agents` (from mattpocock-skills) for new and edited skills, `/plugin-dev:create-plugin` for new plugins.
 - **PR descriptions** follow the format in CLAUDE.md: Summary, Motivation, Test Plan, Jira Ticket.
 
