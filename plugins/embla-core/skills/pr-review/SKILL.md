@@ -143,7 +143,7 @@ Split using the host's own `resolved` boolean field — do not guess from commen
 - `resolved == true` → `resolved_comments`
 - `resolved == false` or missing → `open_comments` (treat a missing/null field as open — never silently treat something as resolved when the platform didn't say so)
 
-Store the full unfiltered fetch as `comments` (union of both) — this is what Phase 3 passes to every agent as `existing_comments`, unchanged from today. `open_comments` is additionally passed to Phase 4 (see Phase 4 — Confidence Scoring) for cross-run duplicate detection.
+Store the full unfiltered fetch as `comments` (union of both) — this is what Phase 3 passes to every agent as `existing_comments`, unchanged from today. `open_comments` and `resolved_comments` are additionally passed to Phase 4 (see Phase 4 — Confidence Scoring) for cross-run duplicate detection.
 
 ### 2.3 — CLAUDE.md files
 
@@ -308,9 +308,9 @@ Merge: keep the most specific description, highest severity, combined agent attr
 
 ## Phase 4 — Confidence Scoring
 
-Dispatch a subagent via the Agent tool with `subagent_type: general-purpose, model: haiku`, passing all deduped issues and `open_comments` (from Phase 2.2). See [scoring-rubric.md](references/scoring-rubric.md).
+Dispatch a subagent via the Agent tool with `subagent_type: general-purpose, model: haiku`, passing all deduped issues, `open_comments`, and `resolved_comments` (from Phase 2.2). See [scoring-rubric.md](references/scoring-rubric.md).
 
-Apply the resolved publish threshold. Split issues into three buckets:
+Drop every issue with `is_duplicate_of_resolved == true` — it appears nowhere in this run's output. Apply the resolved publish threshold to the rest. Split issues into three buckets:
 - **Still Open**: `is_duplicate_of_open == true` — regardless of score. Never posted as a new comment in Phase 6; surfaces in Phase 5/7 under "Still Open (from previous review)" instead. Checked first, before the Postable/Filtered split below.
 - **Postable**: not Still Open, and score ≥ threshold
 - **Filtered**: not Still Open, and score < threshold
