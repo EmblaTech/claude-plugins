@@ -16,7 +16,7 @@ A [Claude Code](https://docs.claude.com/en/docs/claude-code) **plugin marketplac
 
 | Plugin | Version | What it gives you |
 |---|---|---|
-| [`embla-core`](plugins/embla-core) | 1.5.2 | End-to-end dev lifecycle: Jira, story development, PR review, deploy, sprint planning, CI pipelines |
+| [`embla-core`](plugins/embla-core) | 1.6.1 | End-to-end dev lifecycle: Jira, story development, PR review, deploy, sprint planning, CI pipelines |
 | [`project-setup`](plugins/project-setup) | 0.3.1 | Audit a project's Claude Code setup, review session history, set up OpenWiki |
 | [`grc-gdpr`](plugins/grc-gdpr) | 1.0.4 | GDPR compliance: code/system audits, privacy notices, DPAs, DPIAs, article-cited Q&A (vendored, MIT) |
 
@@ -76,10 +76,10 @@ Plugins auto-update when their `version` changes in this repo.
 | `develop` | `/embla-core:develop <JIRA-ID>` | Full story workflow: fetch, branch, brainstorm, TDD, commit, PR, then Done |
 | `jira` | `/jira spec <path>`, `/jira story`, `/jira bug` … | Create Jira epics, stories, tasks, and bugs from a spec or free text |
 | `sprint-plan` | `/embla-core:sprint-plan` | Plan a sprint in 4 phases: goal, stories, assignment, then creation in Jira |
-| `pr-review` | `/embla-core:pr-review <PR_ID> [--mode dev\|lead\|pipeline]` | Bitbucket PR review with up to 7 parallel agents (code quality, security, performance, risk, coverage, dependency, requirement) |
+| `pr-review` | `/embla-core:pr-review <PR_ID> [--mode dev\|lead\|pipeline]` | PR review with up to 7 parallel agents (code quality, security, performance, risk, coverage, dependency, requirement); dev/lead mode on Bitbucket, pipeline mode on any CI host |
 | `resolve-pr-feedback` | `/embla-core:resolve-pr-feedback <PR_ID>` | Work through review comments after a rejection: explain, fix, commit, resolve, reassign |
 | `deploy` | `/embla-core:deploy <PR_ID>` | Trigger CI/CD, poll the build, move Jira to Ready for QA |
-| `pipeline` | `/embla-core:pipeline` or `/embla-core:pipeline check` | Set up or audit `bitbucket-pipelines.yml` and `.mcp.json` for AI PR review and `ai-develop` |
+| `pipeline` | `/embla-core:pipeline` or `/embla-core:pipeline check` | Set up or audit the CI pipeline file and `.mcp.json` for AI PR review on any host (Bitbucket and GitHub profiles, generated for others), plus Bitbucket-only `ai-develop` |
 | `init-llm-wiki` | `/embla-core:init-llm-wiki` | Bootstrap a Karpathy-style LLM Wiki as a dev knowledge base |
 | `develop-auto` | *CI only* | Headless version of `develop`, triggered by the `ai-develop` pipeline when a Jira comment tags `@Claudedev` |
 
@@ -120,7 +120,7 @@ plugins/<plugin-name>/
   skills/<skill-name>/
     SKILL.md                         Skill entry point (frontmatter: name, description)
     references/                      Supporting files, loaded only when SKILL.md says so
-docs/                                Upstream/vendoring notes
+docs/                                Skill-authoring best practices, design specs/plans, upstream vendoring notes
 .claude/                             This repo's own Claude Code settings and CLAUDE.md
 ```
 
@@ -133,7 +133,7 @@ Contributor guidance lives in [`.claude/CLAUDE.md`](.claude/CLAUDE.md). The rule
 - **New plugin:** add `plugins/<name>/.claude-plugin/plugin.json`, at least one working skill, and a `marketplace.json` entry, all in the same PR. Placeholder stubs aren't accepted.
 - **CI pins:** generated pipelines clone this repo at a pinned commit. If a change to `pr-review` or `develop-auto` should reach existing pipelines, bump the pin in that skill's pipeline template: every `hosts/*/template.yml` for `pr-review`, `workflows/ai-develop/template.yml` for `develop-auto`. See "Updating the pinned plugin commit" in the `pipeline` skill's `references/hosts/bitbucket/notes.md`.
 - **Use the right authoring skill:** `/writing-for-agents` (from mattpocock-skills) for new and edited skills, `/plugin-dev:create-plugin` for new plugins.
-- **PR descriptions** follow the format in CLAUDE.md: Summary, Motivation, Test Plan, Jira Ticket.
+- **PR descriptions** follow the format in CLAUDE.md: Summary, Motivation, Test Plan, Linked Issue.
 
 ## License
 
