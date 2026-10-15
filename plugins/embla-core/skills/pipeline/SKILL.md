@@ -31,7 +31,7 @@ Every pipeline, on every host, satisfies [references/pipeline-rules.md](referenc
 
 A **profile** is the set of canonical files for one host or tracker. Resolve the host profile from `embla.json → repo.provider`:
 
-- **Known host** — `references/hosts/<provider>/` exists (`bitbucket`, `github`). Read `notes.md` (paths, discovery, merge and check specifics), `template.yml`, `mcp.json`, `variables.md`. On Bitbucket, when discovery finds a self-hosted runner, also follow [references/hosts/bitbucket/runner-detection.md](references/hosts/bitbucket/runner-detection.md).
+- **Known host** — `references/hosts/<provider>/` exists (`bitbucket`, `github`). Read `<provider>-setup-guide.md` (paths, discovery, merge and check specifics), `template.yml`, `mcp.json`, `variables.md`. On Bitbucket, when discovery finds a self-hosted runner, also follow [references/hosts/bitbucket/runner-detection.md](references/hosts/bitbucket/runner-detection.md).
 - **Generated host** — any other provider. Follow [references/generate-for-host.md](references/generate-for-host.md), which drafts a port of the Bitbucket template, checks it rule by rule, and writes only on the developer's explicit yes.
 
 Tracker profiles live in `references/trackers/<provider>/`; today only `jira` ([prefetch.sh.md](references/trackers/jira/prefetch.sh.md), [variables.md](references/trackers/jira/variables.md)).
@@ -64,7 +64,7 @@ Done when `repo.provider` has a value.
 
 Resolve the profile (see **Profiles**).
 - **Generated host** → follow `generate-for-host.md` to its end; it covers discovery, tracker wiring, writing, and the checklist. Then continue at step 6.
-- **Known host** → run "Phase 0 discovery" from the host's `notes.md`. It yields `base_pipeline` (the existing file's contents, or `new`) and any host-specific state (Bitbucket: runner image, `ai_develop_present`). Every later step operates on the in-memory `base_pipeline`.
+- **Known host** → run "Phase 0 discovery" from the host's `<provider>-setup-guide.md`. It yields `base_pipeline` (the existing file's contents, or `new`) and any host-specific state (Bitbucket: runner image, `ai_develop_present`). Every later step operates on the in-memory `base_pipeline`.
 
 Done when `base_pipeline` is set.
 
@@ -93,8 +93,8 @@ Done when the pre-fetch block and the tracker tool are each decided, or explicit
 
 ### 5. Write files
 
-For a known host, using the paths in `notes.md` → "Files":
-1. **Pipeline file** — take `template.yml`, replace the entry between the `# >>> tracker pre-fetch` and `# <<< tracker pre-fetch` markers with the step 4 block (re-indented to the script list; keep the marker entry as is when there is no block), apply any resolved image, add any approved tracker tool to `--allowedTools`, then merge into `base_pipeline` per `notes.md` → "Merge rules" (P1/P2). Compute the full result in memory, write it, and print `Wrote <file>:` followed by the full contents. No confirmation gate: the write touches only the local working tree and is reversible with `git checkout`.
+For a known host, using the paths in `<provider>-setup-guide.md` → "Files":
+1. **Pipeline file** — take `template.yml`, replace the entry between the `# >>> tracker pre-fetch` and `# <<< tracker pre-fetch` markers with the step 4 block (re-indented to the script list; keep the marker entry as is when there is no block), apply any resolved image, add any approved tracker tool to `--allowedTools`, then merge into `base_pipeline` per `<provider>-setup-guide.md` → "Merge rules" (P1/P2). Compute the full result in memory, write it, and print `Wrote <file>:` followed by the full contents. No confirmation gate: the write touches only the local working tree and is reversible with `git checkout`.
 2. **`.mcp.json`** — existing file that isn't valid JSON → stop: `Cannot parse existing .mcp.json — fix manually before retrying.` Otherwise add each server block from `mcp.json` (plus an approved tracker server) only when its key is missing, copying `${VAR}` placeholders verbatim (C3); print which servers were skipped.
 
 Done when each file is written or reported as skipped.
@@ -103,7 +103,7 @@ Done when each file is written or reported as skipped.
 
 `repo.provider` is not `bitbucket` → print `ai-develop is available on Bitbucket only — skipped.` and continue to step 7.
 
-On Bitbucket, read [references/workflows/ai-develop/notes.md](references/workflows/ai-develop/notes.md), then ask, whatever happened to the AI PR Review step:
+On Bitbucket, read [references/workflows/ai-develop/ai-develop-setup-guide.md](references/workflows/ai-develop/ai-develop-setup-guide.md), then ask, whatever happened to the AI PR Review step:
 
 ```
 Set up the ai-develop pipeline for autonomous Jira-triggered development? (yes / skip)
@@ -139,12 +139,12 @@ Print `✅ <file>` for each file written and `⏭ <file> (unchanged)` for each s
 
 Audits the project's pipeline file and `.mcp.json` against the rules. Read-only: report, never fix.
 
-**1. Identify the host.** Pipeline file from `notes.md` → "Files" for a known host. Otherwise find the file whose first line is `# Generated by embla-core:pipeline for <provider> — rules-version <N>`; that is a generated host. No pipeline file → report `AI PR Review pipeline not found` and run only the `.mcp.json` checks.
+**1. Identify the host.** Pipeline file from `<provider>-setup-guide.md` → "Files" for a known host. Otherwise find the file whose first line is `# Generated by embla-core:pipeline for <provider> — rules-version <N>`; that is a generated host. No pipeline file → report `AI PR Review pipeline not found` and run only the `.mcp.json` checks.
 
 **2. Pipeline file — known host.** Diff mechanically against the canonical `template.yml` (after the project's tracker substitution), never against a hand-kept list of expected lines — such lists drift from the template.
 1. Parse both as YAML; formatting differences that leave the parsed structure unchanged are never drift.
-2. Find our job/step by name (`notes.md` → "Check specifics"). Missing → `AI PR Review step missing`; skip to 4.
-3. Compare the wrapper keys `notes.md` names (Bitbucket: `image`, `clone`), then walk the canonical script list top to bottom. Each entry (a one-line command or a `|` block) is one unit. Locate its counterpart by a distinguishing substring from early in the entry (`su claudeuser -c`, `set -e`, `apt-get remove`), then report exactly one of **missing**, **modified** (show both versions, so the fix is copy-pasteable), or, for user entries with no canonical counterpart, **extra** (noted, not flagged — it may be deliberate).
+2. Find our job/step by name (`<provider>-setup-guide.md` → "Check specifics"). Missing → `AI PR Review step missing`; skip to 4.
+3. Compare the wrapper keys `<provider>-setup-guide.md` names (Bitbucket: `image`, `clone`), then walk the canonical script list top to bottom. Each entry (a one-line command or a `|` block) is one unit. Locate its counterpart by a distinguishing substring from early in the entry (`su claudeuser -c`, `set -e`, `apt-get remove`), then report exactly one of **missing**, **modified** (show both versions, so the fix is copy-pasteable), or, for user entries with no canonical counterpart, **extra** (noted, not flagged — it may be deliberate).
 4. The `git -C /tmp/plugins checkout <commit>` pin is **modified** whenever it differs from canonical (S2) — a stale pin is a silent security regression, never "present".
 
 **3. Pipeline file — generated host.** Run every rule's **verify** from `pipeline-rules.md` against the file. Compare the S1, S2, S3, and S4 values with those in `hosts/bitbucket/template.yml`; any difference is **modified**. A `rules-version` older than the current one → note `generated against rules-version <N>; current is <M> — re-check the rules changed since`.
@@ -155,7 +155,7 @@ Audits the project's pipeline file and `.mcp.json` against the rules. Read-only:
 - `.claude/pr-review-tools.json` present → **obsolete**: `pr-review` now works from `--allowedTools` alone. Report: `Delete .claude/pr-review-tools.json once the pipeline's plugin pin is at or past the commit that stopped reading it — an older pin still reads it.`
 - `.mcp.json` env values are `${VAR}` placeholders (C3); servers are pinned (S3).
 
-**5. ai-develop (Bitbucket).** Only when a `pipelines: custom: ai-develop:` block exists — absence is never drift. Diff it against [references/workflows/ai-develop/template.yml](references/workflows/ai-develop/template.yml) with the same algorithm as 2, citing [references/workflows/ai-develop/notes.md](references/workflows/ai-develop/notes.md) for the reason. Then the `atlassian` server:
+**5. ai-develop (Bitbucket).** Only when a `pipelines: custom: ai-develop:` block exists — absence is never drift. Diff it against [references/workflows/ai-develop/template.yml](references/workflows/ai-develop/template.yml) with the same algorithm as 2, citing [references/workflows/ai-develop/ai-develop-setup-guide.md](references/workflows/ai-develop/ai-develop-setup-guide.md) for the reason. Then the `atlassian` server:
 - ai-develop present, `atlassian` missing → `atlassian (Jira) MCP server missing — required by the ai-develop pipeline step, which needs a live Jira MCP server for the whole session. Add the block from references/workflows/ai-develop/mcp.json, or run /embla-core:pipeline setup and answer yes to the ai-develop prompt.`
 - ai-develop absent, `atlassian` present → `atlassian (Jira) MCP server present — AI PR Review pre-fetches Jira instead, and this repo has no ai-develop step, so the server adds five unused tool schemas to every review context. Remove it, or opt into ai-develop via setup.`
 

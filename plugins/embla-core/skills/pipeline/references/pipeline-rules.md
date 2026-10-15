@@ -2,7 +2,7 @@
 
 rules-version: 1
 
-The single source of truth for what every AI PR Review pipeline must satisfy, on every host. `setup` checks generated files against it, `check` cites rule IDs when it reports drift, and each host's `notes.md` links here instead of repeating a rationale. Bump `rules-version` on any rule change; generated pipelines stamp the version they were checked against.
+The single source of truth for what every AI PR Review pipeline must satisfy, on every host. `setup` checks generated files against it, `check` cites rule IDs when it reports drift, and each host's `<provider>-setup-guide.md` links here instead of repeating a rationale. Bump `rules-version` on any rule change; generated pipelines stamp the version they were checked against.
 
 Each rule has a **statement**, a **verify** (how to confirm it on a file), and a **why** where the reason isn't obvious. The reference implementation is `hosts/bitbucket/template.yml`; quoted lines below come from it.
 
@@ -23,7 +23,7 @@ Each rule has a **statement**, a **verify** (how to confirm it on a file), and a
 
 **S2** Plugins are cloned from `https://github.com/EmblaTech/claude-plugins.git` with no credentials, then `git -C /tmp/plugins checkout <40-char commit>`.
 - Verify: clone URL matches exactly; no credential helper, token, or `user:pass@` on the clone; the checkout argument is a full commit hash, never `main` or a branch.
-- Why: a push to the plugin repo (accidental or malicious) must never change what a consuming pipeline executes on its next run. The pin does not auto-update; see `hosts/bitbucket/notes.md` → "Updating the pinned plugin commit". The repo is public, so a credential on the clone only widens exposure.
+- Why: a push to the plugin repo (accidental or malicious) must never change what a consuming pipeline executes on its next run. The pin does not auto-update; see `hosts/bitbucket/bitbucket-setup-guide.md` → "Updating the pinned plugin commit". The repo is public, so a credential on the clone only widens exposure.
 
 **S3** Every MCP server is pinned to an exact version: an npm `pkg@x.y.z`, a container `image:tag` (digest preferred), or a release binary at a fixed tag with a checksum verified.
 - Verify: every `.mcp.json` server and every download in the pipeline names an exact version; no ranges, no `latest`.
@@ -131,4 +131,4 @@ Applies to the host server and to non-Jira tracker servers.
 
 ## H — Host-specific rules
 
-Host rules live in each host's `notes.md`, with IDs prefixed by the host (`GH1`, `GH2`, …). A generated host may add its own under the same convention and lists them in its ✅ block.
+Host rules live in each host's `<provider>-setup-guide.md`, with IDs prefixed by the host (`GH1`, `GH2`, …). A generated host may add its own under the same convention and lists them in its ✅ block.

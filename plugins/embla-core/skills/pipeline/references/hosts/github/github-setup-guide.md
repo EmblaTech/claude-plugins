@@ -1,4 +1,4 @@
-# GitHub host notes
+# GitHub setup guide
 
 Host-specific facts for `setup` and `check` when `repo.provider` is `github`. Rationale for every line of `template.yml` lives in `pipeline-rules.md` under the cited rule ID; this file covers only what differs from Bitbucket.
 

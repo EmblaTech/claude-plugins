@@ -1,4 +1,4 @@
-# Bitbucket host notes
+# Bitbucket setup guide
 
 Host-specific facts for `setup` and `check` when `repo.provider` is `bitbucket`. Rationale for every line of `template.yml` lives in `pipeline-rules.md` under the cited rule ID.
 
@@ -76,4 +76,4 @@ Otherwise (P1, P2):
 2. Update the pin in `hosts/bitbucket/template.yml` and every other `hosts/*/template.yml` in the same PR. This only affects future `setup` runs; `check` compares generated hosts' S2 pin against the Bitbucket template.
 3. Existing consumers keep their pin (`setup` stops when the step exists). `/embla-core:pipeline check` reports the stale pin as **modified**; each repo updates its pipeline file by hand.
 
-The ai-develop template carries an independent pin and still clones from Bitbucket; bump it only for `develop-auto` changes (see `workflows/ai-develop/notes.md`).
+The ai-develop template carries an independent pin and still clones from Bitbucket; bump it only for `develop-auto` changes (see `workflows/ai-develop/ai-develop-setup-guide.md`).
