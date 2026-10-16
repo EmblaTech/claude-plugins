@@ -41,19 +41,17 @@ Invoked as `/embla-core:<skill>` unless noted.
 | `sprint-plan` | 4-phase sprint planner: goal → stories → assign → create in Jira |
 | `pr-review <PR_ID>` | 7-agent parallel PR review (see architecture below) |
 | `deploy <PR_ID>` | Trigger CI/CD, poll build, transition Jira → Ready for QA |
-| `pipeline` / `pipeline check` | Set up/audit `bitbucket-pipelines.yml` + `.mcp.json` for automated PR review; auto-invoked by `config` Phase 5 |
+| `pipeline` / `pipeline check` | Set up/audit the CI pipeline file + `.mcp.json` for automated PR review on any host (tested Bitbucket/GitHub profiles, generated for others); auto-invoked by `config` Phase 5 |
 | `resolve-pr-feedback <PR_ID>` | Work through PR review comments after a rejection: explain, fix, commit, resolve comments, reassign to lead |
 | `init-llm-wiki` | Bootstrap Karpathy's LLM Wiki pattern as a dev knowledge base |
 | `develop-auto` | Pipeline-only: headless counterpart to `develop`, run by the `ai-develop` Bitbucket pipeline when a Jira comment tags `@Claudedev`. Never invoked by a user |
 
 ### CI plugin pin
 
-Generated pipelines clone this repo at a pinned commit for `--plugin-dir`, not `main`, so they never pick up unreviewed changes. Two templates carry independent pins:
+Generated pipelines clone this repo at a pinned commit for `--plugin-dir`, not `main`, so they never pick up unreviewed changes. Two independent pins, both under `plugins/embla-core/skills/pipeline/references/`:
 
-- `bitbucket-pipelines-template.yml` (AI PR Review) — bump when a change touches `pr-review`'s files.
-- `bitbucket-pipelines-ai-develop-template.yml` (`ai-develop`) — bump when a change touches `develop-auto`'s files.
-
-Both live in `plugins/embla-core/skills/pipeline/references/`; the bump process is "Updating the pinned plugin commit" in that skill's `pipeline-templates.md`.
+- **AI PR Review:** `hosts/<host>/template.yml` (`bitbucket`, `github`) share one pin — bump every host template together when a change touches `pr-review`'s files or `agents/`. Process: "Updating the pinned plugin commit" in `hosts/bitbucket/bitbucket-setup-guide.md`.
+- **ai-develop:** `workflows/ai-develop/template.yml` — bump only when a change touches `develop-auto`'s files. See `workflows/ai-develop/ai-develop-setup-guide.md`.
 
 ### pr-review architecture
 
@@ -61,7 +59,7 @@ Up to **7 parallel subagents**, registered as named subagent types in `plugins/e
 
 - **Phase 2.7 (Agent Relevance Judgment)** picks the subset per PR: the orchestrator judges each agent against the diff and that agent's own "Spawn when" criteria (in its `agents/*.md` description), with no fixed rule set. Every exclusion is logged with a one-line reason, since `pipeline` mode runs unattended.
 - A haiku subagent handles eligibility (Phase 1) and confidence scoring (Phase 4).
-- **Phase 6 Step A** posts comments through `embla-core:poster` (`tools:` scoped to `mcp__bitbucket__bb_post` only) — always this named subagent, since the data traces back to a reviewed PR's diff.
+- **Phase 6 Step A** posts comments through `embla-core:poster` (`tools:` scoped to `mcp__bitbucket__bb_post` only) — always this named subagent, since the data traces back to a reviewed PR's diff. A host with no allowed write tool (GitHub today) gets an outbox file the pipeline posts instead.
 
 Phases: eligibility → size gate → fetch PR data → agent relevance judgment → review agents → dedup → confidence scoring → coverage gate → format → post/notify → write local file.
 

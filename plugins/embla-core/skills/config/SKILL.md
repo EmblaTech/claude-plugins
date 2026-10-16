@@ -137,7 +137,7 @@ Print on completion:
 
 ## Phase 5 — Pipeline Setup
 
-Ask: "Set up Bitbucket Pipelines for automated PR review? (yes / skip)"
+Ask: "Set up automated PR review in your CI pipeline? (yes / skip)"
 
 **If skip:**
 Print: `"Skipped. Run /embla-core:pipeline any time to set this up."` and proceed to Sub-Commands.
@@ -204,13 +204,13 @@ Never claim config was written without a confirmed successful file write.
 ```jsonc
 {
   "repo": {
-    "provider": "bitbucket",        // "bitbucket" | "github" | "azure-devops"
+    "provider": "bitbucket",        // any code host name, e.g. "bitbucket", "github", "azure-devops", "gitlab"
     "workspace": "",
     "slug": "",
     "url": ""
   },
   "tracker": {
-    "provider": "jira",             // "jira" | "azure-devops" | "linear" | "github-issues"
+    "provider": "jira",             // any tracker name, e.g. "jira", "azure-devops", "linear", "github-issues"
     "jira": {
       "siteUrl": "",
       "cloudId": "",                // auto-resolved — never ask

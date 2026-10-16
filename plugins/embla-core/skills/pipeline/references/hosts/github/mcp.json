@@ -1,0 +1,12 @@
+{
+  "mcpServers": {
+    "github": {
+      "type": "stdio",
+      "command": "github-mcp-server",
+      "args": ["stdio", "--read-only", "--toolsets", "pull_requests"],
+      "env": {
+        "GITHUB_PERSONAL_ACCESS_TOKEN": "${GITHUB_TOKEN}"
+      }
+    }
+  }
+}
