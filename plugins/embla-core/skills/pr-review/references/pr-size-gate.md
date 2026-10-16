@@ -36,9 +36,10 @@ pr-size-gate: This PR has {N} changed lines (threshold: {T}). Large PRs are hard
 Return this object to the orchestrator after the gate resolves:
 
 ```json
-{"gate": "pr-size-gate", "passed": true, "lineCount": 187, "threshold": 300, "bypassed": false, "bypassReason": ""}
+{"gate": "pr-size-gate", "passed": true, "exceeded": false, "lineCount": 187, "threshold": 300, "bypassed": false, "bypassReason": ""}
 ```
 
 - `passed`: false if the gate blocked or triggered `fail` action
+- `exceeded`: true whenever `lineCount` > `threshold`, whatever the action — so a `warn` run or a local "continue anyway" still reports the overage (`passed` stays true in both)
 - `bypassed`: true when `--force-size` used (local) or `REVIEW_SIZE_GATE=skip` (pipeline)
 - `bypassReason`: `"--force-size"` or `"REVIEW_SIZE_GATE=skip"` or `""` if not bypassed
