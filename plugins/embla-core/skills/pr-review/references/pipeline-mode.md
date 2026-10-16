@@ -131,7 +131,7 @@ The CI script (rule D2 in the `pipeline` skill) posts `inline`, then `general`; 
 |---|---|---|---|
 | `REVIEW_MODE` | `dev` \| `lead` \| `pipeline` | `dev` | Mode override |
 | `REVIEW_SIZE_GATE` | `warn` \| `fail` \| `skip` | `warn` | pr-size-gate action when threshold exceeded |
-| `REVIEW_COVERAGE_GATE` | `warn` \| `fail` \| `skip` | `fail` | Test coverage gate action when below threshold |
+| `REVIEW_COVERAGE_GATE` | `warn` \| `fail` \| `skip` | `warn` | Test coverage gate action when below threshold |
 | `REVIEW_PUBLISH_THRESHOLD` | integer 0–100 | `60` | Minimum score for an issue to be published as a comment |
 | `REVIEW_PIPELINE_MAX_COMMENTS` | integer | `10` | Maximum inline comments posted in pipeline mode (HIGH ranked first) |
 | `REVIEW_SIZE_THRESHOLD` | integer | `300` | Override pr-size-gate line threshold |

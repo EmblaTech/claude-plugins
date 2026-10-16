@@ -20,7 +20,7 @@ Use the threshold already resolved in SKILL.md's Runtime Resolution table (`REVI
 
 ## Pipeline Mode
 
-Behaviour is driven by the `REVIEW_COVERAGE_GATE` environment variable (default: `fail`).
+Behaviour is driven by the `REVIEW_COVERAGE_GATE` environment variable (default: `warn`).
 
 | Value | Behaviour |
 |---|---|
