@@ -20,7 +20,7 @@ Use the threshold already resolved in SKILL.md's Runtime Resolution table (`REVI
 
 ## Pipeline Mode
 
-Behaviour is driven by the `REVIEW_COVERAGE_GATE` environment variable (default: `fail`).
+Behaviour is driven by the `REVIEW_COVERAGE_GATE` environment variable (default: `warn`).
 
 | Value | Behaviour |
 |---|---|
@@ -38,9 +38,10 @@ test-coverage-gate: Estimated test coverage is {N}% (threshold: {T}%). Add tests
 Return this object to the orchestrator after the gate resolves:
 
 ```json
-{"gate": "test-coverage-gate", "passed": true, "coveragePct": 84, "threshold": 80, "bypassed": false, "bypassReason": ""}
+{"gate": "test-coverage-gate", "passed": true, "exceeded": false, "coveragePct": 84, "threshold": 80, "bypassed": false, "bypassReason": ""}
 ```
 
 - `passed`: false if the gate blocked or triggered `fail` action
+- `exceeded`: true whenever `coveragePct` < `threshold`, whatever the action — so a `warn` run or a local "Force" still reports the shortfall (`passed` stays true in both)
 - `bypassed`: true when `--force-coverage` used (local) or `REVIEW_COVERAGE_GATE=skip` (pipeline)
 - `bypassReason`: `"--force-coverage"` or `"REVIEW_COVERAGE_GATE=skip"` or `""` if not bypassed

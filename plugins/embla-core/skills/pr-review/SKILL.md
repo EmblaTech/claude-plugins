@@ -412,6 +412,7 @@ Template:
 ```
 
 Notes:
+- Gates rows follow the ✅ / ⚠️ / ❌ / ⛔ states in output-format.md → "Link rules" — a gate over its threshold never shows ✅
 - Gates row shows ⛔ and "force-bypassed" label when bypassed via --force-size/--force-coverage
 - Gates row shows ⛔ and "env-bypassed" label when bypassed via pipeline env vars
 - Omit any severity section (`## HIGH`, `## MED`, etc.) where count is 0
