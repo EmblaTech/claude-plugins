@@ -1,18 +1,15 @@
 ---
 name: pr-review
-description: Reviews a pull request with up to 7 parallel agents (code-quality, security, performance, risk, coverage, dependency, requirement) and posts the findings as PR comments. dev and lead mode review a Bitbucket pull request live; pipeline mode runs unattended in CI on any code host configured by embla-core:pipeline. Use when invoked as /embla-core:pr-review <PR_ID> [--mode=dev|lead|pipeline], or as /embla-core:pr-review <PR_ID> accept|reject to transition Jira after review.
+description: Reviews a pull request with up to 7 parallel agents (code-quality, security, performance, risk, coverage, dependency, requirement) and posts the findings as PR comments. dev and lead mode review a Bitbucket pull request live; pipeline mode runs unattended in CI on any code host configured by embla-core:pipeline. Use when invoked as /embla-core:pr-review <PR_ID> [--mode=dev|lead|pipeline].
 ---
 
 ## Invocation
 
 ```
 /embla-core:pr-review <PR_ID> [--mode=dev|lead|pipeline] [--force-size] [--force-coverage]
-/embla-core:pr-review <PR_ID> accept
-/embla-core:pr-review <PR_ID> reject
 ```
 
 - If no PR_ID given: stop with error `"Error: PR ID required. Usage: /embla-core:pr-review <PR_ID> [--mode=dev|lead|pipeline]"`
-- `accept` and `reject` skip all phases — see [accept-reject.md](references/accept-reject.md)
 
 ---
 
@@ -422,12 +419,6 @@ Notes:
 - Omit the `**Notes:**` line when the run recorded no fallback notes
 
 **Pipeline mode only:** after writing the local review file, also write `docs/reviews/gate-result.json` with the pipeline's exit-code verdict — see [pipeline-mode.md](references/pipeline-mode.md) → "Exit Code Logic" for the exact shape and field meanings.
-
----
-
-## accept / reject Sub-Commands
-
-When the second argument is `accept` or `reject`, skip every phase and follow [accept-reject.md](references/accept-reject.md): it transitions the Jira issue, reassigns it, and posts a marker comment on the Bitbucket PR.
 
 ---
 
