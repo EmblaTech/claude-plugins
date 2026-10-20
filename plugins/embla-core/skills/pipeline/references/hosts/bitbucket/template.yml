@@ -155,7 +155,7 @@ pipelines:
             - npm install -g @anthropic-ai/claude-code@2.1.207
             - useradd -m claudeuser
             - git clone https://github.com/EmblaTech/claude-plugins.git /tmp/plugins
-            - git -C /tmp/plugins checkout REPLACE_WITH_MERGED_COMMIT
+            - git -C /tmp/plugins checkout ada4bae90105201512e6d64db221488c31d74e7f
             - |
               ( set +e
                 apt-get update -qq >/dev/null 2>&1
