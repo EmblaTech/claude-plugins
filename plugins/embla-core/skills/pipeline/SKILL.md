@@ -120,7 +120,6 @@ Set up the ai-develop pipeline for autonomous development triggered by @claudede
      ├──────────────────────┼──────────┼─────────────────┼──────────────────────────────────────────────┤
      │ JIRA_ISSUE_KEY       │ ✅       │ —               │ Supplied by the trigger (Jira automation or manual run) │
      │ COMMENTER_ACCOUNT_ID │ optional │ —               │ Supplied by the trigger; blank is handled    │
-     │ SPRINT_NUMBER        │ optional │ —               │ Only when the branch format has a sprint and the ticket has none │
      │ BITBUCKET_USERNAME   │ ✅       │ <resolved/—>    │ Account username (not email) — ai-develop's git push uses it │
      │ ATLASSIAN_SITE_NAME  │ ✅       │ <resolved/—>    │ Shared with the Jira pre-fetch; also read by the atlassian MCP server │
      │ ATLASSIAN_API_TOKEN  │ ✅       │ set manually    │ Shared with the Jira pre-fetch; also read by the atlassian MCP server │

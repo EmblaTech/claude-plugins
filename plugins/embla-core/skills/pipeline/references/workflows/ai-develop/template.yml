@@ -60,10 +60,6 @@ pipelines:
                 echo "COMMENTER_ACCOUNT_ID contains unexpected characters. Refusing to interpolate it into the claude invocation — aborting with no Jira comment attempt."
                 exit 1
               fi
-              if ! [[ "$SPRINT_NUMBER" =~ ^[0-9]*$ ]]; then
-                echo "SPRINT_NUMBER contains unexpected characters. Refusing to interpolate it into the claude invocation — aborting with no Jira comment attempt."
-                exit 1
-              fi
             - npm install -g @anthropic-ai/claude-code@2.1.207
             - useradd -m claudeuser
             - git clone https://github.com/EmblaTech/claude-plugins.git /tmp/plugins
@@ -87,6 +83,6 @@ pipelines:
             - chown -R claudeuser:claudeuser . /home/claudeuser /tmp/plugins
             - apt-get remove -y wget python3 netcat-traditional 2>/dev/null || true
             - |
-              su claudeuser -c ". /home/claudeuser/.pipeline-env && rm -f /home/claudeuser/.pipeline-env && claude -p \"/embla-core:develop-auto $JIRA_ISSUE_KEY $COMMENTER_ACCOUNT_ID $SPRINT_NUMBER\" --output-format json --plugin-dir /tmp/plugins/plugins/embla-core --mcp-config .mcp.json --allowedTools 'Bash(git:*),Bash(npm:*),Bash(npx:*),Bash(mvn:*),Bash(./gradlew:*),Bash(pytest:*),Bash(python:*),Read,Write,Edit,Grep,Glob,mcp__bitbucket__bb_get,mcp__bitbucket__bb_post,mcp__atlassian__jira_get,mcp__atlassian__jira_post,mcp__atlassian__jira_put' --model claude-sonnet-5" | tee docs/reviews/develop-auto-cost.json
+              su claudeuser -c ". /home/claudeuser/.pipeline-env && rm -f /home/claudeuser/.pipeline-env && claude -p \"/embla-core:develop-auto $JIRA_ISSUE_KEY $COMMENTER_ACCOUNT_ID\" --output-format json --plugin-dir /tmp/plugins/plugins/embla-core --mcp-config .mcp.json --allowedTools 'Bash(git:*),Bash(npm:*),Bash(npx:*),Bash(mvn:*),Bash(./gradlew:*),Bash(pytest:*),Bash(python:*),Read,Write,Edit,Grep,Glob,mcp__bitbucket__bb_get,mcp__bitbucket__bb_post,mcp__atlassian__jira_get,mcp__atlassian__jira_post,mcp__atlassian__jira_put' --model claude-sonnet-5" | tee docs/reviews/develop-auto-cost.json
               DEV_EXIT=${PIPESTATUS[0]}
               report_and_exit "$DEV_EXIT"

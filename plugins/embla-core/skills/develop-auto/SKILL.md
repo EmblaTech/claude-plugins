@@ -15,7 +15,7 @@ gate `develop` asks a question at is replaced here by a fixed default or an abor
 run end to end, nothing deferred, no human to ask mid-run.
 
 ## Invocation
-`/embla-core:develop-auto <issue_key> [commenter_id] [sprint_number]`
+`/embla-core:develop-auto <issue_key> [commenter_id]`
 
 - **Issue key** (required), in the tracker's key format. Missing/malformed → no ticket comment (no confirmed ticket to comment
   on), but still use the Write tool to create `docs/reviews/develop-auto-result.json`:
@@ -23,8 +23,6 @@ run end to end, nothing deferred, no human to ask mid-run.
   reasoning as the Abort Pattern above; without this file the CI wrapper has no way to tell this
   case apart from a successful run.
 - **Commenter id** (optional) — used in Step 2; absent → skip assignment.
-- **Sprint number** (optional) — last-resort override for Step 4; the ticket's own sprint field
-  wins whenever it's present.
 
 Resolve the target repository, `repo.provider`, `tracker.provider`, the tracker's site URL, and
 the branch-name format once at the start from this project's config, falling back to git/tooling
@@ -79,9 +77,11 @@ Map the issue type to a branch flavor (feature-shaped vs. bug-shaped); anything 
 branch conventions (config, CLAUDE.md).
 
 When the branch format contains a sprint placeholder, pick the sprint number from the first
-source that has one: the current branch's prefix, then the ticket's own sprint, then the
-invocation argument. None present → abort (reason: no sprint number determinable; resolution:
-assign a sprint or pass one explicitly). No sprint placeholder → skip this lookup.
+source that has one: the current branch's prefix, then the ticket's own sprint. Neither
+present → leave the sprint segment out of the name, along with its
+adjacent separator (`s224/feature/FT-123/add-login` → `feature/FT-123/add-login`), and log
+"no sprint number — branch created without a sprint prefix". A missing sprint never aborts
+the run. No sprint placeholder → skip this lookup.
 
 Generate the branch name deterministically — no proposal or confirmation step. This pipeline
 runs from a fresh clone, so check the *remote* for a name collision (a prior run's local branch

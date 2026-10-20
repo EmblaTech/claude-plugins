@@ -148,7 +148,7 @@ The `ai-develop` pipeline (reference: `workflows/ai-develop/template.yml`) edits
 | C4 | The host token can push a branch and open a PR, nothing broader. |
 | R2–R6, D1, D2 | Replaced by the finish path: `develop-auto-result.json` decides the exit code (`0`/`1`); `outcome: pr_pending` makes the script open the PR and post the success comment; `is_error: true` in the cost JSON posts a fallback tracker comment folding in `.result` (4000 chars). |
 
-**AD1** Every trigger input is validated before any setup work: the issue key against the tracker's key format (Jira `^[A-Z][A-Z0-9]+-[0-9]+$`), the commenter id against `^[A-Za-z0-9:_-]*$`, the sprint against `^[0-9]*$`. A failure exits `1` without a tracker comment.
+**AD1** Every trigger input is validated before any setup work: the issue key against the tracker's key format (Jira `^[A-Z][A-Z0-9]+-[0-9]+$`) and the commenter id against `^[A-Za-z0-9:_-]*$`. A failure exits `1` without a tracker comment.
 - Verify: the validation entry runs after the trap and before the Claude Code install.
 - Why: these values are interpolated into the `su -c` string, which a shell re-parses; an unvalidated key is not confirmed safe to comment on.
 
