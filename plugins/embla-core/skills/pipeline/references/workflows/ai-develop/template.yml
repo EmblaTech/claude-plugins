@@ -66,8 +66,8 @@ pipelines:
               fi
             - npm install -g @anthropic-ai/claude-code@2.1.207
             - useradd -m claudeuser
-            - git -c credential.helper='!f() { echo "username=$BITBUCKET_USERNAME"; echo "password=$BITBUCKET_API_TOKEN"; }; f' clone https://bitbucket.org/emblaftdev/embla-claude-plugins.git /tmp/plugins
-            - git -C /tmp/plugins checkout 3878e57bfea98e68f50432090563311a7d303ae9
+            - git clone https://github.com/EmblaTech/claude-plugins.git /tmp/plugins
+            - git -C /tmp/plugins checkout REPLACE_WITH_MERGED_COMMIT
             - |
               cat > /home/claudeuser/.pipeline-env <<PIPELINE_ENV
               export HOME=/home/claudeuser

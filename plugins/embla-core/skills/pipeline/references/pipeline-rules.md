@@ -1,8 +1,8 @@
 # Pipeline rules
 
-rules-version: 1
+rules-version: 2
 
-The single source of truth for what every AI PR Review pipeline must satisfy, on every host. `setup` checks generated files against it, `check` cites rule IDs when it reports drift, and each host's `<provider>-setup-guide.md` links here instead of repeating a rationale. Bump `rules-version` on any rule change; generated pipelines stamp the version they were checked against.
+The single source of truth for what every AI PR Review pipeline must satisfy, on every host; the AD section adapts it for ai-develop. `setup` checks generated files against it, `check` cites rule IDs when it reports drift, and each host's `<provider>-setup-guide.md` links here instead of repeating a rationale. Bump `rules-version` on any rule change; generated pipelines stamp the version they were checked against.
 
 Each rule has a **statement**, a **verify** (how to confirm it on a file), and a **why** where the reason isn't obvious. The reference implementation is `hosts/bitbucket/template.yml`; quoted lines below come from it.
 
@@ -15,6 +15,7 @@ Each rule has a **statement**, a **verify** (how to confirm it on a file), and a
 - M — MCP server selection
 - P — Merging into an existing pipeline file
 - H — Host-specific rules
+- AD — ai-develop
 
 ## S — Supply chain
 
@@ -132,3 +133,31 @@ Applies to the host server and to non-Jira tracker servers.
 ## H — Host-specific rules
 
 Host rules live in each host's `<provider>-setup-guide.md`, with IDs prefixed by the host (`GH1`, `GH2`, …). A generated host may add its own under the same convention and lists them in its ✅ block.
+
+## AD — ai-develop
+
+The `ai-develop` pipeline (reference: `workflows/ai-develop/template.yml`) edits source, pushes a branch and comments on the ticket, so some rules above change for it. Every rule not listed applies as written.
+
+| Rule | For ai-develop |
+|---|---|
+| S4 | Replaced by AD4 |
+| I3 | The Claude user owns the whole working tree: `chown -R <user>:<user> . /home/<user> /tmp/plugins`. It edits and commits source. |
+| I4 | Remove `wget python3 netcat-traditional`; `curl` stays, because the finish path posts after `claude` exits. |
+| I5 | `--allowedTools` is the reference template's Bash and file tools plus the approved tracker tools and host read tools. No merge, delete or settings tool; no bare `Bash`. |
+| M3 | Tracker tools may read, comment, transition, assign and edit fields. Host tools are read-only; the script opens the PR on a generated host. When tracker and host are one platform, issue comment/assign tools count as tracker tools. |
+| C4 | The host token can push a branch and open a PR, nothing broader. |
+| R2–R6, D1, D2 | Replaced by the finish path: `develop-auto-result.json` decides the exit code (`0`/`1`); `outcome: pr_pending` makes the script open the PR and post the success comment; `is_error: true` in the cost JSON posts a fallback tracker comment folding in `.result` (4000 chars). |
+
+**AD1** Every trigger input is validated before any setup work: the issue key against the tracker's key format (Jira `^[A-Z][A-Z0-9]+-[0-9]+$`), the commenter id against `^[A-Za-z0-9:_-]*$`, the sprint against `^[0-9]*$`. A failure exits `1` without a tracker comment.
+- Verify: the validation entry runs after the trap and before the Claude Code install.
+- Why: these values are interpolated into the `su -c` string, which a shell re-parses; an unvalidated key is not confirmed safe to comment on.
+
+**AD2** Commits use the bot identity `"AI Autonomous Dev" <ai-autonomous-dev@noreply.embla.asia>`, set inside the `.pipeline-env` heredoc.
+- Verify: both `git config --global user.*` lines sit inside the heredoc.
+
+**AD3** No comment the run posts contains `@claudedev`, and the trigger excludes the run's own account.
+- Verify: the fallback and PR-failure comment bodies in the script omit the tag; the printed trigger guidance has the own-account exclusion.
+- Why: the trigger fires on any comment containing the tag, so echoing it loops.
+
+**AD4** The model is pinned to the full ID in the reference template's `--model` (`claude-sonnet-5`).
+- Verify: the generated `--model` equals the reference template's.

@@ -2,9 +2,9 @@
 name: develop-auto
 description: >
   Non-interactive counterpart to embla-core:develop, invoked headless by the ai-develop
-  Bitbucket pipeline when a Jira comment tags @Claudedev. Fetches the story, implements it,
-  and opens a PR with no human interaction — every gate that develop asks a question at is
-  replaced by a fixed default or an abort-with-Jira-comment. Never invoke interactively;
+  pipeline when a ticket comment tags @claudedev, on any code host and tracker. Fetches the
+  story, implements it, and opens a PR with no human interaction — every gate that develop
+  asks a question at is replaced by a fixed default or an abort-with-ticket-comment. Never invoke interactively;
   this skill assumes it is running unattended in CI.
 ---
 
@@ -15,31 +15,34 @@ gate `develop` asks a question at is replaced here by a fixed default or an abor
 run end to end, nothing deferred, no human to ask mid-run.
 
 ## Invocation
-`/embla-core:develop-auto EM-1234 [commenter_account_id] [sprint_number]`
+`/embla-core:develop-auto <issue_key> [commenter_id] [sprint_number]`
 
-- **Jira key** (required). Missing/malformed → no Jira comment (no confirmed ticket to comment
+- **Issue key** (required), in the tracker's key format. Missing/malformed → no ticket comment (no confirmed ticket to comment
   on), but still use the Write tool to create `docs/reviews/develop-auto-result.json`:
-  `{"outcome": "aborted", "reason": "missing or malformed Jira key", "exit_code": 1}` — same
+  `{"outcome": "aborted", "reason": "missing or malformed issue key", "exit_code": 1}` — same
   reasoning as the Abort Pattern above; without this file the CI wrapper has no way to tell this
   case apart from a successful run.
-- **Commenter account ID** (optional) — used in Step 2; absent → skip assignment.
+- **Commenter id** (optional) — used in Step 2; absent → skip assignment.
 - **Sprint number** (optional) — last-resort override for Step 4; the ticket's own sprint field
   wins whenever it's present.
 
-Resolve the target repository, Jira site URL, and the branch-name format once at the start from
-this project's config, falling back to git/tooling defaults where the config is silent.
-Repository unresolved → abort (reason: can't resolve the repo to work in; resolution: set it in
-config). A missing Jira site URL is not fatal — the PR's Jira line just falls back to the bare
-ticket ID.
+Resolve the target repository, `repo.provider`, `tracker.provider`, the tracker's site URL, and
+the branch-name format once at the start from this project's config, falling back to git/tooling
+defaults where the config is silent. Repository unresolved → abort (reason: can't resolve the
+repo to work in; resolution: set it in config). A missing site URL is not fatal — the PR's ticket
+line just falls back to the bare ticket ID.
+
+Tracker and host operations use the MCP tools this run allows. A tracker operation with no
+allowed tool → log and skip it, except the Step 1 fetch.
 
 Carry each step's output forward by name (ticket data, complexity, branch_name,
 dev_plan_path, pr_url) instead of re-deriving it later.
 
 ## Abort Pattern (canonical — every "abort" below means this, once, defined here)
-Post a comment on the Jira ticket: "Autonomous dev run aborted: `<reason>`. `<detail, if any>`
+Post a comment on the ticket: "Autonomous dev run aborted: `<reason>`. `<detail, if any>`
 A human needs to `<resolution>` before requesting another automated run. 🤖 Crafted by Claude AI."
-Never spell out the automation trigger tag inside a posted comment — the Jira automation that
-starts this pipeline fires on any comment containing it, so echoing it back here would
+Never spell out the automation trigger tag inside a posted comment — the trigger that starts
+this pipeline fires on any comment containing it, so echoing it back here would
 re-trigger a run and loop. Then use the Write tool to create `docs/reviews/develop-auto-result.json`:
 ```json
 {"outcome": "aborted", "reason": "<reason>", "exit_code": 1}
@@ -75,9 +78,10 @@ Map the issue type to a branch flavor (feature-shaped vs. bug-shaped); anything 
 (reason: unrecognized issue type; resolution: resolve manually). Name it per this project's
 branch conventions (config, CLAUDE.md).
 
-Pick the sprint number from the first source that has one: the current branch's prefix, then
-the ticket's own sprint, then the invocation argument. None present → abort (reason: no sprint
-number determinable; resolution: assign a sprint or pass one explicitly).
+When the branch format contains a sprint placeholder, pick the sprint number from the first
+source that has one: the current branch's prefix, then the ticket's own sprint, then the
+invocation argument. None present → abort (reason: no sprint number determinable; resolution:
+assign a sprint or pass one explicitly). No sprint placeholder → skip this lookup.
 
 Generate the branch name deterministically — no proposal or confirmation step. This pipeline
 runs from a fresh clone, so check the *remote* for a name collision (a prior run's local branch
@@ -119,12 +123,15 @@ Failing → abort (reason: tests failed after implementation; detail: the failur
 resolution: investigate) — no PR opened. Passing but with leftover uncommitted changes → commit
 the remainder (Step 6's process), then proceed. Passing and clean → push the branch and open a
 pull request: title referencing the ticket and summary, description covering the change, a
-Jira link (or the bare ticket ID if the site URL never resolved), and a note that automated
-tests passed. Push or PR-creation failure → abort (reason: tests passed but the push/PR
+ticket link (or the bare ticket ID if the site URL never resolved), and a note that automated
+tests passed. Open it with the host's allowed PR tool. No such tool (a generated host) → write
+`docs/reviews/develop-auto-outbox.json` = `{"pr": {"title", "description", "source_branch",
+"target_branch"}, "success_comment": "<Step 8's comment, with {{pr_url}} where the link goes>"}`;
+the pipeline opens the PR after this run. Push or PR-creation failure → abort (reason: tests passed but the push/PR
 creation failed; detail: the error output; resolution: investigate) — the PR URL stays unset
 and Step 8 never runs.
 
-## Step 8 — Final Jira Transition & Success Comment
+## Step 8 — Final Ticket Transition & Success Comment
 Look up the ticket's available transitions and move it to an in-review-equivalent status,
 falling back to a "Done"-equivalent if none is configured for this project. No match either
 way → log and proceed untransitioned — a successful PR isn't worth aborting over.
@@ -136,5 +143,7 @@ Then use the Write tool to create `docs/reviews/develop-auto-result.json`:
 ```json
 {"outcome": "success", "pr_url": "<url>", "exit_code": 0}
 ```
+Outbox path: transition as above, skip the comment (the outbox carries it), and write
+`{"outcome": "pr_pending", "exit_code": 0}` instead.
 Same reasoning as the Abort Pattern: this file, not the `claude` process's own exit code, is what
 tells the CI wrapper the run actually succeeded.
