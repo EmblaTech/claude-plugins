@@ -14,7 +14,7 @@ Next: Set these variables in Bitbucket repo settings → Pipelines → Variables
 │ <tracker rows>                  │          │                  │                                    │
 │ REVIEW_MODE                     │ ✅       │ pipeline         │ Set to: pipeline                   │
 │ REVIEW_SIZE_GATE                │ optional │ —                │ warn / fail / skip (default: warn) │
-│ REVIEW_COVERAGE_GATE            │ optional │ —                │ warn / fail / skip (default: fail) │
+│ REVIEW_COVERAGE_GATE            │ optional │ —                │ warn / fail / skip (default: warn) │
 │ REVIEW_SIZE_THRESHOLD           │ optional │ —                │ integer — PR line count threshold (default: 300) │
 │ REVIEW_COVERAGE_THRESHOLD       │ optional │ —                │ integer — coverage % floor (default: 80) │
 │ REVIEW_PUBLISH_THRESHOLD        │ optional │ —                │ 0–100 (default: 60)                │

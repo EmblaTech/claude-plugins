@@ -213,7 +213,13 @@ This is needed because total review cost isn't known until the whole session end
 - General issues (`file == ""`): use `— {description}` (no file/line to link).
 - Filtered issues (not posted): use `` `{file}:{line}` `` (plain, no link).
 - Still Open issues (duplicate of an existing open comment, not re-posted this run): use `` `{file}:{line}` — {description} (matches comment from {date}) `` (plain, no link — no new comment was posted for it this run).
-- Gate rows render the `passed`/`bypassed` result from [pr-size-gate.md](pr-size-gate.md) and [test-coverage-gate.md](test-coverage-gate.md) as `✅ {detail} (threshold: {threshold})` when passed, `⛔ {detail} (threshold: {threshold}, {bypassReason})` when bypassed, or `❌ {detail} (threshold: {threshold})` when failed but not bypassed (the `fail` action's normal outcome on a real gate failure — `bypassReason` is empty in this case, so it's omitted rather than rendered blank) — identical to the Gates table Phase 7 writes to the local file.
+- Gate rows render each gate's Gate Result from [pr-size-gate.md](pr-size-gate.md) and [test-coverage-gate.md](test-coverage-gate.md) by the first state that matches — identical to the Gates table Phase 7 writes to the local file:
+  1. `bypassed: true` → `⛔ {detail} (threshold: {threshold}, {bypassReason})`
+  2. `passed: false` → `❌ {detail} (threshold: {threshold})` — the `fail` action on a real gate failure
+  3. `exceeded: true` → `⚠️ {detail} (threshold: {threshold})` — over the threshold but not blocking: the `warn` action, or a local "continue anyway"
+  4. otherwise → `✅ {detail} (threshold: {threshold})` — within the threshold
+
+  A gate over its threshold always renders ⚠️ or ❌; ✅ means the PR is within it.
 - Omit any severity section (`#### HIGH`, `#### MED`, etc.) where count is 0.
 - Omit `#### Still Open` block if empty.
 - Omit `#### Filtered` block if no issues were filtered.

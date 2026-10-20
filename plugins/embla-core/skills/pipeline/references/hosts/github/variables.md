@@ -11,7 +11,7 @@ Next: Set these in GitHub → Settings → Secrets and variables → Actions:
 │ GITHUB_TOKEN                    │ built in │ —        │ —                │ Nothing to set. Scoped by the workflow's permissions: contents: read, pull-requests: write (GH2) │
 │ <tracker rows>                  │          │          │                  │                                    │
 │ REVIEW_SIZE_GATE                │ Variable │ optional │ —                │ warn / fail / skip (default: warn) │
-│ REVIEW_COVERAGE_GATE            │ Variable │ optional │ —                │ warn / fail / skip (default: fail) │
+│ REVIEW_COVERAGE_GATE            │ Variable │ optional │ —                │ warn / fail / skip (default: warn) │
 │ REVIEW_SIZE_THRESHOLD           │ Variable │ optional │ —                │ integer — PR line count threshold (default: 300) │
 │ REVIEW_COVERAGE_THRESHOLD       │ Variable │ optional │ —                │ integer — coverage % floor (default: 80) │
 │ REVIEW_PUBLISH_THRESHOLD        │ Variable │ optional │ —                │ 0–100 (default: 60)                │
