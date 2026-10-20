@@ -63,7 +63,7 @@ pipelines:
             - npm install -g @anthropic-ai/claude-code@2.1.207
             - useradd -m claudeuser
             - git clone https://github.com/EmblaTech/claude-plugins.git /tmp/plugins
-            - git -C /tmp/plugins checkout REPLACE_WITH_MERGED_COMMIT
+            - git -C /tmp/plugins checkout ec198b6f94e0a3072d4b34ff187c4335d5f59118
             - |
               cat > /home/claudeuser/.pipeline-env <<PIPELINE_ENV
               export HOME=/home/claudeuser
