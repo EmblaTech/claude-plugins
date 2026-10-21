@@ -141,13 +141,18 @@ then open the PR.
 
 **Test status.** Re-check docs-only against `git diff --name-only <target branch>...HEAD`.
 - Docs-only → `test_status` = "docs-only change, tests not run"; run nothing.
-- Otherwise run the test command once, exactly as written, from the repo root. It is the first
-  line of `docs/reviews/develop-auto-test-command` when that file exists (the pipeline wrote it);
-  else the one command the project's tooling defines for its tests.
+- Otherwise work out what the diff needs and do it, from the repo root: install missing
+  dependencies, generate code, apply the migrations or seed data the tests rely on, then run the
+  tests. Use the command the repo declares for each (manifest script, `Makefile` target, existing
+  CI step), in the form the run's allowed commands list (its system prompt names them; otherwise
+  the allowlist visibly permits). Services such as a database are already running in CI with
+  their connection variables exported; start no container. A setup or test command that is
+  denied or fails never stops the run: go on to the status.
   - Passed → `test_status` = "tests passed".
-  - Failed → `test_status` = "tests failed" plus the failure summary.
-  - Denied, no command, or an error before any test ran → `test_status` = "tests not run" plus
-    the reason and the exact command a human should allow.
+  - Failed, in setup or in the tests → `test_status` = "tests failed" plus the failure summary
+    naming the failing command.
+  - No command to run, or every attempt denied → `test_status` = "tests not run" plus the
+    reason and the exact command a human should allow.
 
 Test status never blocks delivery. Commit any leftover uncommitted changes (Step 6's process),
 push the branch and open a normal pull request: title referencing the ticket and summary,
