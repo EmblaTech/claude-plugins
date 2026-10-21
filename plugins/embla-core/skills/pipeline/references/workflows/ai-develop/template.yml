@@ -25,27 +25,42 @@ pipelines:
                 RUN_IS_ERROR="false"
                 RUN_SUBTYPE=""
                 RUN_RESULT=""
+                NO_VERDICT="false"
                 if [ -f docs/reviews/develop-auto-cost.json ] && jq -e . docs/reviews/develop-auto-cost.json >/dev/null 2>&1; then
                   RUN_IS_ERROR=$(jq -r '.is_error // false' docs/reviews/develop-auto-cost.json 2>/dev/null)
                   RUN_SUBTYPE=$(jq -r '.subtype // "unknown"' docs/reviews/develop-auto-cost.json 2>/dev/null)
-                  RUN_RESULT=$(jq -r '.result // empty' docs/reviews/develop-auto-cost.json 2>/dev/null | head -c 4000)
+                  RUN_RESULT=$(jq -r '.result // empty' docs/reviews/develop-auto-cost.json 2>/dev/null | head -c 4000 | sed -E 's/@claudedev//gI')
                   if [ "$RUN_IS_ERROR" != "true" ]; then
-                    # develop-auto ran to completion (success or its own graceful abort) and
-                    # already posted whatever Jira comment was appropriate itself. Its own exit
-                    # code only reflects harness completion, not which of those two happened —
-                    # develop-auto-result.json carries that verdict; trust it when present.
+                    # A clean end_turn only means the session stopped. It posted its own Jira
+                    # comment (success or graceful abort) only if develop-auto-result.json holds
+                    # a real verdict: valid JSON with an exit_code and an outcome other than the
+                    # "incomplete" placeholder it writes first. Anything else — a missing,
+                    # unparseable or still-"incomplete" file — is a run that stopped short.
+                    VERDICT_OUTCOME=""
                     if [ -f docs/reviews/develop-auto-result.json ] && jq -e '.exit_code' docs/reviews/develop-auto-result.json >/dev/null 2>&1; then
+                      VERDICT_OUTCOME=$(jq -r '.outcome // empty' docs/reviews/develop-auto-result.json 2>/dev/null)
+                    fi
+                    if [ -n "$VERDICT_OUTCOME" ] && [ "$VERDICT_OUTCOME" != "incomplete" ]; then
                       RESULT_EXIT=$(jq -r '.exit_code' docs/reviews/develop-auto-result.json)
                       case "$RESULT_EXIT" in 0|1) CODE="$RESULT_EXIT" ;; esac
+                      exit "$CODE"
                     fi
-                    exit "$CODE"
+                    NO_VERDICT="true"
+                    echo "AI Autonomous Dev: claude ended cleanly but develop-auto wrote no valid verdict (outcome: ${VERDICT_OUTCOME:-missing}). Posting a fallback Jira comment and failing the run."
+                  else
+                    echo "AI Autonomous Dev: claude reported is_error=true (subtype: $RUN_SUBTYPE) — the run crashed before develop-auto's own Jira comment logic could run. Posting a fallback Jira comment."
                   fi
-                  echo "AI Autonomous Dev: claude reported is_error=true (subtype: $RUN_SUBTYPE) — the run crashed before develop-auto's own Jira comment logic could run. Posting a fallback Jira comment."
+                fi
+                if [ "$CODE" = "0" ]; then CODE=1; fi
+                if [ "$NO_VERDICT" = "true" ]; then
+                  HEADLINE="⚠ AI Autonomous Dev ended without a verdict, so no PR or ticket update can be assumed (exit $CODE)."
+                else
+                  HEADLINE="⚠ AI Autonomous Dev pipeline crashed before develop-auto could report its own outcome (exit $CODE)."
                 fi
                 if [ -n "$RUN_RESULT" ]; then
-                  BODY=$(jq -n --arg result "$RUN_RESULT" --arg code "$CODE" '{body: ("⚠ AI Autonomous Dev pipeline crashed before develop-auto could report its own outcome (exit " + $code + ").\n\n```\n" + $result + "\n```\n\nCheck the pipeline build log for details.")}')
+                  BODY=$(jq -n --arg headline "$HEADLINE" --arg result "$RUN_RESULT" '{body: ($headline + "\n\nLast message from the run:\n\n```\n" + $result + "\n```\n\nCheck the pipeline build log for details.")}')
                 else
-                  BODY=$(jq -n --arg text "⚠ AI Autonomous Dev pipeline failed before develop-auto could report its own outcome (exit $CODE). Check the pipeline build log." '{body: $text}')
+                  BODY=$(jq -n --arg text "$HEADLINE Check the pipeline build log." '{body: $text}')
                 fi
                 post_jira_comment "$BODY" || echo "Fallback Jira comment failed to post"
                 exit "$CODE"

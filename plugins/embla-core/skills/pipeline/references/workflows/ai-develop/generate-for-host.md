@@ -11,7 +11,7 @@ Generate ai-develop for <host> + <tracker>:
 - [ ] 1. Read the rules and the reference template
 - [ ] 2. Confirm host and tracker facts from official docs
 - [ ] 3. Draft the pipeline file
-- [ ] 4. Choose MCP servers and allowed tools
+- [ ] 4. Research the repo, derive the allowlist, get approval
 - [ ] 5. Check every rule (max 3 rounds per rule)
 - [ ] 6. Present the draft and get an explicit yes
 - [ ] 7. Write the files with the header stamp
@@ -49,28 +49,38 @@ Start from the reference template and change only:
 - AD1's key pattern, to the tracker's format;
 - `post_jira_comment` → `post_tracker_comment`, with the tracker's endpoint, payload and auth through `curl -K -` (C1);
 - the git credential helper and the host env in `.pipeline-env` (I2);
-- `--allowedTools` and the `claude` arguments (`/embla-core:develop-auto $ISSUE_KEY $COMMENTER_ID`);
+- `--allowedTools`, filled from step 4's approved allowlist, and the other `claude` arguments (`/embla-core:develop-auto $ISSUE_KEY $COMMENTER_ID`);
 - the finish path: when `develop-auto-result.json` has `"outcome": "pr_pending"`, open the PR from `docs/reviews/develop-auto-outbox.json` with the host's create-PR call. On success, replace `{{pr_url}}` in the outbox's `success_comment` and post it with `post_tracker_comment`, then exit `0`. On failure, post `Branch <branch> was pushed but the PR could not be opened (HTTP <status>). A human needs to open it.` and exit `1`.
+- AD5: when the result file is missing, unparseable or `outcome: incomplete`, keep the reference template's fallback comment and forced exit `1`. Port that branch line for line.
 
 Done when the draft is a complete file and each change maps to a fact from step 2.
 
-## 4. Choose MCP servers and allowed tools
+## 4. Research the repo, derive the allowlist, get approval
 
-- **Tracker** (Jira: the `atlassian` block in `workflows/ai-develop/mcp.json`; others chosen under M1–M8 with M6 evidence, starting from a server already in `.mcp.json`): allow its read, comment, transition, assign and edit-fields tools (M3 for ai-develop).
-- **Host:** read tools only, or none. The PR is opened by the script (step 3).
-- No tracker server passes → `develop-auto` cannot fetch the ticket, so stop: `Cannot generate ai-develop for <tracker>: no MCP server passed <rule>. No files were written.`
+The allowlist is researched for this project and approved by the developer. Nothing is copied from the reference template's `--allowedTools`, which fits one stack.
 
-Done when every allowed MCP tool appears in an M6 evidence block.
+**a. Dev tools, from the repo.** Read the repo's own build and test setup: manifests and lockfiles (`package.json` and its lockfile, `pom.xml`, `build.gradle*`, `pyproject.toml`, `requirements*.txt`, `go.mod`, `Cargo.toml`, `*.csproj`), test configs and existing tests, `Makefile` and script folders, and any existing CI file. Find the commands that install dependencies, run the tests, and typecheck, lint or build. Allow each as `Bash(<command>:*)` at the narrowest prefix that covers it (`Bash(npm test:*)`, not `Bash(npm:*)`). Add `Bash(git:*)` for branch, commit and push, and the file tools `Read,Write,Edit,Grep,Glob`. No test command detectable → ask the developer for it; `develop-auto` aborts without one (its Step 5c), so say so.
+
+**b. Operations, from `develop-auto`.** List what the skill does against the tracker and host: fetch the ticket, post a comment, assign, transition status, open the PR. For each, name the tool that performs it, from a server chosen under M1–M8 with M6 evidence (Jira: the `atlassian` block in `workflows/ai-develop/mcp.json`; others starting from a server already in `.mcp.json`), or `none`, with what the skill does instead:
+- assign or transition with no tool → logged and skipped;
+- PR creation → the outbox file, opened by the script (step 3). The allowlist names no PR-creating command (no `Bash(gh:*)` or similar);
+- fetch with no tool → stop: `Cannot generate ai-develop for <tracker>: no MCP server passed <rule>. No files were written.`
+
+Host MCP tools are read-only or none (M3 for ai-develop). **Same platform for host and tracker** (GitHub issues + GitHub): the PR-review `.mcp.json` `github` block is read-only. When an ai-develop block needs different tools under the same key, write it to `.mcp.ai-develop.json` and pass that file to `--mcp-config`. Status moves on a user-owned Projects board need more than the run's token, so they fall back to logged and skipped; say that in the variable checklist.
+
+**c. Approval.** Show one table with a row per allowed entry and the evidence for it: the repo file that justifies each Bash command, the `develop-auto` operation each MCP tool serves, and the fallback for each operation with no tool. Ask: `Use this allowlist? (yes / revise / abort)`. `revise` → apply the change and show the table again. `abort` → `Aborted. No files were written.`
+
+Done when every entry has evidence, every operation has a tool or a fallback, and the developer answered `yes`.
 
 ## 5. Check every rule
 
-Walk `pipeline-rules.md` and run the **verify** of every rule the AD table applies, plus AD1–AD4. On a failure, fix the draft and re-check that rule. Three failed rounds on one rule → `Cannot generate ai-develop for <host>: rule <ID> — <reason>. No files were written.`
+Walk `pipeline-rules.md` and run the **verify** of every rule the AD table applies, plus AD1–AD6. On a failure, fix the draft and re-check that rule. Three failed rounds on one rule → `Cannot generate ai-develop for <host>: rule <ID> — <reason>. No files were written.`
 
 Done when every applicable rule ID has a ✅.
 
 ## 6. Present the draft and get an explicit yes
 
-Show: the full pipeline file; the `.mcp.json` blocks; the M6 evidence; one line per rule (`✅ AD1 — ISSUE_KEY matches ^[0-9]+$`, citing the line). Ask: `Write these files? (yes / revise / abort)`. `revise` → apply the change, return to step 5. `abort` → `Aborted. No files were written.`
+Show: the full pipeline file; the `.mcp.json` blocks; the M6 evidence; the approved allowlist table from step 4; one line per rule (`✅ AD1 — ISSUE_KEY matches ^[0-9]+$`, citing the line). Ask: `Write these files? (yes / revise / abort)`. `revise` → apply the change, return to step 5. `abort` → `Aborted. No files were written.`
 
 ## 7. Write the files with the header stamp
 

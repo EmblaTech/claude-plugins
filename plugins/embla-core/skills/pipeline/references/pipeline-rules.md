@@ -1,6 +1,6 @@
 # Pipeline rules
 
-rules-version: 2
+rules-version: 4
 
 The single source of truth for what every AI PR Review pipeline must satisfy, on every host; the AD section adapts it for ai-develop. `setup` checks generated files against it, `check` cites rule IDs when it reports drift, and each host's `<provider>-setup-guide.md` links here instead of repeating a rationale. Bump `rules-version` on any rule change; generated pipelines stamp the version they were checked against.
 
@@ -143,10 +143,10 @@ The `ai-develop` pipeline (reference: `workflows/ai-develop/template.yml`) edits
 | S4 | Replaced by AD4 |
 | I3 | The Claude user owns the whole working tree: `chown -R <user>:<user> . /home/<user> /tmp/plugins`. It edits and commits source. |
 | I4 | Remove `wget python3 netcat-traditional`; `curl` stays, because the finish path posts after `claude` exits. |
-| I5 | `--allowedTools` is the reference template's Bash and file tools plus the approved tracker tools and host read tools. No merge, delete or settings tool; no bare `Bash`. |
+| I5 | `--allowedTools` is the Bash and file tools plus the approved tracker tools and host read tools. Bitbucket + Jira: the reference template's list. Generated host: the Bash entries are the repo-derived set from AD6. No merge, delete or settings tool; no bare `Bash`. |
 | M3 | Tracker tools may read, comment, transition, assign and edit fields. Host tools are read-only; the script opens the PR on a generated host. When tracker and host are one platform, issue comment/assign tools count as tracker tools. |
 | C4 | The host token can push a branch and open a PR, nothing broader. |
-| R2–R6, D1, D2 | Replaced by the finish path: `develop-auto-result.json` decides the exit code (`0`/`1`); `outcome: pr_pending` makes the script open the PR and post the success comment; `is_error: true` in the cost JSON posts a fallback tracker comment folding in `.result` (4000 chars). |
+| R2–R6, D1, D2 | Replaced by the finish path: `develop-auto-result.json` decides the exit code (`0`/`1`); `outcome: pr_pending` makes the script open the PR and post the success comment; `is_error: true` in the cost JSON, or no valid verdict (AD5), posts a fallback tracker comment folding in `.result` (4000 chars). |
 
 **AD1** Every trigger input is validated before any setup work: the issue key against the tracker's key format (Jira `^[A-Z][A-Z0-9]+-[0-9]+$`) and the commenter id against `^[A-Za-z0-9:_-]*$`. A failure exits `1` without a tracker comment.
 - Verify: the validation entry runs after the trap and before the Claude Code install.
@@ -161,3 +161,11 @@ The `ai-develop` pipeline (reference: `workflows/ai-develop/template.yml`) edits
 
 **AD4** The model is pinned to the full ID in the reference template's `--model` (`claude-sonnet-5`).
 - Verify: the generated `--model` equals the reference template's.
+
+**AD5** A run with no valid verdict fails. When `is_error` is not `true` but `docs/reviews/develop-auto-result.json` is missing, unparseable, lacks `exit_code`, or has `outcome: incomplete`, the finish path posts a fallback tracker comment (claude's last message from the cost JSON `.result`, 4000 chars, `@claudedev` removed) and exits `1`. Every other failure path that would exit `0` is forced to `1`.
+- Verify: in `report_and_exit`'s `is_error != true` branch, the `exit "$CODE"` is guarded by a check that `.outcome` is non-empty and not `incomplete`; the fall-through builds its body with `jq -n --arg`, pipes `.result` through the tag strip, and forces `CODE=1` when it was `0`.
+- Why: `claude --output-format json` reports `is_error: false` on a clean `end_turn`, including when the model stopped to ask a question or gave up after a denied tool. Green with no PR and no comment is the silent pass R3 forbids for PR review. `develop-auto` writes `outcome: incomplete` first and overwrites it with its verdict, so a missing file never has to mean "unknown".
+
+**AD6** On a generated host, the Bash entries in `--allowedTools` come from researching the repo and the developer approved them. Each entry beyond `git:*` runs a command the repo itself defines (a manifest script, a test config, a Makefile target, an existing CI step), at the narrowest prefix that covers it.
+- Verify: setup's step-4 table has a row per Bash entry naming the repo file that justifies it, ends in an explicit `yes`, and the pipeline's list equals the table. `check` re-reads the repo and reports an entry whose file or command no longer exists, and a test or build command the repo defines that the list lacks. No bare `Bash`, no runner the repo doesn't use.
+- Why: the list is the only thing that lets a headless run act. A copied list denies a stack's real test command (the run then can't finish) or grants runners the project never uses (wider than the task needs). Deriving it from the repo and showing it for approval fixes both.

@@ -14,6 +14,11 @@ Same start-of-development work as `embla-core:develop`, unattended. **Governing 
 gate `develop` asks a question at is replaced here by a fixed default or an abort. Steps 1–8
 run end to end, nothing deferred, no human to ask mid-run.
 
+**Headless rule:** the session ends only with a verdict file written (see Verdict file below).
+A tool that is denied, errors or doesn't exist → take that step's documented fallback, else the
+Abort Pattern. A denial is the final answer for that tool; the run moves to the fallback and
+stays silent about permission.
+
 ## Invocation
 `/embla-core:develop-auto <issue_key> [commenter_id]`
 
@@ -36,12 +41,21 @@ allowed tool → log and skip it, except the Step 1 fetch.
 Carry each step's output forward by name (ticket data, complexity, branch_name,
 dev_plan_path, pr_url) instead of re-deriving it later.
 
+## Verdict file (written first, overwritten last)
+Before Step 1, use the Write tool to create `docs/reviews/develop-auto-result.json`:
+```json
+{"outcome": "incomplete", "reason": "run ended before a verdict", "exit_code": 1}
+```
+Every verdict below (the Abort Pattern, Step 8) overwrites it. `incomplete` surviving to the end
+of the session means the run stopped without reaching a verdict; the CI wrapper reads that as a
+failure and posts its own comment, so a missing or stale verdict never counts as success.
+
 ## Abort Pattern (canonical — every "abort" below means this, once, defined here)
 Post a comment on the ticket: "Autonomous dev run aborted: `<reason>`. `<detail, if any>`
 A human needs to `<resolution>` before requesting another automated run. 🤖 Crafted by Claude AI."
 Never spell out the automation trigger tag inside a posted comment — the trigger that starts
 this pipeline fires on any comment containing it, so echoing it back here would
-re-trigger a run and loop. Then use the Write tool to create `docs/reviews/develop-auto-result.json`:
+re-trigger a run and loop. Then use the Write tool to overwrite `docs/reviews/develop-auto-result.json`:
 ```json
 {"outcome": "aborted", "reason": "<reason>", "exit_code": 1}
 ```
@@ -124,10 +138,12 @@ resolution: investigate) — no PR opened. Passing but with leftover uncommitted
 the remainder (Step 6's process), then proceed. Passing and clean → push the branch and open a
 pull request: title referencing the ticket and summary, description covering the change, a
 ticket link (or the bare ticket ID if the site URL never resolved), and a note that automated
-tests passed. Open it with the host's allowed PR tool. No such tool (a generated host) → write
+tests passed. Open it with the PR-creation tool this run's allowed tools name (an `mcp__*` tool,
+or a command the allowlist spells out). None named, or the attempt denied → write
 `docs/reviews/develop-auto-outbox.json` = `{"pr": {"title", "description", "source_branch",
-"target_branch"}, "success_comment": "<Step 8's comment, with {{pr_url}} where the link goes>"}`;
-the pipeline opens the PR after this run. Push or PR-creation failure → abort (reason: tests passed but the push/PR
+"target_branch"}, "success_comment": "<Step 8's comment, with {{pr_url}} where the link goes>"}`
+and continue to Step 8's outbox path; the pipeline opens the PR after this run. Push failure, or
+an error from a PR tool the run did allow → abort (reason: tests passed but the push/PR
 creation failed; detail: the error output; resolution: investigate) — the PR URL stays unset
 and Step 8 never runs.
 
@@ -139,7 +155,7 @@ way → log and proceed untransitioned — a successful PR isn't worth aborting 
 Regardless of the transition outcome, comment on the ticket with a success message and the PR
 link. A failure here also just logs and continues — the PR already exists.
 
-Then use the Write tool to create `docs/reviews/develop-auto-result.json`:
+Then use the Write tool to overwrite `docs/reviews/develop-auto-result.json`:
 ```json
 {"outcome": "success", "pr_url": "<url>", "exit_code": 0}
 ```
