@@ -51,6 +51,7 @@ Start from the reference template and change only:
 - the git credential helper and the host env in `.pipeline-env` (I2);
 - `--allowedTools`, filled from step 4's approved allowlist, and the other `claude` arguments (`/embla-core:develop-auto $ISSUE_KEY $COMMENTER_ID`);
 - the finish path: when `develop-auto-result.json` has `"outcome": "pr_pending"`, open the PR from `docs/reviews/develop-auto-outbox.json` with the host's create-PR call. On success, replace `{{pr_url}}` in the outbox's `success_comment` and post it with `post_tracker_comment`, then exit `0`. On failure, post `Branch <branch> was pushed but the PR could not be opened (HTTP <status>). A human needs to open it.` and exit `1`.
+- AD7: a **prepare environment** block that runs before `claude` starts and a `docs/reviews/develop-auto-test-command` file holding step 4's test command, both described in step 4d. Port both into the draft after step 4 approves them;
 - AD5: when the result file is missing, unparseable or `outcome: incomplete`, keep the reference template's fallback comment and forced exit `1`. Port that branch line for line.
 
 Done when the draft is a complete file and each change maps to a fact from step 2.
@@ -59,7 +60,7 @@ Done when the draft is a complete file and each change maps to a fact from step 
 
 The allowlist is researched for this project and approved by the developer. Nothing is copied from the reference template's `--allowedTools`, which fits one stack.
 
-**a. Dev tools, from the repo.** Read the repo's own build and test setup: manifests and lockfiles (`package.json` and its lockfile, `pom.xml`, `build.gradle*`, `pyproject.toml`, `requirements*.txt`, `go.mod`, `Cargo.toml`, `*.csproj`), test configs and existing tests, `Makefile` and script folders, and any existing CI file. Find the commands that install dependencies, run the tests, and typecheck, lint or build. Allow each as `Bash(<command>:*)` at the narrowest prefix that covers it (`Bash(npm test:*)`, not `Bash(npm:*)`). Add `Bash(git:*)` for branch, commit and push, and the file tools `Read,Write,Edit,Grep,Glob`. No test command detectable → ask the developer for it; `develop-auto` aborts without one (its Step 5c), so say so.
+**a. Dev tools, from the repo.** Read the repo's own build and test setup: manifests and lockfiles (`package.json` and its lockfile, `pom.xml`, `build.gradle*`, `pyproject.toml`, `requirements*.txt`, `go.mod`, `Cargo.toml`, `*.csproj`), test configs and existing tests, `Makefile` and script folders, and any existing CI file. Find the commands that install dependencies, run the tests, and typecheck, lint or build. Allow each as `Bash(<command>:*)` at the narrowest prefix that covers it (`Bash(npm test:*)`, not `Bash(npm:*)`). Add `Bash(git:*)` for branch, commit and push, and the file tools `Read,Write,Edit,Grep,Glob`. Pick **one canonical test command**, run from the repo root (`npm --prefix backend test`, not `cd backend && npm test`), and allow exactly that prefix. A monorepo with several suites → the command that covers the code the project changes most, and say which suites it leaves out. No test command detectable → ask the developer for it; without one `develop-auto` reports "tests not run" on every PR.
 
 **b. Operations, from `develop-auto`.** List what the skill does against the tracker and host: fetch the ticket, post a comment, assign, transition status, open the PR. For each, name the tool that performs it, from a server chosen under M1–M8 with M6 evidence (Jira: the `atlassian` block in `workflows/ai-develop/mcp.json`; others starting from a server already in `.mcp.json`), or `none`, with what the skill does instead:
 - assign or transition with no tool → logged and skipped;
@@ -70,11 +71,18 @@ Host MCP tools are read-only or none (M3 for ai-develop). **Same platform for ho
 
 **c. Approval.** Show one table with a row per allowed entry and the evidence for it: the repo file that justifies each Bash command, the `develop-auto` operation each MCP tool serves, and the fallback for each operation with no tool. Ask: `Use this allowlist? (yes / revise / abort)`. `revise` → apply the change and show the table again. `abort` → `Aborted. No files were written.`
 
-Done when every entry has evidence, every operation has a tool or a fallback, and the developer answered `yes`.
+**d. Prepare the environment, from the repo.** `develop-auto` runs only allowlisted commands, so everything the test command needs is set up by the pipeline before `claude` starts. Derive each piece from a repo file and add a row for it to the step-c table:
+- **Dependencies:** the lockfile's install command (`npm --prefix backend ci`).
+- **Services the tests need** (database, cache, queue): from `docker-compose.yml` and the test config, as the host's service containers or sidecars, with image, port, credentials and a health check, plus the connection variable the tests read (`DATABASE_URL`) exported in the `.pipeline-env` heredoc. Never `docker compose` inside the job: the job is already a container.
+- **Migrations or seed:** the manifest script the tests rely on (`prisma migrate deploy`).
+
+Place the block after the Claude user is created and before the `chown -R` entry, so ownership covers what it creates. A failing entry fails the run with a tracker comment `Pipeline environment broken: <command> failed (exit <n>). A human needs to fix the pipeline setup.` (no `@claudedev`, AD3) and exit `1`, before any model run. The same block writes the canonical test command to `docs/reviews/develop-auto-test-command` for `develop-auto` to read.
+
+Done when every entry has evidence, every operation has a tool or a fallback, every test prerequisite has a prepare step, and the developer answered `yes`.
 
 ## 5. Check every rule
 
-Walk `pipeline-rules.md` and run the **verify** of every rule the AD table applies, plus AD1–AD6. On a failure, fix the draft and re-check that rule. Three failed rounds on one rule → `Cannot generate ai-develop for <host>: rule <ID> — <reason>. No files were written.`
+Walk `pipeline-rules.md` and run the **verify** of every rule the AD table applies, plus AD1–AD7. On a failure, fix the draft and re-check that rule. Three failed rounds on one rule → `Cannot generate ai-develop for <host>: rule <ID> — <reason>. No files were written.`
 
 Done when every applicable rule ID has a ✅.
 
@@ -89,3 +97,7 @@ First line of a standalone file: `# Generated by embla-core:pipeline for <host> 
 ## 8. Print the variable checklist
 
 Same table format as `hosts/bitbucket/variables.md`: every secret and variable the file and `.mcp.json` reference, each token's minimum scope, where to set it, marked secret/masked. Inputs (`ISSUE_KEY`, `COMMENTER_ID`) read `supplied by the trigger`.
+
+Then print these notes that apply to the host:
+- GitHub: a PR opened with the workflow's `GITHUB_TOKEN` does not trigger other workflows, so AI PR Review does not run on it unless a PAT or GitHub App token opens the PR.
+- GitHub: the repo setting "Allow GitHub Actions to create and approve pull requests" must be on, or PR creation returns 403.

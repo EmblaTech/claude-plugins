@@ -17,7 +17,9 @@ run end to end, nothing deferred, no human to ask mid-run.
 **Headless rule:** the session ends only with a verdict file written (see Verdict file below).
 A tool that is denied, errors or doesn't exist → take that step's documented fallback, else the
 Abort Pattern. A denial is the final answer for that tool; the run moves to the fallback and
-stays silent about permission.
+stays silent about permission. Run only the commands this run's allowed tools spell out: no
+install, `npx`, container or other setup command the allowlist doesn't name, and no substitute for
+a denied one.
 
 ## Invocation
 `/embla-core:develop-auto <issue_key> [commenter_id]`
@@ -114,15 +116,19 @@ Always runs — it's the audit-trail stand-in for the human brainstorm either wa
 plan file capturing approach, files to change and why, and edge cases/risks, then commit it
 with a conventional commit scoped to the ticket.
 
-## Step 5c — TDD Detection & Implementation
-Always runs, no gate — only the test-framework choice is open, and there's no "ask" fallback
-for it. Infer the framework from the project's existing tests or tooling config; nothing
-detectable → abort (reason: no test framework detectable and TDD is required; resolution:
-specify one or add initial scaffolding).
+## Step 5c — Implementation (TDD for code changes)
+**Docs-only** means every changed file is documentation: `*.md`, `*.mdx`, `*.rst`, `*.txt`,
+anything under `docs/` or `wiki/`, licence and changelog files. Any source, config, build or
+workflow file makes the change not docs-only. Judge from the files the dev plan lists (Step 7
+re-checks against the real diff).
 
-Dispatch a subagent to run the full red/green/refactor cycle against the acceptance criteria
-(or the description, if that's all there is) plus the dev plan's approach and file list. Report
-back the changed files.
+Docs-only → write the change directly, no TDD cycle.
+
+Otherwise infer the test framework from the project's existing tests or tooling config; nothing
+detectable → log "no test framework detectable — implementing without a red/green cycle" and
+implement directly (Step 7 reports tests as not run). Detected → dispatch a subagent to run the
+full red/green/refactor cycle against the acceptance criteria (or the description, if that's all
+there is) plus the dev plan's approach and file list. Report back the changed files.
 
 ## Step 6 — Commit
 Subagent (default model): review the working changes, draft a conventional commit scoped to
@@ -130,30 +136,39 @@ the ticket per this project's commit conventions (config, CLAUDE.md), and commit
 confirmation.
 
 ## Step 7 — Completion Check & PR Creation
-No conversational finishing step — there's no one to converse with. Instead: run the project's
-test suite and read the result.
+No conversational finishing step — there's no one to converse with. Instead: settle `test_status`,
+then open the PR.
 
-Failing → abort (reason: tests failed after implementation; detail: the failure output;
-resolution: investigate) — no PR opened. Passing but with leftover uncommitted changes → commit
-the remainder (Step 6's process), then proceed. Passing and clean → push the branch and open a
-pull request: title referencing the ticket and summary, description covering the change, a
-ticket link (or the bare ticket ID if the site URL never resolved), and a note that automated
-tests passed. Open it with the PR-creation tool this run's allowed tools name (an `mcp__*` tool,
-or a command the allowlist spells out). None named, or the attempt denied → write
-`docs/reviews/develop-auto-outbox.json` = `{"pr": {"title", "description", "source_branch",
-"target_branch"}, "success_comment": "<Step 8's comment, with {{pr_url}} where the link goes>"}`
-and continue to Step 8's outbox path; the pipeline opens the PR after this run. Push failure, or
-an error from a PR tool the run did allow → abort (reason: tests passed but the push/PR
-creation failed; detail: the error output; resolution: investigate) — the PR URL stays unset
-and Step 8 never runs.
+**Test status.** Re-check docs-only against `git diff --name-only <target branch>...HEAD`.
+- Docs-only → `test_status` = "docs-only change, tests not run"; run nothing.
+- Otherwise run the test command once, exactly as written, from the repo root. It is the first
+  line of `docs/reviews/develop-auto-test-command` when that file exists (the pipeline wrote it);
+  else the one command the project's tooling defines for its tests.
+  - Passed → `test_status` = "tests passed".
+  - Failed → `test_status` = "tests failed" plus the failure summary.
+  - Denied, no command, or an error before any test ran → `test_status` = "tests not run" plus
+    the reason and the exact command a human should allow.
+
+Test status never blocks delivery. Commit any leftover uncommitted changes (Step 6's process),
+push the branch and open a normal pull request: title referencing the ticket and summary,
+description covering the change, a ticket link (or the bare ticket ID if the site URL never
+resolved), and a **Tests** line carrying `test_status`. Open it with the PR-creation tool this
+run's allowed tools name (an `mcp__*` tool, or a command the allowlist spells out). None named,
+or the attempt denied → write `docs/reviews/develop-auto-outbox.json` = `{"pr": {"title",
+"description", "source_branch", "target_branch"}, "success_comment": "<Step 8's comment, with
+{{pr_url}} where the link goes>"}` and continue to Step 8's outbox path; the pipeline opens the PR
+after this run. Push failure, or an error from a PR tool the run did allow → abort (reason: the
+push/PR creation failed; detail: the error output; resolution: investigate) — the PR URL stays
+unset and Step 8 never runs.
 
 ## Step 8 — Final Ticket Transition & Success Comment
 Look up the ticket's available transitions and move it to an in-review-equivalent status,
 falling back to a "Done"-equivalent if none is configured for this project. No match either
 way → log and proceed untransitioned — a successful PR isn't worth aborting over.
 
-Regardless of the transition outcome, comment on the ticket with a success message and the PR
-link. A failure here also just logs and continues — the PR already exists.
+Regardless of the transition outcome, comment on the ticket with a success message, the PR
+link and `test_status` (a failed or not-run status is stated plainly, with a request to check
+before merging). A failure here also just logs and continues — the PR already exists.
 
 Then use the Write tool to overwrite `docs/reviews/develop-auto-result.json`:
 ```json
