@@ -90,6 +90,7 @@ pipelines:
               export BITBUCKET_DEFAULT_WORKSPACE=${BITBUCKET_WORKSPACE@Q}
               export ATLASSIAN_SITE_NAME=${ATLASSIAN_SITE_NAME@Q}
               export ATLASSIAN_API_TOKEN=${ATLASSIAN_API_TOKEN@Q}
+              export MCP_TIMEOUT=60000
               git config --global user.name "AI Autonomous Dev"
               git config --global user.email "ai-autonomous-dev@noreply.embla.asia"
               git config --global credential.helper '!f() { echo "username=\$BITBUCKET_USERNAME"; echo "password=\$BITBUCKET_API_TOKEN"; }; f'
@@ -97,6 +98,14 @@ pipelines:
               chmod 600 /home/claudeuser/.pipeline-env
             - chown -R claudeuser:claudeuser . /home/claudeuser /tmp/plugins
             - apt-get remove -y wget python3 netcat-traditional 2>/dev/null || true
+            - |
+              # AD8: fill claudeuser's npx cache so the MCP servers start from disk. Versions match .mcp.json.
+              for PKG in @aashari/mcp-server-atlassian-jira@3.3.0 @aashari/mcp-server-atlassian-bitbucket@3.1.0; do
+                WARM_RC=0
+                su claudeuser -c ". /home/claudeuser/.pipeline-env && timeout 120 npx -y $PKG < /dev/null" > /tmp/mcp-warm.log 2>&1 || WARM_RC=$?
+                echo "MCP warm-up $PKG: exit $WARM_RC"
+                tail -n 5 /tmp/mcp-warm.log
+              done
             - |
               su claudeuser -c ". /home/claudeuser/.pipeline-env && rm -f /home/claudeuser/.pipeline-env && claude -p \"/embla-core:develop-auto $JIRA_ISSUE_KEY $COMMENTER_ACCOUNT_ID\" --output-format json --plugin-dir /tmp/plugins/plugins/embla-core --mcp-config .mcp.json --allowedTools 'Bash(git:*),Bash(npm:*),Bash(npx:*),Bash(mvn:*),Bash(./gradlew:*),Bash(pytest:*),Bash(python:*),Read,Write,Edit,Grep,Glob,mcp__bitbucket__bb_get,mcp__bitbucket__bb_post,mcp__atlassian__jira_get,mcp__atlassian__jira_post,mcp__atlassian__jira_put' --model claude-sonnet-5" | tee docs/reviews/develop-auto-cost.json
               DEV_EXIT=${PIPESTATUS[0]}
