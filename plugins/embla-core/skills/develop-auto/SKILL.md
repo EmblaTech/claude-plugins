@@ -6,6 +6,7 @@ description: >
   story, implements it, and opens a PR with no human interaction — every gate that develop
   asks a question at is replaced by a fixed default or an abort-with-ticket-comment. Never invoke interactively;
   this skill assumes it is running unattended in CI.
+disable-model-invocation: true
 ---
 
 # embla-core:develop-auto — Headless Developer Workflow

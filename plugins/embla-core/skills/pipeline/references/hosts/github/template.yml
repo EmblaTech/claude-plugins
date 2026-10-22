@@ -187,7 +187,7 @@ jobs:
           useradd -m claudeuser
           git config --system --add safe.directory "$GITHUB_WORKSPACE"
           git clone https://github.com/EmblaTech/claude-plugins.git /tmp/plugins
-          git -C /tmp/plugins checkout REPLACE_WITH_MERGED_COMMIT
+          git -C /tmp/plugins checkout ada4bae90105201512e6d64db221488c31d74e7f
 
           # S3: GitHub's official MCP server as a release binary at a fixed tag, checksum-verified.
           curl -sSfL -o /tmp/github-mcp-server.tar.gz https://github.com/github/github-mcp-server/releases/download/v2.0.0/github-mcp-server_Linux_x86_64.tar.gz
