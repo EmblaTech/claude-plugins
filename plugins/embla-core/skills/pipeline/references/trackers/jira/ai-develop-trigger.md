@@ -8,13 +8,14 @@ Project settings → Automation → Create rule:
 
 1. **Trigger:** *Work item commented*. Comment type: *Comment is the main action*.
 2. **Condition:** *{{smart values}} condition* — first value `{{comment.body.toLowerCase()}}`, condition `contains`, second value `@claudedev`.
-3. **Condition:** *{{smart values}} condition* — first value `{{comment.author.accountId}}`, condition `does not equal`, second value `<account id of the API token's owner>`. Loop guard (AD3): the run's own comments come from that account.
-4. **Action:** *Send web request*.
+3. **Action:** *Send web request*.
    - URL: `<host run-pipeline URL>` (Bitbucket: `https://api.bitbucket.org/2.0/repositories/<workspace>/<slug>/pipelines/`)
    - Method: `POST`. Web request body: *Custom data*.
    - Headers: `Content-Type: application/json`; `Authorization: <host auth value>` with **Hidden** ticked.
    - Tick *Delay execution of subsequent flow actions until we've received a response*.
-5. Name the rule `Autonomous AI Development - triggered by @claudedev mention`, set the owner, save, enable.
+4. Name the rule `Autonomous AI Development - triggered by @claudedev mention`, set the owner, save, enable.
+
+No author condition: API tokens are personal, so the token's owner is usually the person commenting `@claudedev`, and an author exclusion would block their own triggers. The loop guard (AD3) is that no run comment contains the tag.
 
 ## Bitbucket body
 

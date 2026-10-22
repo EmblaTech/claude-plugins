@@ -2,7 +2,7 @@
 
 Read by `setup` step 6 after the ai-develop pipeline is written. Output is printed instructions only: the user builds the trigger by hand, and no file or API call creates it.
 
-**Contract** — every trigger does what the Jira reference does: on a new ticket comment containing `@claudedev` (case-insensitive), from anyone but the run's own account, start the ai-develop pipeline on the default branch with `ISSUE_KEY` (the ticket key) and `COMMENTER_ID` (the commenter's account id). The Bitbucket + Jira profile names these `JIRA_ISSUE_KEY` and `COMMENTER_ACCOUNT_ID`. Anyone who can comment can trigger a run.
+**Contract** — every trigger does what the Jira reference does: on a new ticket comment containing `@claudedev` (case-insensitive), start the ai-develop pipeline on the default branch with `ISSUE_KEY` (the ticket key) and `COMMENTER_ID` (the commenter's account id). The Bitbucket + Jira profile names these `JIRA_ISSUE_KEY` and `COMMENTER_ACCOUNT_ID`. Anyone who can comment can trigger a run.
 
 ## 1. Known tracker
 
@@ -17,7 +17,6 @@ Look up each fact in the tracker's and host's official docs (context7 or the ven
 | Native automation or webhook that fires on a new comment | Automation → *Work item commented* |
 | Matching `@claudedev` in the comment body | smart-value condition, `contains` |
 | Reading the ticket key and commenter id | `{{issue.key}}`, `{{comment.author.accountId}}` |
-| Excluding the run's own account's comments | condition on comment author |
 | Sending an authenticated HTTP request with the secret hidden | *Send web request*, Hidden header |
 | Host endpoint and body that start the ai-develop pipeline with inputs | Bitbucket `POST /2.0/repositories/{workspace}/{slug}/pipelines/`, `selector.pattern: ai-develop` |
 | Host token that can start it, minimum scope | repository access token, `pipeline:write` |
@@ -35,7 +34,7 @@ Any row without a source → print `Could not confirm from official docs: <facts
 ## 4. Print
 
 In this order, each step citing its source:
-1. Numbered UI steps in the Jira reference's order: trigger, tag condition, own-account exclusion, request.
+1. Numbered UI steps in the Jira reference's order: trigger, tag condition, request.
 2. The request body, copy-pasteable, with the tracker's placeholders for key and commenter.
 3. The token to create, its minimum scope, and where it is stored (the tracker's hidden field — never `embla.json`).
 4. Public tracker or repo per the docs → `Warning: anyone who can comment can start a run, including people outside your team. Each run spends API budget and pushes a branch.`

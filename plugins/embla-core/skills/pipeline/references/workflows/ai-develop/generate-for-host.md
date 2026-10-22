@@ -45,7 +45,7 @@ Done when every row has a value and a source. Any row unconfirmed → print `Can
 ## 3. Draft the pipeline file
 
 Start from the reference template and change only:
-- the trigger and job wrapper (inputs `ISSUE_KEY`, `COMMENTER_ID`; one shell for the whole sequence). Tracker and host on the same platform → the trigger is a comment event in this file, its condition matching `@claudedev` case-insensitively and excluding the run's own account;
+- the trigger and job wrapper (inputs `ISSUE_KEY`, `COMMENTER_ID`; one shell for the whole sequence). Tracker and host on the same platform → the trigger is a comment event in this file, its condition matching `@claudedev` case-insensitively;
 - AD1's key pattern, to the tracker's format;
 - `post_jira_comment` → `post_tracker_comment`, with the tracker's endpoint, payload and auth through `curl -K -` (C1);
 - the git credential helper and the host env in `.pipeline-env` (I2);

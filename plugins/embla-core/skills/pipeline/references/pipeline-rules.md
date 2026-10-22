@@ -155,9 +155,9 @@ The `ai-develop` pipeline (reference: `workflows/ai-develop/template.yml`) edits
 **AD2** Commits use the bot identity `"AI Autonomous Dev" <ai-autonomous-dev@noreply.embla.asia>`, set inside the `.pipeline-env` heredoc.
 - Verify: both `git config --global user.*` lines sit inside the heredoc.
 
-**AD3** No comment the run posts contains `@claudedev`, and the trigger excludes the run's own account.
-- Verify: the fallback and PR-failure comment bodies in the script omit the tag; the printed trigger guidance has the own-account exclusion.
-- Why: the trigger fires on any comment containing the tag, so echoing it loops.
+**AD3** No comment the run posts contains `@claudedev`.
+- Verify: the fallback and PR-failure comment bodies in the script omit the tag.
+- Why: the trigger fires on any comment containing the tag, so echoing it loops. It has no author condition, because the token's owner is usually the human commenting.
 
 **AD4** The model is pinned to the full ID in the reference template's `--model` (`claude-sonnet-5`).
 - Verify: the generated `--model` equals the reference template's.
