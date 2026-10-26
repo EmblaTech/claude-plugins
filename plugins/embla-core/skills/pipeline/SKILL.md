@@ -4,9 +4,9 @@ description: >
   Sets up and audits automated AI PR review in a project's CI pipeline on any code
   host — Bitbucket Pipelines and GitHub Actions from tested profiles, other hosts
   (GitLab CI, Azure Pipelines, …) generated against a security rules checklist —
-  writing the pipeline file and .mcp.json. Also adds
-  the Bitbucket-only ai-develop custom pipeline for autonomous Jira-triggered
-  development. Use when the user wants AI PR review in CI, asks "is my pipeline set
+  writing the pipeline file and .mcp.json. Also sets up ai-develop, the
+  @claudedev-triggered autonomous development pipeline, on any host and tracker,
+  with researched guidance for the tracker trigger. Use when the user wants AI PR review in CI, asks "is my pipeline set
   up right", mentions bitbucket-pipelines.yml, a GitHub Actions workflow, or ai-develop
   in the context of AI review, or is adding any pre-merge check (tests, security
   scans, linting) to a pipeline this skill owns. Invoked by embla-core:config Phase 5.
@@ -25,7 +25,7 @@ Every pipeline, on every host, satisfies [references/pipeline-rules.md](referenc
 /embla-core:pipeline check        → audit existing files against the rules
 ```
 
-**Scope:** this skill automates the AI PR Review step and the `ai-develop` custom pipeline only. When a developer wants another pre-merge check (unit tests, security scans, linting), say plainly that it isn't automated here, then help wire it up by hand under P1.
+**Scope:** this skill automates the AI PR Review step and the `ai-develop` pipeline only. When a developer wants another pre-merge check (unit tests, security scans, linting), say plainly that it isn't automated here, then help wire it up by hand under P1.
 
 ## Profiles
 
@@ -49,7 +49,7 @@ Pipeline setup:
 - [ ] 3. Gather values
 - [ ] 4. Tracker
 - [ ] 5. Write files
-- [ ] 6. ai-develop (Bitbucket only)
+- [ ] 6. ai-develop
 - [ ] 7. Completion output
 ```
 
@@ -99,35 +99,37 @@ For a known host, using the paths in `<provider>-setup-guide.md` → "Files":
 
 Done when each file is written or reported as skipped.
 
-### 6. ai-develop (Bitbucket only)
+### 6. ai-develop
 
-`repo.provider` is not `bitbucket` → print `ai-develop is available on Bitbucket only — skipped.` and continue to step 7.
-
-On Bitbucket, read [references/workflows/ai-develop/ai-develop-setup-guide.md](references/workflows/ai-develop/ai-develop-setup-guide.md), then ask, whatever happened to the AI PR Review step:
+Ask, whatever happened to the AI PR Review step:
 
 ```
-Set up the ai-develop pipeline for autonomous Jira-triggered development? (yes / skip)
+Set up the ai-develop pipeline for autonomous development triggered by @claudedev ticket comments? (yes / skip)
 ```
 
 - `skip` → print `Skipped. Run /embla-core:pipeline setup again any time to add this.` No files change.
-- `yes`:
-  1. `ai_develop_present` → print `ai-develop pipeline already present — no changes made.` and continue to step 7.
+- `yes`, **Bitbucket + Jira** → read [references/workflows/ai-develop/ai-develop-setup-guide.md](references/workflows/ai-develop/ai-develop-setup-guide.md), then:
+  1. `ai_develop_present` → print `ai-develop pipeline already present — no changes made.` and go to 4.
   2. Copy the `custom:` block verbatim from [references/workflows/ai-develop/template.yml](references/workflows/ai-develop/template.yml). Add `ai-develop:` beside any existing `custom:` entries, or add `pipelines: custom:` fresh. Write and print as in step 5.
-  3. Add the `atlassian` block from [references/workflows/ai-develop/mcp.json](references/workflows/ai-develop/mcp.json) to `.mcp.json` only if missing. This is the only path that adds it.
+  3. Add the `atlassian` block from [references/workflows/ai-develop/mcp.json](references/workflows/ai-develop/mcp.json) to `.mcp.json` only if missing.
   4. Print the extra variables, reusing `ATLASSIAN_SITE_NAME`/`ATLASSIAN_API_TOKEN` values already resolved this run:
      ```
      ai-develop requires these additional Bitbucket pipeline variables:
      ┌──────────────────────┬──────────┬─────────────────┬──────────────────────────────────────────────┐
      │ Variable             │ Required │ Suggested value │ Notes                                        │
      ├──────────────────────┼──────────┼─────────────────┼──────────────────────────────────────────────┤
-     │ JIRA_ISSUE_KEY       │ ✅       │ —               │ Supplied at trigger time (Jira automation or manual run) │
-     │ COMMENTER_ACCOUNT_ID │ optional │ —               │ Atlassian account id of whoever triggered the run; blank is handled │
-     │ SPRINT_NUMBER        │ ✅       │ —               │ The default branch has no sprint prefix, so develop-auto builds its branch name from this │
-     │ BITBUCKET_USERNAME   │ ✅       │ <resolved/—>    │ Account username (not email) — ai-develop's clone and git push use it │
+     │ JIRA_ISSUE_KEY       │ ✅       │ —               │ Supplied by the trigger (Jira automation or manual run) │
+     │ COMMENTER_ACCOUNT_ID │ optional │ —               │ Supplied by the trigger; blank is handled    │
+     │ BITBUCKET_USERNAME   │ ✅       │ <resolved/—>    │ Account username (not email) — ai-develop's git push uses it │
      │ ATLASSIAN_SITE_NAME  │ ✅       │ <resolved/—>    │ Shared with the Jira pre-fetch; also read by the atlassian MCP server │
      │ ATLASSIAN_API_TOKEN  │ ✅       │ set manually    │ Shared with the Jira pre-fetch; also read by the atlassian MCP server │
      └──────────────────────┴──────────┴─────────────────┴──────────────────────────────────────────────┘
      ```
+- `yes`, **any other host or tracker** → follow [references/workflows/ai-develop/generate-for-host.md](references/workflows/ai-develop/generate-for-host.md) to its end. An existing ai-develop pipeline → `ai-develop pipeline already present — no changes made.` (P2).
+
+Then, on either `yes` path, print the trigger setup from [references/workflows/ai-develop/trigger-guide.md](references/workflows/ai-develop/trigger-guide.md). For Jira it fills [references/trackers/jira/ai-develop-trigger.md](references/trackers/jira/ai-develop-trigger.md).
+
+Done when the pipeline is written or reported present, and the trigger guidance is printed.
 
 ### 7. Completion output
 
@@ -155,7 +157,7 @@ Audits the project's pipeline file and `.mcp.json` against the rules. Read-only:
 - `.claude/pr-review-tools.json` present → **obsolete**: `pr-review` now works from `--allowedTools` alone. Report: `Delete .claude/pr-review-tools.json once the pipeline's plugin pin is at or past the commit that stopped reading it — an older pin still reads it.`
 - `.mcp.json` env values are `${VAR}` placeholders (C3); servers are pinned (S3).
 
-**5. ai-develop (Bitbucket).** Only when a `pipelines: custom: ai-develop:` block exists — absence is never drift. Diff it against [references/workflows/ai-develop/template.yml](references/workflows/ai-develop/template.yml) with the same algorithm as 2, citing [references/workflows/ai-develop/ai-develop-setup-guide.md](references/workflows/ai-develop/ai-develop-setup-guide.md) for the reason. Then the `atlassian` server:
+**5. ai-develop.** Only when an ai-develop pipeline exists — absence is never drift. Bitbucket + Jira: diff the `pipelines: custom: ai-develop:` block against [references/workflows/ai-develop/template.yml](references/workflows/ai-develop/template.yml) with the same algorithm as 2, citing [references/workflows/ai-develop/ai-develop-setup-guide.md](references/workflows/ai-develop/ai-develop-setup-guide.md) for the reason. Generated (marked `# Generated by embla-core:pipeline for <host> ai-develop`): run the verify of every rule the AD section of `pipeline-rules.md` applies, comparing S1, S2 and AD4 values with the reference template. Then, on Bitbucket + Jira, the `atlassian` server:
 - ai-develop present, `atlassian` missing → `atlassian (Jira) MCP server missing — required by the ai-develop pipeline step, which needs a live Jira MCP server for the whole session. Add the block from references/workflows/ai-develop/mcp.json, or run /embla-core:pipeline setup and answer yes to the ai-develop prompt.`
 - ai-develop absent, `atlassian` present → `atlassian (Jira) MCP server present — AI PR Review pre-fetches Jira instead, and this repo has no ai-develop step, so the server adds five unused tool schemas to every review context. Remove it, or opt into ai-develop via setup.`
 

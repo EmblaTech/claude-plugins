@@ -76,4 +76,4 @@ Otherwise (P1, P2):
 2. Update the pin in `hosts/bitbucket/template.yml` and every other `hosts/*/template.yml` in the same PR. This only affects future `setup` runs; `check` compares generated hosts' S2 pin against the Bitbucket template.
 3. Existing consumers keep their pin (`setup` stops when the step exists). `/embla-core:pipeline check` reports the stale pin as **modified**; each repo updates its pipeline file by hand.
 
-The ai-develop template carries an independent pin and still clones from Bitbucket; bump it only for `develop-auto` changes (see `workflows/ai-develop/ai-develop-setup-guide.md`).
+The ai-develop template clones from the same GitHub repo but carries an independent pin; bump it only for `develop-auto` changes (see `workflows/ai-develop/ai-develop-setup-guide.md`).
