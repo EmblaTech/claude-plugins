@@ -1,16 +1,15 @@
 ---
 name: compact-agent-docs
-description: Compacts CLAUDE.md / AGENTS.md files and prunes redundant code comments, for a whole repo, a path, or a branch/PR diff. Gives every instruction line and comment a verdict, cuts what the code already shows, moves rare gotchas into a linked doc, and reports each cut. Use when asked to compact, slim or prune instruction files, or to clean the comments in a change.
-disable-model-invocation: true
+description: Compacts CLAUDE.md / AGENTS.md files and prunes redundant code comments, for a whole repo, a path, or a branch/PR diff. Gives every instruction line and comment a verdict, cuts what the code already shows, moves rare gotchas into a linked doc, and reports each cut. Use as a step of a code review on a branch or PR diff, or when asked to compact, slim or prune CLAUDE.md, agent docs or comments.
 ---
 
 # Compact CLAUDE.md and comments
 
 Always-loaded instructions hold only what the agent cannot find by looking; comments hold only what the nearby lines do not say.
 
-**Scope** is what the user names: the whole repo (default), a path, or a diff (branch, PR, "my changes"). In a diff, review the changed comments and the CLAUDE.md lines that name changed files or symbols.
+**Scope** is what the user names: the whole repo (default), a path, or a diff (branch, PR, "my changes"). Called from a code review, the scope is the branch diff. In a diff, review the changed comments and the CLAUDE.md lines that name changed files or symbols.
 
-**Delegate** steps 1 and 2 for a repo or path: one subagent per CLAUDE.md file and one per code folder for comments, each applying its edits and returning only its verdict table. The main session merges the tables into the step 3 report. A small diff runs inline.
+**Delegate** steps 1 and 2 for a repo or path: one subagent per CLAUDE.md file and one per code folder for comments, each with Bash for `git log -S` and `git blame`, applying its edits and returning only its verdict table. The main session merges the tables into the step 3 report. A small diff runs inline.
 
 ## 1. Verdict for every instruction line
 
@@ -27,7 +26,7 @@ Done when every line in scope has a verdict, and every cache, stale and duplicat
 
 ## 2. Verdict for every comment
 
-People read comments too, so the bar for deleting is narrow:
+People read comments too, so the bar for deleting is narrow. Change comment text only: code, whitespace and line endings stay byte for byte. Commented-out code is code; leave it unless the user asks.
 
 - **Delete** a comment that restates the name, the signature or the next line.
 - **Keep** nuance that saves the reader from reading past the nearby lines: the reason, the contract (order, units, assumptions), an edge case, surprising behaviour of other code. Shorten it to one line where it reads as well.
