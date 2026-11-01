@@ -17,7 +17,7 @@ A [Claude Code](https://docs.claude.com/en/docs/claude-code) **plugin marketplac
 | Plugin | Version | What it gives you |
 |---|---|---|
 | [`embla-core`](plugins/embla-core) | 1.6.1 | End-to-end dev lifecycle: Jira, story development, PR review, deploy, sprint planning, CI pipelines |
-| [`project-setup`](plugins/project-setup) | 0.3.1 | Audit a project's Claude Code setup, review session history, set up OpenWiki |
+| [`project-setup`](plugins/project-setup) | 0.4.0 | Audit a project's Claude Code setup, review session history, set up OpenWiki, compact CLAUDE.md files |
 | [`grc-gdpr`](plugins/grc-gdpr) | 1.0.4 | GDPR compliance: code/system audits, privacy notices, DPAs, DPIAs, article-cited Q&A (vendored, MIT) |
 
 Install only the plugins you need. Each one adds its skill descriptions to every session's context.
@@ -97,6 +97,7 @@ Plugins auto-update when their `version` changes in this repo.
 | `audit` | Ask to "audit my Claude Code setup" | Severity-tagged report covering settings placement, MCP health, permissions, plugin drift, stack coverage, and CLAUDE.md placement |
 | `session-review` | `/project-setup:session-review` | Review session history for context, delegation, verification, and memory discipline, with quoted citations |
 | `setup-openwiki` | `/project-setup:setup-openwiki` | Install LangChain OpenWiki's host-driven integration (no API key) |
+| `compact-agent-docs` | `/project-setup:compact-agent-docs` | Compact CLAUDE.md / AGENTS.md files and prune redundant code comments, for a repo, a path, or a branch diff |
 
 A `config` skill is planned. It will move here from `embla-core`.
 
