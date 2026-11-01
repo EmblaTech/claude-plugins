@@ -1,45 +1,45 @@
 ---
 name: compact-agent-docs
-description: Compacts CLAUDE.md / AGENTS.md files and prunes redundant code comments, for a whole repo, a path, or a branch/PR diff. Gives every instruction line and comment a verdict, cuts what the code already shows, moves rare gotchas into a linked doc, and reports each cut. Use as a step of a code review on a branch or PR diff, or when asked to compact, slim or prune CLAUDE.md, agent docs or comments.
+description: Makes CLAUDE.md / AGENTS.md files short and removes code comments that only repeat the code. Works on a whole repo, a path, or a branch/PR diff. Gives each instruction line and each comment a verdict, cuts what the code already shows, moves rare gotchas to a linked doc, and reports each cut. Use as a step of a code review on a branch or PR diff, or when asked to compact, slim or prune CLAUDE.md, agent docs or comments.
 ---
 
 # Compact CLAUDE.md and comments
 
-Always-loaded instructions hold only what the agent cannot find by looking; comments hold only what the nearby lines do not say.
+Keep in CLAUDE.md only what the agent cannot find in the code. Keep in a comment only what the nearby lines do not say.
 
-**Scope** is what the user names: the whole repo (default), a path, or a diff (branch, PR, "my changes"). Called from a code review, the scope is the branch diff. In a diff, review the changed comments and the CLAUDE.md lines that name changed files or symbols.
+**Scope.** Work on what the user names: the whole repo, a path, or a diff. The default is the whole repo. When a code review calls this skill, the scope is the branch diff. In a diff, check the changed comments. Also check the CLAUDE.md lines that name changed files or symbols.
 
-**Delegate** steps 1 and 2 for a repo or path: one subagent per CLAUDE.md file and one per code folder for comments, each with Bash for `git log -S` and `git blame`, applying its edits and returning only its verdict table. The main session merges the tables into the step 3 report. A small diff runs inline.
+**Subagents.** For a repo or a path, give steps 1 and 2 to subagents. Use one subagent for each CLAUDE.md file. Use one subagent for each code folder for comments. Give each subagent Bash for `git log -S` and `git blame`. Each subagent applies its edits and returns only its verdict table. Merge the tables into the step 3 report. For a small diff, do the work yourself.
 
-## 1. Verdict for every instruction line
+## 1. Give each instruction line a verdict
 
-Read the code each CLAUDE.md / AGENTS.md line talks about, then give it one verdict:
+For each CLAUDE.md / AGENTS.md line, read the code that the line is about. Then give the line one verdict:
 
-- **cache**: restates code, config, scripts or layout one lookup away. Cut. A pattern every neighbouring file of the same kind already shows is cache too: the agent copies neighbours.
-- **no-op**: the model does it by default, or it is standard practice for the stack. Cut, or collapse several into one leading-word line ("Playwright idioms apply: a logged-out context carries no `storageState`").
-- **convention**: the code shows it but does not enforce it; a change that breaks it would still compile and pass tests. Keep, as one positive line.
-- **gotcha**: a trap no code or config confesses, or the reason behind a choice. Keep. When only some tasks need it, create a linked doc next to that CLAUDE.md and move it there, behind one pointer line that front-loads the trigger and names each branch ("Before writing or fixing a spec, read `docs/gotchas.md`: navigation and slow loads, dialogs, streaming timing, MCP tools").
-- **stale**: no longer true, or names something that drifts (test numbers, line numbers). Fix to a stable name, or cut.
-- **duplicate**: the same meaning also lives in a code comment. Keep one copy: next to the code when it concerns one file, in CLAUDE.md when it crosses files.
+- **cache**: the line repeats code, config, scripts or folder layout. The agent finds this in one lookup. Cut the line. A pattern that all nearby files of the same type show is also cache, because the agent copies nearby files.
+- **default**: the model does this anyway, or it is standard practice for the stack. Cut the line. Or join several such lines into one short line with a known term, for example "Playwright idioms apply: a logged-out context has no `storageState`".
+- **convention**: a team rule that the code shows but does not enforce. A change that breaks it still compiles and passes tests. Keep it as one line.
+- **gotcha**: a trap that no code or config shows, or the reason for a choice. Keep it. If only some tasks need it, move it to a linked doc next to that CLAUDE.md. Create the doc. In CLAUDE.md, add one pointer line. Start the pointer with the trigger and name each topic, for example "Before you write or fix a spec, read `docs/gotchas.md`: navigation and slow loads, dialogs, streaming timing, MCP tools".
+- **stale**: the line is not true now, or it names a thing that changes (test numbers, line numbers). Change it to a stable name, or cut it.
+- **duplicate**: a code comment has the same meaning. Keep one copy. If it is about one file, keep the comment. If it is about many files, keep the CLAUDE.md line.
 
-Write every kept or rewritten rule as its target behaviour: "selectors live in the page object; specs only call its methods". A bare "not X" puts X in front of the agent, so keep a prohibition only as a hard guardrail, paired with its positive target. In the ftweb pilot the same rule passed 1/3 as "…not in specs" and 3/3 as the positive line.
+Write each kept rule as the action to do, for example "selectors live in the page object; specs only call its methods". A rule that says only "do not do X" makes the agent think of X. Use a prohibition only as a hard limit, and put the action to do next to it. In the ftweb pilot, "…not in specs" passed 1 of 3 runs. The same rule as an action passed 3 of 3.
 
-Done when every line in scope has a verdict, and every cache, stale and duplicate verdict names the file or command that proves it.
+This step is done when each line in scope has a verdict. Each cache, stale and duplicate verdict must name the file or command that proves it.
 
-## 2. Verdict for every comment
+## 2. Give each comment a verdict
 
-People read comments too, so the bar for deleting is narrow. Change comment text only: code, whitespace and line endings stay byte for byte. Commented-out code is code; leave it unless the user asks.
+People also read comments, so delete only a small set. Change only comment text. Keep code, whitespace and line endings exactly as they are. Commented-out code is code: do not change it unless the user asks.
 
-- **Delete** a comment that restates the name, the signature or the next line.
-- **Keep** nuance that saves the reader from reading past the nearby lines: the reason, the contract (order, units, assumptions), an edge case, surprising behaviour of other code. Shorten it to one line where it reads as well.
-- **History** ("added for X; before that…"): keep the nuance, replace the story with `why: <ticket>`. Find the ticket with `git log -S '<phrase>'`; the commit or its merge branch name carries the key.
+- **Delete** a comment that repeats the name, the signature or the next line.
+- **Keep** a comment that tells the reader something the nearby lines do not. Examples: the reason, the contract (order, units, assumptions), an edge case, or surprising behaviour of other code. If one line is enough, make it one line.
+- **History** ("added for X; before that…"): keep the useful fact and replace the story with `why: <ticket>`. To find the ticket, run `git log -S '<phrase>'`. The commit message or the merge branch name has the key.
 
-Done when every comment in scope has a verdict.
+This step is done when each comment in scope has a verdict.
 
 ## 3. Apply and report
 
-Before editing, commit any uncommitted changes `git status` shows as `checkpoint before compact-agent-docs`. Then edit the files directly and leave the edits uncommitted: `git diff` shows only the skill's changes and is the review. When the user asked for a proposal only, report without editing.
+Before you edit, run `git status`. If there are uncommitted changes, commit them as `checkpoint before compact-agent-docs`. Then edit the files. Do not commit your edits, so `git diff` shows only the changes of this skill. The user reviews that diff. If the user asked only for a proposal, report and do not edit.
 
-End with a short report of every cut, moved or shortened line and comment (`file:line`, verdict, proof), since the diff shows what changed but not why.
+At the end, give a short report. List each cut, moved or shortened line and comment with `file:line`, verdict and proof. The diff shows what changed, but the report shows why.
 
-When a cut-or-keep verdict is a guess and the user wants evidence, run the probe in [references/probe.md](references/probe.md). In diff scope, run it only on request.
+If a verdict is a guess and the user wants evidence, do the remove-and-test check in [references/remove-and-test.md](references/remove-and-test.md). In diff scope, do it only when the user asks.
