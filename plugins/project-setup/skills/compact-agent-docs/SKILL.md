@@ -22,6 +22,8 @@ Read the code each CLAUDE.md / AGENTS.md line talks about, then give it one verd
 - **stale**: no longer true, or names something that drifts (test numbers, line numbers). Fix to a stable name, or cut.
 - **duplicate**: the same meaning also lives in a code comment. Keep one copy: next to the code when it concerns one file, in CLAUDE.md when it crosses files.
 
+Write every kept or rewritten rule as its target behaviour: "selectors live in the page object; specs only call its methods". A bare "not X" puts X in front of the agent, so keep a prohibition only as a hard guardrail, paired with its positive target. In the ftweb pilot the same rule passed 1/3 as "…not in specs" and 3/3 as the positive line.
+
 Done when every line in scope has a verdict, and every cache, stale and duplicate verdict names the file or command that proves it.
 
 ## 2. Verdict for every comment
