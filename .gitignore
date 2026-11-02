@@ -53,6 +53,7 @@ docs/superpowers/
 
 # Git worktrees used for isolated plan execution
 .worktrees/
+.claude/worktrees/
 
 # pr-review eval fixtures (kept locally, not shared to remote)
 plugins/embla-core/skills/pr-review/evals/
