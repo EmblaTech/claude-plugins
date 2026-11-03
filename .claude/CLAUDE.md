@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## What this repo is
 
-A Claude Code **plugin marketplace** for the Embla organisation. It provides shared skills that other Embla repos install to get AI-assisted developer workflows (Jira integration, PR review, branch/commit conventions, sprint planning, deployment).
+A Claude Code **plugin marketplace** for the Embla organisation. It provides shared skills that other Embla repos install to get AI-assisted developer workflows (Jira integration, PR review, branch/commit conventions, sprint planning, deployment) and office automation for business teams.
 
 The marketplace manifest is `.claude-plugin/marketplace.json`. Each plugin lives in `plugins/<name>/`:
 
@@ -26,6 +26,7 @@ New plugins are added only when they ship at least one working skill — no plac
 | `embla-core` | End-to-end dev lifecycle: Jira, PR review, deploy, sprint planning | Active — full skill set (below) |
 | `project-setup` | Configure and audit a project's Claude Code setup; review session history for context/delegation/verification/memory discipline | Active — `audit`, `session-review`, `setup-openwiki`, `compact-agent-docs`; `config` (moving from `embla-core`) planned |
 | `grc-gdpr` | GDPR (EU privacy) compliance | Vendored from an MIT upstream with local citation patches — edit via re-sync + patches in `docs/grc-upstream.md`, not in place |
+| `office` | Office automation for HR, marketing and other business teams | Active — `greetings` (staff birthday/anniversary/holiday cards + email drafts) |
 
 GRC frameworks ship one plugin per framework so consumers only pay context for what they install; `docs/grc-upstream.md` covers the source commit, patches to re-apply, adding a framework, and re-sync.
 

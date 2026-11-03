@@ -19,6 +19,7 @@ A [Claude Code](https://docs.claude.com/en/docs/claude-code) **plugin marketplac
 | [`embla-core`](plugins/embla-core) | 1.6.1 | End-to-end dev lifecycle: Jira, story development, PR review, deploy, sprint planning, CI pipelines |
 | [`project-setup`](plugins/project-setup) | 0.4.0 | Audit a project's Claude Code setup, review session history, set up OpenWiki, compact CLAUDE.md files |
 | [`grc-gdpr`](plugins/grc-gdpr) | 1.0.4 | GDPR compliance: code/system audits, privacy notices, DPAs, DPIAs, article-cited Q&A (vendored, MIT) |
+| [`office`](plugins/office) | 0.1.0 | Office automation for HR and marketing: recurring staff greetings as branded cards and email drafts |
 
 Install only the plugins you need. Each one adds its skill descriptions to every session's context.
 
@@ -38,6 +39,7 @@ From inside Claude Code in the consuming repo:
 /plugin install embla-core@embla-claude-plugins
 /plugin install project-setup@embla-claude-plugins
 /plugin install grc-gdpr@embla-claude-plugins
+/plugin install office@embla-claude-plugins
 ```
 
 ### 3. Share the setup with your team (recommended)
@@ -108,6 +110,12 @@ A `config` skill is planned. It will move here from `embla-core`.
 | `gdpr-compliance` | Mention GDPR, data protection, DPIA, etc. | Audit code and systems, draft privacy notices and DPAs, review data flows, answer questions with article citations |
 
 This plugin is vendored from an MIT-licensed upstream with local citation patches. Don't edit it in place. Follow the re-sync process in [`docs/grc-upstream.md`](docs/grc-upstream.md).
+
+### `office`
+
+| Skill | Invocation | Purpose |
+|---|---|---|
+| `greetings` | `/office:greetings [YYYY-MM-DD]` or `/office:greetings setup` | Find the day's birthdays, work anniversaries and holidays, and write a branded card plus an email draft for each; a person reviews and sends |
 
 ## Repository layout
 

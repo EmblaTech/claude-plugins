@@ -20,6 +20,12 @@
       "source": "./plugins/grc-gdpr",
       "description": "GDPR compliance: code and system audits, privacy notices, DPAs, DPIAs, data flow reviews, article-cited Q&A",
       "license": "MIT"
+    },
+    {
+      "name": "office",
+      "source": "./plugins/office",
+      "description": "Office automation for HR and marketing: recurring staff greetings as branded cards and email drafts",
+      "license": "Apache-2.0"
     }
   ]
 }
