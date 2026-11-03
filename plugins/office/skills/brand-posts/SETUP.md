@@ -1,6 +1,6 @@
 # Setup
 
-Writes the project's config and templates so a plain `/office:greetings` run needs nothing else. Re-running setup overwrites the config; keep templates the user has edited unless they ask.
+Writes the project's config and templates so a plain `/office:brand-posts` run needs nothing else. Re-running setup overwrites the config; keep templates the user has edited unless they ask.
 
 ## 1. Discover sources
 

@@ -115,7 +115,7 @@ This plugin is vendored from an MIT-licensed upstream with local citation patche
 
 | Skill | Invocation | Purpose |
 |---|---|---|
-| `greetings` | `/office:greetings [YYYY-MM-DD]` or `/office:greetings setup` | Find the day's birthdays, work anniversaries and holidays, and write a branded card plus an email draft for each; a person reviews and sends |
+| `brand-posts` | `/office:brand-posts [YYYY-MM-DD]` or `/office:brand-posts setup` | Find the day's birthdays, work anniversaries and holidays, and write a branded card plus an email draft for each; a person reviews and sends |
 
 ## Repository layout
 

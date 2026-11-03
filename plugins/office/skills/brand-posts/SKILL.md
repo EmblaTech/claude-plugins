@@ -1,5 +1,5 @@
 ---
-name: greetings
+name: brand-posts
 description: Make today's staff greeting cards (birthdays, work anniversaries, holidays) and ready-to-send email drafts. Pass `setup` to configure a new project.
 disable-model-invocation: true
 ---
@@ -11,7 +11,7 @@ Turns the staff list into **greeting cards** and **email drafts** for one day. A
 ## Branch
 
 - Argument `setup`: follow [SETUP.md](SETUP.md) and stop.
-- Otherwise the argument is a date (`YYYY-MM-DD`, default today). Read `ai-designer.md` at the project root; if it is missing, say "run `/office:greetings setup` first" and stop.
+- Otherwise the argument is a date (`YYYY-MM-DD`, default today). Read `ai-designer.md` at the project root; if it is missing, say "run `/office:brand-posts setup` first" and stop.
 
 All paths come from `ai-designer.md` and resolve against the project root. The config is the single source of truth for where data lives.
 
