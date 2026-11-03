@@ -12,7 +12,7 @@ Status: draft, 2026-11-03. Owner: Ilya Ashikhmin. Implementer: Anjali Perera.
 - [Flows](#flows)
 - [Setup](#setup)
 - [Run](#run)
-- [Approval](#approval)
+- [Delivery](#delivery)
 - [Schedule and storage](#schedule-and-storage)
 - [Rules for every flow](#rules-for-every-flow)
 - [Dashboard](#dashboard)
@@ -69,10 +69,11 @@ Each `flow.md` sets:
 |---|---|
 | Trigger | `date-in-data` (a date field in a people list, e.g. birthday, join date), `event-list` (a CSV or a calendar, e.g. holidays, company events), `cadence` (e.g. every Monday, the 1st of each month), or other |
 | Data source | where the people or event data comes from |
-| Audience and channel | who gets it, and how: email, Teams, Slack, or other |
+| Audience | who gets it, e.g. the all-staff address, a Teams channel, the person |
+| Channel | email, Teams, Slack, or other |
+| Delivery | `draft`, `send`, `dashboard` or `files` (see [Delivery](#delivery)) |
 | Personalization | `template` (name, photo, standard text) or `personal` (text from available data, e.g. years of work, projects) |
 | Variants | 1 to 3 versions of each item |
-| Approval | `none`, `draft` or `dashboard` (see [Approval](#approval)) |
 | Schedule | how often the flow runs, e.g. daily, or weekly for the next 7 days |
 | Language | English, Norwegian, Sinhala, Tamil, or other |
 | Weekend rule | when an occasion falls on a weekend: the Friday before, the Monday after, or the same day |
@@ -88,7 +89,8 @@ Each `flow.md` sets:
 - **Templates.** Setup writes the templates for each flow, in the brand.
 - **Tools.** PNG export needs a headless browser (installed Edge or Chrome, or Playwright). Setup checks that one is present and helps install one if not.
 - **Schedule.** Setup offers to create a scheduled task for each flow (see [Schedule and storage](#schedule-and-storage)).
-- **Done** when every flow has a data source, a template, a channel, an approval mode and a schedule (or an explicit "none"), and the user has seen the config.
+- **Delivery.** Setup asks how each flow delivers (see [Delivery](#delivery)) and checks that the channel's connector can do it, e.g. that the mail connector can create drafts.
+- **Done** when every flow has a data source, a template, a channel, a delivery mode and a schedule (or an explicit "none"), and the user has seen the config.
 
 ## Run
 
@@ -97,19 +99,24 @@ Each `flow.md` sets:
 1. Find the items for the date (or the period, for a weekly run).
 2. Skip items in the journal and people on the opt-out list.
 3. Make the content: cards (HTML, plus PNG for chat channels) and message text, in the flow's language and personalization level, with the number of variants the flow sets.
-4. Act on the approval mode (see below).
-5. Write each item to `out/journal.csv`.
-6. Report what was made.
+4. Deliver each item through the flow's channel, in the flow's delivery mode (see [Delivery](#delivery)).
+5. Write each item and its delivery result to `out/journal.csv`.
+6. Report what was made and delivered.
 
-**Dry-run**: `--dry-run` makes the content for any date and sends nothing. Use it to test a flow.
+**Dry-run**: `--dry-run` makes the content for any date and delivers nothing. Use it to test a flow.
 
-## Approval
+## Delivery
 
-| Mode | What happens |
-|---|---|
-| `none` | The run sends the content. For simple template flows only. |
-| `draft` | The run makes a draft in Outlook, Teams or Slack. A person reviews and sends. **Default.** |
-| `dashboard` | The run puts the variants on the dashboard. A person picks one. A later run sends it. |
+Every flow ends with delivery. Setup sets the mode for each flow; the run never chooses it.
+
+| Mode | What the run does | Who approves |
+|---|---|---|
+| `draft` | Makes a draft in the channel, with the card attached, e.g. an Outlook draft. Sends nothing. **Default.** | The person who presses Send: sending is the approval. |
+| `send` | Sends the content. For simple template flows that need no check. | Nobody. |
+| `dashboard` | Puts the variants on the dashboard. A later run sends the chosen one. | The person who picks a variant. |
+| `files` | Writes the files to `out/` only. A person uses them by hand. | The person who uses them. |
+
+If a channel cannot hold a draft (for example Teams or Slack through some connectors), setup tells the user and offers another way, e.g. an email draft to the approver with the PNG, or `dashboard`.
 
 ## Schedule and storage
 
@@ -121,7 +128,7 @@ Each `flow.md` sets:
 
 - **Personal data (GDPR).** Birthdays and photos are personal data. Each project has an opt-out list: people on it get no content. Check the design with the `grc-gdpr` plugin.
 - **No duplicates.** `out/journal.csv` records date, flow, person or event, and status. A run skips items that are already in it. This also covers daily and weekly runs that overlap.
-- **Human sends by default.** Without approval mode `none`, nothing goes out until a person approves it.
+- **Human sends by default.** Without delivery mode `send`, nothing goes out until a person approves it.
 - **AI marker.** Every message ends with an AI marker line, set in `brand/brand.md`.
 
 ## Dashboard
@@ -143,6 +150,6 @@ No ticket yet.
 ## Tickets
 
 1. **Make `brand-posts` universal** (#37): everything in this PRD except [Dashboard](#dashboard) and [Later](#later).
-2. **Dashboard approval** (#38): the `dashboard` approval mode and the dashboard.
+2. **Dashboard approval** (#38): the `dashboard` delivery mode and the dashboard.
 
 🤖 Crafted by Claude AI
