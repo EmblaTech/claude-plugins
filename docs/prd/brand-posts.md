@@ -142,7 +142,7 @@ No ticket yet.
 
 ## Tickets
 
-1. **Make `brand-posts` universal**: everything in this PRD except [Dashboard](#dashboard) and [Later](#later).
-2. **Dashboard approval**: the `dashboard` approval mode and the dashboard.
+1. **Make `brand-posts` universal** (#37): everything in this PRD except [Dashboard](#dashboard) and [Later](#later).
+2. **Dashboard approval** (#38): the `dashboard` approval mode and the dashboard.
 
 🤖 Crafted by Claude AI
