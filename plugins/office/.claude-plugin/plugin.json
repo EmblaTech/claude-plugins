@@ -1,6 +1,6 @@
 {
   "name": "office",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Office automation for HR, marketing and other business teams: recurring staff greetings (birthdays, work anniversaries, holidays) as branded cards and email drafts that a person reviews and sends.",
   "license": "Apache-2.0"
 }
