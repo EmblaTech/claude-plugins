@@ -49,7 +49,7 @@ Both modes are in v2 scope (confirmed 2026-11-04). Build order: B first, then A 
 - `dsh:needs-you`: Claude is waiting on the user
 - `dsh:replied`: Claude answered in the thread and the user has not opened the card since
 - `dsh:status`: the single status issue (below)
-- `dsh:delete`: The user pressed ✕ on a task; the next run deletes the issue
+- `dsh:delete`: the user pressed ✕ on a task; the next run deletes the issue
 
 Track labels (Acme, Ops, …) are task taxonomy, not dashboard-specific, so they carry no prefix. *(My call; flag if you want them prefixed.)*
 
@@ -338,7 +338,7 @@ Collected from sessions 2026-11-01..04.
 - Cards for 7 days ahead. Full brief for today and the next working day, light cards collapsed for days 3–7.
 - What the user owes becomes tasks with the series label, shown under the card; the brief does not repeat them. A sync reads the series' tasks, open and closed, before adding one, so it never recreates a task the user already has or closed. The brief opens with what matters most, then what was decided and what others owe *(changed 2026-11-15, #169)*.
 - No "you rarely attend" flags.
-- Tooltips for unfamiliar terms and modules. Fastighet, Navtor and Agrando cards carry reminder context.
+- Tooltips for unfamiliar terms and modules. Client cards carry reminder context.
 - Focus on process, planning and AI, not app internals.
 - A comment on a future meeting is prep for its brief, filed into meeting notes after the meeting.
 - A meeting moved to another day gets a new card; comments stay on the old issue, which links to the new one.

@@ -6,7 +6,7 @@ Facts learned while building and running dashboard v2 that shape its mechanics. 
 
 **PR updated time** was checked on 12 PRs: two Bitbucket repos and GitHub `EmblaTech/claude-plugins`.
 - `updated_on` (Bitbucket) and `updated_at` (GitHub) moved with every comment, approval, change request, push and merge.
-  - Bitbucket `ftweb` PR 1440: an approval's `participated_on` equalled `updated_on` to the microsecond.
+  - A Bitbucket PR: an approval's `participated_on` equalled `updated_on` to the microsecond.
   - Bitbucket PR 1439: a comment bumped `updated_on` 17 ms later.
   - GitHub PR 39: a change-request review bumped `updated_at` one second later.
 - Not observed: a Bitbucket change request as the last event, and GitHub inline review comments.
