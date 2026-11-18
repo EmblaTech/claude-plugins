@@ -447,7 +447,8 @@ function themeBlocks(css) {
     "dark (data-theme)": body(/:root\[data-theme="dark"\]\s*\{([^}]*)\}/),
   };
 }
-for (const path of ["./theme.css", "../../dashboard/theme.css"]) {
+// Only the skill's own theme: a project's theme lives outside the plugin and is checked in that project.
+for (const path of ["./theme.css"]) {
   test("theme contract: " + path + " defines every required token in light, and every colour (only colours and elevation) in both dark blocks", () => {
     const req = required(), colours = req.filter(t => t.startsWith("--color-"));
     for (const [name, block] of Object.entries(themeBlocks(read(path)))) {
