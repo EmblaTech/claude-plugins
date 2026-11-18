@@ -24,7 +24,7 @@
     {
       "name": "office",
       "source": "./plugins/office",
-      "description": "Office automation for HR and marketing: recurring staff greetings as branded cards and email drafts",
+      "description": "Office automation for HR, marketing and individuals: recurring staff greetings as branded cards and email drafts, and a personal prep page for meetings, PRs and tasks",
       "license": "Apache-2.0"
     }
   ]
