@@ -1,0 +1,24 @@
+<title>Dashboard</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="theme.css">
+<link rel="stylesheet" href="base.css">
+<!-- The stored light/dark choice before first paint, so the page never flashes the other mode; app.js wires the switcher. -->
+<script>try { const t = localStorage.getItem("dashboard-v2.theme"); if (t === "light" || t === "dark") document.documentElement.dataset.theme = t; } catch {}</script>
+
+<main>
+  <header><h1 id="h">Dashboard</h1><div class="row"><span class="stamp" id="stamp">Loading…</span><span class="seg" id="theme" role="group" aria-label="Theme"><button type="button" class="mk" value="auto">Auto</button><button type="button" class="mk" value="light">Light</button><button type="button" class="mk" value="dark">Dark</button></span></div></header>
+  <nav class="tabs" role="tablist"><button type="button" role="tab" id="tab-cards">Cards</button><button type="button" role="tab" id="tab-assistant">Assistant</button></nav>
+  <div id="cards">
+    <nav class="jump" id="nav" aria-label="Sections"></nav>
+    <div id="banners"></div>
+    <div id="sections"></div>
+  </div>
+  <section id="assistant" hidden>
+    <div><h3 class="part">Cloud</h3><div id="tab-cloud"></div></div>
+    <div><h3 class="part">Local</h3><div id="tab-local"></div></div>
+  </section>
+</main>
+
+<script id="dsh-config" type="application/json">__DASHBOARD_CONFIG__</script>
+<script type="module" src="app.js"></script>
