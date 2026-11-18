@@ -1,9 +1,9 @@
 ---
-name: dashboard-v2
-description: Dashboard v2 (the user's prep page on a tracker). Use to refresh its meeting, PR and task cards, to follow up on the user's comments on cards, or to set the page up.
+name: organizer
+description: Keeps one person's Organizer dashboard, a claude.ai artifact prep page of meeting briefs, open pull requests and tasks on a tracker (GitHub issues or the artifact database). Use when the user wants to sync or refresh the page's meeting, PR or task cards, follow up on their comments on cards, add a task by instruction, or set up the Organizer, its sections, sources or theme.
 ---
 
-# Dashboard v2
+# Organizer
 
 The page is a claude.ai artifact that reads the **tracker** live and keeps no data of its own: it shows open records labelled `dsh:on`, writes the user's ✓ / ✕ / ⏸ clicks and comments straight back, and is never republished for data. So a run's job is the tracker: the right cards, current briefs, comments answered.
 
@@ -11,16 +11,16 @@ The skill holds only the mechanics. Everything about this project and this user 
 
 ## Commands
 
-The first word after `/dashboard-v2` picks the command; text is a command only when that word is `sync` or `setup` ([ADR 0009](https://github.com/EmblaTech/claude-plugins/blob/main/docs/dashboard-v2/adr/0009-one-change-driven-sync-with-intake.md)).
+The first word after `/office:organizer` picks the command; text is a command only when that word is `sync` or `setup` ([ADR 0009](https://github.com/EmblaTech/claude-plugins/blob/main/docs/dashboard-v2/adr/0009-one-change-driven-sync-with-intake.md)).
 
 | Command | Does |
 |---|---|
-| `/dashboard-v2` | Prints this table and the section ids from `dashboard.toml`; runs nothing. |
-| `/dashboard-v2 sync [section] [params]` | A **Sync**: run hourly, below. |
-| `/dashboard-v2 setup [text]` | [references/setup.md](references/setup.md); with text, a [targeted setup](references/setup.md#targeted-setup). |
-| `/dashboard-v2 <any other text>` | An instruction, below. |
+| `/office:organizer` | Prints this table and the section ids from `dashboard.toml`; runs nothing. |
+| `/office:organizer sync [section] [params]` | A **Sync**: run hourly, below. |
+| `/office:organizer setup [text]` | [references/setup.md](references/setup.md); with text, a [targeted setup](references/setup.md#targeted-setup). |
+| `/office:organizer <any other text>` | An instruction, below. |
 
-## `/dashboard-v2 sync [section] [params]`
+## `/office:organizer sync [section] [params]`
 
 Every Sync run is change-driven: each source is read once, since its own cursor, and every section works from what the sources returned. With a section id, only that section is collected; the params are free text for its collector, e.g. `sync meetings high priority only`.
 
@@ -40,10 +40,10 @@ Every Sync run is change-driven: each source is read once, since its own cursor,
 
 The first step of a sync, before any tracker call. When the storage reference defines `quota()`, check it: below the reference's threshold the run skips, with no tracker work, no scheduled task and no PushNotification, and its whole report is the reference's one skip line. The next Sync run catches up, since it reads everything since the cursors. A storage mode with no `quota()` has no gate.
 
-## `/dashboard-v2 <any other text>`
+## `/office:organizer <any other text>`
 
 An instruction, e.g. `add a task to call the supplier`: the same request as the Assistant tab's Local input, but the user is here, so carry it out now in this session with local tools, by the rules of an [agent task](references/comments.md#agent-tasks) minus the card: no `ready-for-agent` card, no claim. Report what you did, with links to any card you created or changed.
 
 ## Page
 
-The page is six files in this folder: `page.html` (markup and config), `base.css` (layout), `theme.css` (the default **Theme**: token values, light and dark), `logic.js` (pure logic), `tracker.js` (the tracker contract, one implementation per storage mode) and `app.js` (DOM and wiring); setup fills and publishes them as one artifact, the Theme taken from `.claude/dashboard/theme.css`. It has two tabs, **Cards** and **Assistant**; every card and the Assistant tab end with **Cloud** (a chat on the artifact `sample` capability, kept in the artifact `db`, whose rules turn setup bakes in from [references/assistant.md](references/assistant.md)) and **Local** (the card's comments). The page's tools fix the mechanics, write through the same tracker contract as the cards, read the repo but never write it, and put any other connector write behind a click. The page never answers card comments: only a sync does. `node --test "plugins/office/skills/dashboard-v2/*.test.mjs"` from the repo root covers `logic.js`, both storage modes of `tracker.js` and the Theme contract (no colour outside a Theme, every Theme complete in light, colours only in dark). Run it after any change to the page files or a Theme.
+The page is six files in this folder: `page.html` (markup and config), `base.css` (layout), `theme.css` (the default **Theme**: token values, light and dark), `logic.js` (pure logic), `tracker.js` (the tracker contract, one implementation per storage mode) and `app.js` (DOM and wiring); setup fills and publishes them as one artifact, the Theme taken from `.claude/dashboard/theme.css`. It has two tabs, **Cards** and **Assistant**; every card and the Assistant tab end with **Cloud** (a chat on the artifact `sample` capability, kept in the artifact `db`, whose rules turn setup bakes in from [references/assistant.md](references/assistant.md)) and **Local** (the card's comments). The page's tools fix the mechanics, write through the same tracker contract as the cards, read the repo but never write it, and put any other connector write behind a click. The page never answers card comments: only a sync does. `node --test "plugins/office/skills/organizer/*.test.mjs"` from the repo root covers `logic.js`, both storage modes of `tracker.js` and the Theme contract (no colour outside a Theme, every Theme complete in light, colours only in dark). Run it after any change to the page files or a Theme.

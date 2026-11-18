@@ -4,7 +4,7 @@
 <link rel="stylesheet" href="theme.css">
 <link rel="stylesheet" href="base.css">
 <!-- The stored light/dark choice before first paint, so the page never flashes the other mode; app.js wires the switcher. -->
-<script>try { const t = localStorage.getItem("dashboard-v2.theme"); if (t === "light" || t === "dark") document.documentElement.dataset.theme = t; } catch {}</script>
+<script>try { const t = localStorage.getItem("organizer.theme"); if (t === "light" || t === "dark") document.documentElement.dataset.theme = t; } catch {}</script>
 
 <main>
   <header><h1 id="h">Dashboard</h1><div class="row"><span class="stamp" id="stamp">Loading…</span><span class="seg" id="theme" role="group" aria-label="Theme"><button type="button" class="mk" value="auto">Auto</button><button type="button" class="mk" value="light">Light</button><button type="button" class="mk" value="dark">Dark</button></span></div></header>

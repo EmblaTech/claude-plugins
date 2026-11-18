@@ -1,6 +1,6 @@
 {
   "name": "office",
   "version": "0.2.0",
-  "description": "Office automation for HR, marketing and other business teams: recurring staff greetings (birthdays, work anniversaries, holidays) as branded cards and email drafts that a person reviews and sends, and a personal prep page with meeting briefs, open pull requests and tasks, kept on a tracker (GitHub issues or the artifact database) and synced hourly from calendar, mail, Teams and PRs.",
+  "description": "Office automation for HR, marketing and other business teams: recurring staff greetings (birthdays, work anniversaries, holidays) as branded cards and email drafts that a person reviews and sends, and the Organizer, a personal prep page with meeting briefs, open pull requests and tasks, kept on a tracker (GitHub issues or the artifact database) and synced hourly from calendar, mail, Teams and PRs.",
   "license": "Apache-2.0"
 }

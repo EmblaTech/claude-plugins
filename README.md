@@ -116,7 +116,7 @@ This plugin is vendored from an MIT-licensed upstream with local citation patche
 | Skill | Invocation | Purpose |
 |---|---|---|
 | `brand-posts` | `/office:brand-posts [YYYY-MM-DD]` or `/office:brand-posts setup` | Find the day's birthdays, work anniversaries and holidays, and write a branded card plus an email draft for each; a person reviews and sends |
-| `dashboard-v2` | `/office:dashboard-v2 sync [section]`, `/office:dashboard-v2 setup` or `/office:dashboard-v2 <instruction>` | Keep one person's prep page (a claude.ai artifact) of meeting briefs, open PRs and tasks on a tracker (GitHub issues or the artifact database); an hourly sync updates the cards and follows up on the user's comments |
+| `organizer` | `/office:organizer sync [section]`, `/office:organizer setup` or `/office:organizer <instruction>` | Keep one person's Organizer dashboard, a prep page (a claude.ai artifact) of meeting briefs, open PRs and tasks on a tracker (GitHub issues or the artifact database); an hourly sync updates the cards and follows up on the user's comments |
 
 ## Repository layout
 

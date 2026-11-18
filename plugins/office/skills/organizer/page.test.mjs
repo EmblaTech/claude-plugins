@@ -1,5 +1,5 @@
 // Tests for the page's pure logic (logic.js) and its Theme contract (ADR 0006).
-// Run from the repo root: node --test "plugins/office/skills/dashboard-v2/*.test.mjs"
+// Run from the repo root: node --test "plugins/office/skills/organizer/*.test.mjs"
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";

@@ -100,7 +100,7 @@ export function githubTracker({ call, owner, repo, server = "github" }) {
     failText: e => ({
       consent_required: "no permission for the GitHub connector: allow it at the next prompt",
       approval_required: "no permission for the GitHub connector",
-      not_in_manifest: "tool not declared in the artifact: run /dashboard-v2 setup republish the page",
+      not_in_manifest: "tool not declared in the artifact: run /office:organizer setup republish the page",
       server_not_connected: "the GitHub connector is not connected in claude.ai",
       server_not_found: "connector \"" + server + "\" not found in claude.ai",
       needs_reauth: "the GitHub connector asks to sign in again",
@@ -179,7 +179,7 @@ export function artifactDbTracker({ db, now = () => new Date().toISOString(), ra
     setField: guard((key, name, value) => docOf(key).update({ [name]: value ?? null, updated: now() })),
     failText: e => ({
       resource_exhausted: "the db's rate limit: slowing down",
-      quota_exceeded: "the db is full: turn overflow on (run /dashboard-v2 setup)",
+      quota_exceeded: "the db is full: turn overflow on (run /office:organizer setup)",
       not_found: "the record is gone",
       not_granted: "the page has no access to its db",
       revoked: "the page lost access to its db",

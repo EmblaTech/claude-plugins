@@ -60,7 +60,7 @@ import { githubTracker, artifactDbTracker } from "./tracker.js";
   const stale = () => !LOAD_ERR && DSH.isStale(STATUS?.meta.updated, Date.now(), CFG.staleHours || 26);
 
   // ---- Filters: a section with `filters` gets author / repo / last-activity chips, at most one of each on.
-  const FKEY = "dashboard-v2.filter";
+  const FKEY = "organizer.filter";
   const F = (() => { try { return JSON.parse(localStorage.getItem(FKEY) || "{}"); } catch { return {}; } })();
   const fget = id => Object.assign({ author: "", repo: "", age: "all" }, F[id]);
   const fset = (id, k, v) => { F[id] = Object.assign(fget(id), { [k]: v }); try { localStorage.setItem(FKEY, JSON.stringify(F)); } catch {} render(true); };
@@ -475,7 +475,7 @@ import { githubTracker, artifactDbTracker } from "./tracker.js";
   }
 
   // ---- Tabs: Cards (the dashboard) and Assistant; the open tab is remembered per viewer.
-  const TKEY = "dashboard-v2.tab";
+  const TKEY = "organizer.tab";
   const showTab = id => {
     ["cards", "assistant"].forEach(t => { document.getElementById(t).hidden = t !== id; document.getElementById("tab-" + t).setAttribute("aria-selected", String(t === id)); });
     try { localStorage.setItem(TKEY, id); } catch {}
@@ -486,7 +486,7 @@ import { githubTracker, artifactDbTracker } from "./tracker.js";
 
   // ---- Theme switcher: Auto / Light / Dark, remembered per viewer; `data-theme` on <html> picks the Theme's block,
   // none follows the system. page.html's inline script applies the stored choice before first paint.
-  const THKEY = "dashboard-v2.theme";
+  const THKEY = "organizer.theme";
   const setTheme = (t, save) => {
     if (t === "auto") delete document.documentElement.dataset.theme; else document.documentElement.dataset.theme = t;
     document.querySelectorAll("#theme button").forEach(b => b.setAttribute("aria-pressed", String(b.value === t)));
@@ -888,7 +888,7 @@ import { githubTracker, artifactDbTracker } from "./tracker.js";
     ta.placeholder = "A task for Claude with local tools: what to do and what done looks like. The next sync takes it and reports in the card's comments.";
     send.type = "button"; send.title = "Ctrl+Enter";
     row.append(send, msg); box.append(ta, row);
-    if (!CFG.agentAssignee) { ta.disabled = send.disabled = true; msg.textContent = "No agent-assignee in the config: run /dashboard-v2 setup agent assignee."; return; }
+    if (!CFG.agentAssignee) { ta.disabled = send.disabled = true; msg.textContent = "No agent-assignee in the config: run /office:organizer setup agent assignee."; return; }
     onCtrlEnter(ta, () => send.click());
     send.onclick = async () => {
       const text = ta.value.trim(); if (!text || send.disabled) return;
@@ -935,7 +935,7 @@ import { githubTracker, artifactDbTracker } from "./tracker.js";
       branchFound();
       LOAD_ERR = GITHUB ? "the page has no connector access (the mcp capability is not available in this window)"
         : CFG.storage === "artifact-db" ? "the page has no access to its db (the db capability is not available in this window)"
-        : "storage \"" + CFG.storage + "\" is not one the page can read: run /dashboard-v2 setup";
+        : "storage \"" + CFG.storage + "\" is not one the page can read: run /office:organizer setup";
       render(true); return;
     }
     // Once per page open, alongside the first poll: where repo reads go, and the connector tools setup gave the assistant.

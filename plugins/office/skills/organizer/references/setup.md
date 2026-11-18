@@ -46,23 +46,23 @@ Summarise what is there and what is missing. Then go section by section, one ans
    The set is the whole declaration: one left out is revoked. `db` keeps the Cloud conversations (`cloud/tab`, `cloud/card-<n>`), shared by every viewer of the page, and in artifact-db mode the tracker's `records/`.
    No `artifact-url` yet: publish a new artifact with `icon: "calendar"` and write its URL back to `dashboard.toml`. No Artifact tool in this session: say so and go on.
 5. **Schedule.** Routines need Claude Desktop's `scheduled-tasks` tools. Without them, recommend rerunning setup from Desktop or print the routine for the user to add by hand. With them, offer to install and do it on a yes, skipping a routine some task's prompt already runs; a separate daily routine that writes the same notes (a digest) is retired in the same change, so no hour has two writers:
-   - **Sync:** one task, `dashboard-v2-update`, running `/dashboard-v2 sync` hourly (`0 * * * *`). Every Sync run is change-driven, so a quiet hour costs one cheap check per source.
+   - **Sync:** one task, `organizer-update`, running `/office:organizer sync` hourly (`0 * * * *`). Every Sync run is change-driven, so a quiet hour costs one cheap check per source.
    - **Permissions:** unattended runs stall on a prompt; name the tools the runs use so the user can allow them, as the storage reference's Setup says.
    - **Notifications:** Desktop shows a "task complete" banner after every run, several when a run ends more than one turn, and it can only be turned off for all sessions. Runs push on their own when something needs the user or fails, so offer to set `task_complete_notifications` to off (ccd_settings), saying it also silences the user's interactive sessions finishing.
 
 ## 4. Done
 
-Offer to run the first `/dashboard-v2 sync` now, so the page does not open empty; run it on a yes. In artifact-db mode, run it without asking: setup is done only when one Sync run finishes without errors. Report what was created, what already existed, and the page link. Then tell the user how to live with it:
+Offer to run the first `/office:organizer sync` now, so the page does not open empty; run it on a yes. In artifact-db mode, run it without asking: setup is done only when one Sync run finishes without errors. Report what was created, what already existed, and the page link. Then tell the user how to live with it:
 - **Cloud and Local:** every card and the Assistant tab end with two parts. **Cloud** is a chat with Claude in the page: it answers, reads the repo on the chosen branch and the chosen connectors, and changes something (a task, a comment, ✓ / ✕ / ⏸, a draft) only when asked; a draft or message waits for a click on its preview. The last conversation stays until **New conversation**. It runs on the viewer's Claude plan, only while the page is open; claude.ai asks once to allow Claude for the page. **Local** is the card's comments, for work that needs the user's machine; on the Assistant tab it creates an agent task, which the sync claims, carries out and reports on in the card's comments.
 - **Comments on cards:** a comment, written on the page or straight in the tracker, is a prompt for the next sync, which acts on it with local tools (notes, repo, messages) and answers with one signed reply in the same thread, within the hour. The page itself never answers comments.
 - **What runs:** one sync every hour answers comments and updates the cards whose sources changed since the last run, only while Desktop is open. In github mode, the first time the page opens, claude.ai asks once to allow the tracker's connector.
 - **Where problems show:** a banner on the page from the status record, a warning when no run has written it for `stale-hours`, and one push per new problem.
 - **What to tune:** a section's prompt in `.claude/dashboard/sections/` for what it collects and how; `dashboard.toml` for filters, window and signature; the project's `CLAUDE.md` for facts other work shares. A comment on a card for a one-off.
-- **When to rerun setup:** a new section or source, a new tracker, or a lost page; `/dashboard-v2 setup <what to change>` for one change, e.g. `setup make the theme lighter`.
+- **When to rerun setup:** a new section or source, a new tracker, or a lost page; `/office:organizer setup <what to change>` for one change, e.g. `setup make the theme lighter`.
 
 ## Targeted setup
 
-`/dashboard-v2 setup <text>` (e.g. `make the theme lighter`, `add a section`, `add a source to the prs section`) runs only the steps the text touches. Explore only what those steps need, take the text as the answer to their question (ask only what it leaves open), write what they write, and when the change reaches the page (a Theme, a page setting, a section's title or flags), fill and publish it as in **Page** and **Publish** of Write: the page is replaced, so it is filled, translated and declared exactly as in a full setup. Report what changed. Text that matches no step: ask what to change rather than running the full setup.
+`/office:organizer setup <text>` (e.g. `make the theme lighter`, `add a section`, `add a source to the prs section`) runs only the steps the text touches. Explore only what those steps need, take the text as the answer to their question (ask only what it leaves open), write what they write, and when the change reaches the page (a Theme, a page setting, a section's title or flags), fill and publish it as in **Page** and **Publish** of Write: the page is replaced, so it is filled, translated and declared exactly as in a full setup. Report what changed. Text that matches no step: ask what to change rather than running the full setup.
 
 ## Sources
 
@@ -86,4 +86,4 @@ The **Theme** is `theme.css`, token values only; the **Style source** is the DES
 - **Fonts** from Google Fonts only, the one font host the artifact loads, in one `@import` with every family and weight the Theme uses. A family missing there gets its nearest Google Fonts match, reported to the user.
 - **Shape** as the skill's `theme.css`: the import; a comment naming the Style source and every derived value and font substitution (a derived value also gets `/* derived */` beside it); the light `:root` block; the colours in both dark blocks.
 
-Done when `node --test "plugins/office/skills/dashboard-v2/*.test.mjs"` from the repo root passes (it checks the config's `theme.css`), every contrast pair holds, and the user has the list of derived values, contrast fixes and font substitutions.
+Done when `node --test "plugins/office/skills/organizer/*.test.mjs"` from the repo root passes (it checks the config's `theme.css`), every contrast pair holds, and the user has the list of derived values, contrast fixes and font substitutions.
