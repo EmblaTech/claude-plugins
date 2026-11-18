@@ -66,8 +66,9 @@ if (process.argv[1] && import.meta.url === (await import("node:url")).pathToFile
   const { execFileSync } = await import("node:child_process");
   const fs = await import("node:fs");
   const args = process.argv.slice(2), at = args.indexOf("--repo");
-  const gh = a => execFileSync("gh", a, { encoding: "utf8" });
+  const gh = a => execFileSync("gh", a, { encoding: "utf8", stdio: ["ignore", "pipe", "pipe"] });
   const io = {
+    // gh lists 30 labels by default; one oz:mtg/<series> label per meeting series can pass that, so ask for all.
     listLabels: async r => JSON.parse(gh(["label", "list", "--repo", r, "--limit", "1000", "--json", "name"])).map(l => l.name),
     editLabel: async (r, from, to) => gh(["label", "edit", from, "--name", to, "--repo", r]),
     exists: p => fs.existsSync(p),
@@ -75,6 +76,11 @@ if (process.argv[1] && import.meta.url === (await import("node:url")).pathToFile
     move: (from, to) => fs.renameSync(from, to),
     log: line => console.log(line),
   };
-  const conflicts = await migrate({ dryRun: args.includes("--dry-run"), repo: at >= 0 ? args[at + 1] : undefined }, io);
-  process.exitCode = conflicts ? 1 : 0;
+  try {
+    const conflicts = await migrate({ dryRun: args.includes("--dry-run"), repo: at >= 0 ? args[at + 1] : undefined }, io);
+    process.exitCode = conflicts ? 1 : 0;
+  } catch (e) {
+    console.error(`migration stopped: ${(e.stderr || e.message || e).toString().trim()}\nNeeds the gh CLI, logged in (gh auth login), run from the project root. What is done stays done; rerun to finish.`);
+    process.exitCode = 2;
+  }
 }
