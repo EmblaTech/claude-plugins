@@ -1,6 +1,6 @@
 # Storage mode: artifact-db
 
-How the [tracker contract](../tracker.md) runs on the dashboard page's own artifact db, for `storage = "artifact-db"` in `dashboard.toml`. A record is one document `records/<key>` in the db of the artifact at `artifact-url`; the Cloud conversations live in the same db under `cloud/`. Runs read and write with the `ArtifactData` tool, passing `artifact-url` as `url`; the page uses its own `db` capability. Design: [#224](https://github.com/Debatt-AS/embla-docs/issues/224), [#225](https://github.com/Debatt-AS/embla-docs/issues/225), [#226](https://github.com/Debatt-AS/embla-docs/issues/226); live checks in [findings](../../../../../docs/dashboard-v2/findings.md) (2026-11-18).
+How the [tracker contract](../tracker.md) runs on the dashboard page's own artifact db, for `storage = "artifact-db"` in `dashboard.toml`. A record is one document `records/<key>` in the db of the artifact at `artifact-url`; the Cloud conversations live in the same db under `cloud/`. Runs read and write with the `ArtifactData` tool, passing `artifact-url` as `url`; the page uses its own `db` capability. Live checks in [findings](https://github.com/EmblaTech/claude-plugins/blob/main/docs/dashboard-v2/findings.md) (2026-11-18).
 
 ## Writes
 

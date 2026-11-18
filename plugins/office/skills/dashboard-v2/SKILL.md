@@ -11,7 +11,7 @@ The skill holds only the mechanics. Everything about this project and this user 
 
 ## Commands
 
-The first word after `/dashboard-v2` picks the command; text is a command only when that word is `sync` or `setup` ([ADR 0009](../../../docs/dashboard-v2/adr/0009-one-change-driven-sync-with-intake.md)).
+The first word after `/dashboard-v2` picks the command; text is a command only when that word is `sync` or `setup` ([ADR 0009](https://github.com/EmblaTech/claude-plugins/blob/main/docs/dashboard-v2/adr/0009-one-change-driven-sync-with-intake.md)).
 
 | Command | Does |
 |---|---|
@@ -42,8 +42,8 @@ The first step of a sync, before any tracker call. When the storage reference de
 
 ## `/dashboard-v2 <any other text>`
 
-An instruction, e.g. `add a task to call Tharsan`: the same request as the Assistant tab's Local input, but the user is here, so carry it out now in this session with local tools, by the rules of an [agent task](references/comments.md#agent-tasks) minus the card: no `ready-for-agent` card, no claim. Report what you did, with links to any card you created or changed.
+An instruction, e.g. `add a task to call the supplier`: the same request as the Assistant tab's Local input, but the user is here, so carry it out now in this session with local tools, by the rules of an [agent task](references/comments.md#agent-tasks) minus the card: no `ready-for-agent` card, no claim. Report what you did, with links to any card you created or changed.
 
 ## Page
 
-The page is six files in this folder: `page.html` (markup and config), `base.css` (layout), `theme.css` (the default **Theme**: token values, light and dark), `logic.js` (pure logic), `tracker.js` (the tracker contract, one implementation per storage mode) and `app.js` (DOM and wiring); setup fills and publishes them as one artifact, the Theme taken from `.claude/dashboard/theme.css`. It has two tabs, **Cards** and **Assistant**; every card and the Assistant tab end with **Cloud** (a chat on the artifact `sample` capability, kept in the artifact `db`, whose rules turn setup bakes in from [references/assistant.md](references/assistant.md)) and **Local** (the card's comments). The page's tools fix the mechanics, write through the same tracker contract as the cards, read the repo but never write it, and put any other connector write behind a click. The page never answers card comments: only a sync does. `node --test ".claude/skills/dashboard-v2/*.test.mjs"` from the repo root covers `logic.js`, both storage modes of `tracker.js` and the Theme contract (no colour outside a Theme, every Theme complete in light, colours only in dark). Run it after any change to the page files or a Theme.
+The page is six files in this folder: `page.html` (markup and config), `base.css` (layout), `theme.css` (the default **Theme**: token values, light and dark), `logic.js` (pure logic), `tracker.js` (the tracker contract, one implementation per storage mode) and `app.js` (DOM and wiring); setup fills and publishes them as one artifact, the Theme taken from `.claude/dashboard/theme.css`. It has two tabs, **Cards** and **Assistant**; every card and the Assistant tab end with **Cloud** (a chat on the artifact `sample` capability, kept in the artifact `db`, whose rules turn setup bakes in from [references/assistant.md](references/assistant.md)) and **Local** (the card's comments). The page's tools fix the mechanics, write through the same tracker contract as the cards, read the repo but never write it, and put any other connector write behind a click. The page never answers card comments: only a sync does. `node --test "plugins/office/skills/dashboard-v2/*.test.mjs"` from the repo root covers `logic.js`, both storage modes of `tracker.js` and the Theme contract (no colour outside a Theme, every Theme complete in light, colours only in dark). Run it after any change to the page files or a Theme.

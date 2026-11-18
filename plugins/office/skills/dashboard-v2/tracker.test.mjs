@@ -1,5 +1,5 @@
 // The tracker contract on the page: both storage modes, run against fakes of their transport.
-// node --test ".claude/skills/dashboard-v2/*.test.mjs"
+// Run from the repo root: node --test "plugins/office/skills/dashboard-v2/*.test.mjs"
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { githubTracker, artifactDbTracker } from "./tracker.js";
@@ -60,12 +60,12 @@ const META = { key: "task_x", section: "tasks", lead: "20.11" };
 const ISSUE = {
   number: 7, title: "Send report", state: "OPEN", updated_at: "2026-11-17T09:00:00Z", comments: 2,
   body: "## Brief\nDo it.\n\n<!-- dsh " + JSON.stringify(META) + " -->",
-  labels: [{ name: "dsh:task" }, { name: "dsh:on" }, { name: "FT" }],
+  labels: [{ name: "dsh:task" }, { name: "dsh:on" }, { name: "Ops" }],
   field_values: [{ field: "Priority", value: "High" }, { field: "Target date", value: "2026-11-20T00:00:00Z" }, { field: "Start date", value: "2026-11-19" }],
 };
 const DOC = {
   key: "task_x", title: "Send report", body: "## Brief\nDo it.", meta: { section: "tasks", lead: "20.11" },
-  labels: ["dsh:task", "dsh:on", "FT"], priority: "High", targetDate: "2026-11-20", startDate: "2026-11-19",
+  labels: ["dsh:task", "dsh:on", "Ops"], priority: "High", targetDate: "2026-11-20", startDate: "2026-11-19",
   state: "open", type: null, parent: null, blockedBy: [], assignee: null, updated: "2026-11-17T09:00:00Z",
 };
 
@@ -78,7 +78,7 @@ test("contract: list gives the same record in both modes", async () => {
   const ad = dbTracker({ "records/task_x": DOC }).tracker;
   const [a] = await gh.list({ labels: ["dsh:on"] }), [b] = await ad.list({ labels: ["dsh:on"] });
   const want = { key: "task_x", title: "Send report", body: "## Brief\nDo it.", meta: { key: "task_x", section: "tasks", lead: "20.11" },
-    labels: ["dsh:task", "dsh:on", "FT"], priority: "High", targetDate: "2026-11-20", startDate: "2026-11-19", state: "open" };
+    labels: ["dsh:task", "dsh:on", "Ops"], priority: "High", targetDate: "2026-11-20", startDate: "2026-11-19", state: "open" };
   assert.deepEqual(shared(a), want);
   assert.deepEqual(shared(b), want);
   assert.equal(a.id, 7); assert.equal(b.id, "task_x");

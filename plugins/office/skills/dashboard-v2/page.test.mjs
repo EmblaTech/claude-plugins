@@ -1,5 +1,5 @@
 // Tests for the page's pure logic (logic.js) and its Theme contract (ADR 0006).
-// Run: node --test .claude/skills/dashboard-v2/page.test.mjs
+// Run from the repo root: node --test "plugins/office/skills/dashboard-v2/*.test.mjs"
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
@@ -202,11 +202,11 @@ test("assistant: trimming keeps the rules turn first and drops the oldest turns"
   assert.ok(bytes(out) <= 100);
 });
 
-test("assistant: trimming counts UTF-8 bytes, so Cyrillic weighs double", () => {
+test("assistant: trimming counts UTF-8 bytes, so accented letters weigh double", () => {
   const rules = turn("user", "R");
-  const history = [turn("user", "я".repeat(30)), turn("assistant", "ok"), turn("user", "ещё")];
-  // 30 Cyrillic letters are 60 bytes: over a 50-byte budget, though only 30 characters.
-  assert.deepEqual(DSH.trimTurns(rules, history, 50).map(t => t.content), ["R", "ok", "ещё"]);
+  const history = [turn("user", "é".repeat(30)), turn("assistant", "ok"), turn("user", "déjà")];
+  // 30 accented letters are 60 bytes: over a 50-byte budget, though only 30 characters.
+  assert.deepEqual(DSH.trimTurns(rules, history, 50).map(t => t.content), ["R", "ok", "déjà"]);
 });
 
 test("assistant: trimming never drops the newest user turn", () => {
@@ -218,24 +218,24 @@ test("assistant: trimming never drops the newest user turn", () => {
 const CTX = { stamp: "20261110-0930", section: "todo", known: ["dsh:mtg/weekly-sync", "Ops", "dsh:on"] };
 
 test("new task: always dsh:task and dsh:on; only labels already in the tracker, no other dsh: label", () => {
-  const t = DSH.newTask({ title: "Отправить SoW", slug: "send-sow", brief: "Нужно отправить SoW.", series: "weekly-sync", track: "Ops" }, CTX);
+  const t = DSH.newTask({ title: "Send the SoW", slug: "send-sow", brief: "The SoW must go out.", series: "weekly-sync", track: "Ops" }, CTX);
   assert.deepEqual(t.labels, ["dsh:task", "dsh:on", "dsh:mtg/weekly-sync", "Ops"]);
   const bad = DSH.newTask({ title: "x", slug: "x", brief: "x", series: "made-up", track: "dsh:delete" }, CTX);
   assert.deepEqual(bad.labels, ["dsh:task", "dsh:on"]);
 });
 
 test("agent task: ready-for-agent and the assignee, even though no card on the page carries that label", () => {
-  const t = DSH.newTask({ slug: "agent", brief: "Обнови README." }, { ...CTX, assignee: "ivashikhmin" });
+  const t = DSH.newTask({ slug: "agent", brief: "Update the README." }, { ...CTX, assignee: "agent-login" });
   assert.deepEqual(t.labels, ["dsh:task", "dsh:on", "ready-for-agent"]);
-  assert.equal(t.assignee, "ivashikhmin");
+  assert.equal(t.assignee, "agent-login");
   assert.equal(DSH.newTask({ title: "x", slug: "x", brief: "x" }, CTX).assignee, undefined);
 });
 
 test("agent task: without a title, the first line of the text is the title, cut to 80 characters; the whole text is the brief", () => {
-  const text = "  Сделай обзор PR #12\nи напиши итог в комментарии.  ";
+  const text = "  Review PR #12\nand write the outcome in a comment.  ";
   const t = DSH.newTask({ slug: "agent", brief: text }, { ...CTX, assignee: "u" });
-  assert.equal(t.title, "Сделай обзор PR #12");
-  assert.equal(DSH.parseCard(t.body).brief, "Сделай обзор PR #12\nи напиши итог в комментарии.");
+  assert.equal(t.title, "Review PR #12");
+  assert.equal(DSH.parseCard(t.body).brief, "Review PR #12\nand write the outcome in a comment.");
   const long = DSH.newTask({ slug: "agent", brief: "a".repeat(100) }, CTX).title;
   assert.equal(long, "a".repeat(79) + "…");
 });
@@ -248,19 +248,19 @@ test("new task: Priority and Target date only when valid", () => {
 });
 
 test("new task: a record with a brief, the linked card, its key and meta", () => {
-  const t = DSH.newTask({ title: "Отправить SoW", slug: "Send SoW!", brief: "Нужно отправить SoW.", target: "2026-11-14", card: 41 }, CTX);
+  const t = DSH.newTask({ title: "Send the SoW", slug: "Send SoW!", brief: "The SoW must go out.", target: "2026-11-14", card: 41 }, CTX);
   const c = DSH.parseCard(t.body);
-  assert.equal(c.brief, "Нужно отправить SoW.\n\n→ #41");
+  assert.equal(c.brief, "The SoW must go out.\n\n→ #41");
   assert.equal(t.key, "task_send-sow_20261110-0930");
   assert.deepEqual(t.meta, { section: "todo", lead: "14.11" });
   // artifact-db: the card is a key, linked in the page
   const k = DSH.newTask({ title: "x", slug: "x", brief: "B", card: "mtg_w_20261110" }, { ...CTX, parseId: x => String(x), refMd: id => "[" + id + "](#" + id + ")" });
   assert.equal(k.body, "## Brief\nB\n\n→ [mtg_w_20261110](#mtg_w_20261110)");
-  assert.equal(t.title, "Отправить SoW");
+  assert.equal(t.title, "Send the SoW");
 });
 
 test("new task: the key carries the time, so the same slug twice a day still differs; no ASCII gives a neutral slug", () => {
-  const t = DSH.newTask({ title: "Позвонить", slug: "Позвонить", brief: "Позвонить." }, CTX);
+  const t = DSH.newTask({ title: "電話", slug: "電話", brief: "電話。" }, CTX);
   assert.equal(t.key, "task_new_20261110-0930");
   assert.equal(t.meta.lead, "—");
 });
@@ -303,9 +303,9 @@ test("cloud: a file read collects the embedded resource, not the download notice
   assert.equal(DSH.fileText(r), "# Index\nline");
 });
 
-test("cloud: a base64 blob decodes as UTF-8, Cyrillic included", () => {
-  const r = { content: [{ type: "text", text: "successfully downloaded" }, { type: "resource", resource: { blob: b64("Привет, мир") } }] };
-  assert.equal(DSH.fileText(r), "Привет, мир");
+test("cloud: a base64 blob decodes as UTF-8, accented letters included", () => {
+  const r = { content: [{ type: "text", text: "successfully downloaded" }, { type: "resource", resource: { blob: b64("Grüße, café") } }] };
+  assert.equal(DSH.fileText(r), "Grüße, café");
 });
 
 test("cloud: without a resource block, every text block is kept", () => {
@@ -335,7 +335,7 @@ test("cloud: a connector write needs the AI marker in one of its text fields", (
 });
 
 test("cloud: a stored conversation fits one db document, dropping its oldest turns", () => {
-  const turns = [turn("user", "я".repeat(100)), turn("assistant", "b".repeat(100)), turn("user", "last")];
+  const turns = [turn("user", "é".repeat(100)), turn("assistant", "b".repeat(100)), turn("user", "last")];
   const out = DSH.fitConversation(turns, 250);
   assert.deepEqual(out.map(t => t.content[0]), ["b", "l"]);
   assert.ok(Buffer.byteLength(JSON.stringify({ turns: out })) <= 250);
@@ -368,7 +368,7 @@ test("cloud: a long thread drops its oldest comments first and says so; the newe
 
 test("fitBytes keeps short text and cuts long text to the byte limit", () => {
   assert.equal(DSH.fitBytes("abc", 10), "abc");
-  const cut = DSH.fitBytes("ж".repeat(1000), 100);
+  const cut = DSH.fitBytes("é".repeat(1000), 100);
   assert.ok(new TextEncoder().encode(cut).length <= 100);
   assert.ok(cut.endsWith("…"));
   assert.equal(DSH.fitBytes("😀".repeat(50), 10), "😀…");
@@ -550,7 +550,7 @@ test("walk up: a cycle ends the walk and is marked; a long chain stops at 8 leve
   assert.ok(calls <= 8);
 });
 
-test("lift: a walked root needs Ilya and keeps the path to open; it sorts like a needs-you card", () => {
+test("lift: a walked root needs the user and keeps the path to open; it sorts like a needs-you card", () => {
   const m = DSH.liftMap([{ root: 1, path: [3, 2, 1], cycle: false }, { root: 9, path: [8, 9], cycle: true }]);
   assert.deepEqual([...m.get(1).path], [3, 2, 1]);
   assert.equal(m.get(9).cycle, true);

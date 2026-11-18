@@ -1,6 +1,6 @@
 # Dashboard v2 coding standards
 
-Judgement rules a reviewer checks on any diff touching the dashboard: the skill (`.claude/skills/dashboard-v2/`), its config (`.claude/dashboard/`), these design docs and the page code.
+Judgement rules a reviewer checks on any diff touching the dashboard: the skill (`plugins/office/skills/dashboard-v2/`), its config (`.claude/dashboard/`), these design docs and the page code.
 
 - **Single source of truth.** Each rule or fact lives in one file; every other file points to it. A rule restated in a second file (e.g. a storage-mode detail copied into `setup.md`) is a finding, even when both copies agree today.
 - **Mode-neutral shared files.** Files every storage mode reads (`SKILL.md`, `references/tracker.md`, `references/card.md`, `references/setup.md`, the page's `app.js`) speak in tracker-contract terms: record, kind, storage mode. Anything one storage mode does differently lives in `references/storage/<name>.md` or `tracker.js`.

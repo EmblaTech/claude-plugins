@@ -34,7 +34,7 @@ A meeting moved to another day gets a new key. The run links the old card to the
 ## Body
 
 GitHub-flavoured Markdown; the page renders it in full, so links, lists, tables and task lists all work. Fixed headings, each optional except `## Brief`:
-- `## Brief`: its first paragraph is the **gist**, shown on the collapsed card: one sentence, the single thing that matters most. The rest opens in place. When the card stands for an **origin item** elsewhere (a pull request, a ticket, a mail or chat thread, a calendar event), the gist opens with a link to it, the item's key as text: `[FT-123](…) — …`. One click on the card takes the user to the item itself.
+- `## Brief`: its first paragraph is the **gist**, shown on the collapsed card: one sentence, the single thing that matters most. The rest opens in place. When the card stands for an **origin item** elsewhere (a pull request, a ticket, a mail or chat thread, a calendar event), the gist opens with a link to it, the item's key as text: `[ABC-123](…) — …`. One click on the card takes the user to the item itself.
 - `## Prepare`: prep text for the meeting; the page shows the series' open tasks under the card from its `dsh:mtg/<series>` label.
 - `## Terms`: `- **term** — what it does for the user`, one per line. The page turns the term's first occurrence into a tooltip. Explain what the user, who is not in the product's day-to-day, would stumble on: modules, client jargon, acronyms.
 - `## Prompts`: fenced blocks, each a standalone prompt the user can copy into a fresh session in this project: the task, where it came from, what to read, what done looks like. Only for the user's own work that Claude can move forward.

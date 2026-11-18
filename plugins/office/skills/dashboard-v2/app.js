@@ -50,7 +50,7 @@ import { githubTracker, artifactDbTracker } from "./tracker.js";
   const THREADS = {};                                      // id -> comments (or an Error), loaded when a card opens
   let ISSUES = [], STATUS = null, LOAD_ERR = null, HASH_MISS = null, lastSig = "";
   // Relations (ADR 0008): per task its parent / done count / type, the open tasks per series on the page, the roots lifted by a
-  // subtask that needs Ilya, and the subtask levels opened so far (loaded one level per click).
+  // subtask that needs the user, and the subtask levels opened so far (loaded one level per click).
   let RELS = {}, SERIES = {}, LIFT = new Map(), REL_ERR = null;
   // ROWS: task rows expanded in place; ROWGET: the one `get` each of them reads (an Error when it failed). EXP holds only
   // the series lists a meeting card opens ("s<n>").
@@ -376,7 +376,7 @@ import { githubTracker, artifactDbTracker } from "./tracker.js";
     const t = today();
     [...ISSUES, ...Object.values(LIFTED)].forEach(i => { delete i._lifted; });
     const shown0 = ISSUES.filter(i => DSH.isVisible(i, t) && !GONE.has(i.id));
-    // Subtasks show under their parent and series tasks under their meeting; a root lifted by a subtask that needs Ilya stays.
+    // Subtasks show under their parent and series tasks under their meeting; a root lifted by a subtask that needs the user stays.
     const cards = DSH.topLevel(shown0, RELS, DSH.seriesOnPage(shown0));
     LIFT.forEach((e, root) => {
       const i = ISSUES.find(x => x.id === root) || LIFTED[root];
@@ -424,7 +424,7 @@ import { githubTracker, artifactDbTracker } from "./tracker.js";
   }
 
   // Relations of the cards just read: one `get` per task (the list call has none), the series' open tasks, the walk up from
-  // every subtask that needs Ilya. A failure shows as a banner, never as "no subtasks".
+  // every subtask that needs the user. A failure shows as a banner, never as "no subtasks".
   async function loadRelations(items) {
     const t = today(), isTask = i => DSH.labelNames(i).includes(L.task);
     const onPage = DSH.seriesOnPage(items.filter(i => DSH.isVisible(i, t)));

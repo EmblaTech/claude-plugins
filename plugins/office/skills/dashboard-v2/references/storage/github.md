@@ -30,7 +30,7 @@ The field mutation takes node IDs. Read the field and option IDs once per run, a
 
 Field values: `Start date` and `Target date` as `dateValue: "YYYY-MM-DD"`; `Priority` as the option id of Urgent, High, Medium or Low; clear with `delete: true`.
 
-**The page's GitHub connector has no dependencies tool**: the page shows no live Blocked mark and `create_task` refuses `blockedBy` until that changes ([findings](../../../../../docs/dashboard-v2/findings.md)). Sync runs with `gh` and sets it.
+**The page's GitHub connector has no dependencies tool**: the page shows no live Blocked mark and `create_task` refuses `blockedBy` until that changes ([findings](https://github.com/EmblaTech/claude-plugins/blob/main/docs/dashboard-v2/findings.md)). Sync runs with `gh` and sets it.
 
 ## Encoding
 

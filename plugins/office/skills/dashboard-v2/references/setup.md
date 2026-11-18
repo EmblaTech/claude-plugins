@@ -68,7 +68,7 @@ Offer to run the first `/dashboard-v2 sync` now, so the page does not open empty
 
 A source is a place the Sync reads origin items from, declared once: a `[[source]]` entry in `dashboard.toml` (`id`, `tools` as `{server, tool}` entries, `prompt` = `sources/<id>.md`) and that file, written as prose for the agent that reads the source:
 - **Ask:** how to ask the tools for what is new since a time, with the time as the one input. A pull request source holds two asks: the list since the cursor, and the full read of one PR (diff, comments, participants).
-- **Returns:** what an item holds, as SKILL.md step 3 names the fields. A source that returns its whole window every Sync run, such as a calendar, says so. A pull request source emits the **Pull request** terms of the [glossary](../../../../docs/dashboard-v2/glossary.md) and names in one line which host fields they come from.
+- **Returns:** what an item holds, as SKILL.md step 3 names the fields. A source that returns its whole window every Sync run, such as a calendar, says so. A pull request source emits the **Pull request** terms of the [glossary](https://github.com/EmblaTech/claude-plugins/blob/main/docs/dashboard-v2/glossary.md) and names in one line which host fields they come from.
 - **Quirks:** a link to the provider's gotchas reference, kept in the project; the quirks themselves stay out of the file.
 - **Local only**, when a cloud run cannot reach it.
 
@@ -86,4 +86,4 @@ The **Theme** is `theme.css`, token values only; the **Style source** is the DES
 - **Fonts** from Google Fonts only, the one font host the artifact loads, in one `@import` with every family and weight the Theme uses. A family missing there gets its nearest Google Fonts match, reported to the user.
 - **Shape** as the skill's `theme.css`: the import; a comment naming the Style source and every derived value and font substitution (a derived value also gets `/* derived */` beside it); the light `:root` block; the colours in both dark blocks.
 
-Done when `node --test ".claude/skills/dashboard-v2/*.test.mjs"` from the repo root passes (it checks the config's `theme.css`), every contrast pair holds, and the user has the list of derived values, contrast fixes and font substitutions.
+Done when `node --test "plugins/office/skills/dashboard-v2/*.test.mjs"` from the repo root passes (it checks the config's `theme.css`), every contrast pair holds, and the user has the list of derived values, contrast fixes and font substitutions.

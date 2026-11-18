@@ -13,7 +13,7 @@ The skill is meant for others too, so setup offers the `github` storage mode and
 - snooze
 - list and add comments
 
-`github` is built first because Ilya uses it, and `artifact-db` follows once `github` is in use.
+`github` is built first because the user uses it, and `artifact-db` follows once `github` is in use.
 
 ## Consequences
 

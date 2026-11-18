@@ -99,7 +99,7 @@ export const DSH = (() => {
     }
     return { root: cur, path, cycle: false };
   }
-  // Walks → root id -> { path, cycle }: the card to place as needing Ilya and the cards to open on the way down.
+  // Walks → root id -> { path, cycle }: the card to place as needing the user and the cards to open on the way down.
   const liftMap = walks => {
     const m = new Map();
     walks.forEach(w => { const e = m.get(w.root) || { path: new Set(), cycle: false }; w.path.forEach(n => e.path.add(n)); e.cycle = e.cycle || w.cycle; m.set(w.root, e); });

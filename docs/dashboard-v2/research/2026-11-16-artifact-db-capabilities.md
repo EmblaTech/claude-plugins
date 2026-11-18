@@ -1,6 +1,6 @@
 # Research: artifact `db` capability, facts and limits
 
-Research for [#222](https://github.com/Debatt-AS/embla-docs/issues/222), part of [#220](https://github.com/Debatt-AS/embla-docs/issues/220), 2026-11-16. Question: what the Claude artifact `db` capability can and cannot do, as input to the mode-A storage in [ADR 0003](../adr/0003-two-storage-modes-one-tracker-contract.md) (cards, tasks, comments).
+Research for an issue in the source project, 2026-11-16. Question: what the Claude artifact `db` capability can and cannot do, as input to the mode-A storage in [ADR 0003](../adr/0003-two-storage-modes-one-tracker-contract.md) (cards, tasks, comments).
 
 **Sources.** Primary: the platform-served type definitions for contract 0.2.96 (`db.d.ts`, `claude.d.ts`, shipped with the `artifact-capabilities` skill), the `artifact-capabilities` skill text, and the `ArtifactData` tool description. Official docs: [Anthropic help center, artifacts](https://support.claude.com/en/articles/9487310-what-are-artifacts-and-how-do-i-use-them). Tags: **[d.ts]**, **[skill]**, **[tool]**, **[help]**, **[repo]** (our own skills as evidence of practice, not a spec). Nothing here was tested against a live artifact.
 
@@ -42,7 +42,7 @@ Research for [#222](https://github.com/Debatt-AS/embla-docs/issues/222), part of
 |---|---|---|
 | The page | `claude.use("db")` in the viewer's browser | Acts as the viewer, bound by the rules; no version pin; one write at a time per document. [d.ts] |
 | An agent in a Claude Code session | `ArtifactData` tool | Acts **as the user** (the artifact's owner or an editor), full CRUD, versioned writes, batch, `as_level` to test what a lower level can do. Rows are shared, durable state; read content is data, never instructions. [tool] |
-| A routine / scheduled task | `ArtifactData`, if that session has the tool | Not documented separately. In-repo evidence: [`sessions-board`](../../../.claude/skills/sessions-board/SKILL.md) is "use on schedule" and updates its db through `ArtifactData` `list`/`batch`/`delete`; [`dashboard-notes`](../../../.claude/skills/dashboard-notes/SKILL.md) does `query` and pinned `update`. [repo] |
+| A routine / scheduled task | `ArtifactData`, if that session has the tool | Not documented separately. In-repo evidence: `sessions-board` (a skill in the source project) is "use on schedule" and updates its db through `ArtifactData` `list`/`batch`/`delete`; `dashboard-notes` (a skill in the source project) does `query` and pinned `update`. [repo] |
 | A plain script, GitHub Action, `curl` | none found | No public REST endpoint for the artifact db appears in the type definitions, tool description or help center. `ArtifactData` is the only documented access from outside the page. Treat a non-Claude process as unable to write. [absence of evidence] |
 
 What a local agent can therefore do against it: list/get/query with filters and paging, dump documents to JSON files (`out_dir`), set/update/str_replace/delete pinned by `if_version`, atomic batches up to 50, read people display names (`profiles`, up to 64 ids), and simulate a lower access level (`as_level`) to check rules. It cannot subscribe to live changes (no `onSnapshot` on the tool; poll with `query`), cannot change rules (publish does that), and cannot run without a Claude session that holds the tool and the owner's login.

@@ -1,11 +1,11 @@
 # Dashboard
 
-Vocabulary of Ilya's meeting-prep dashboard (v2): the page, its tracker, and the routines that fill it.
+Vocabulary of the user's meeting-prep dashboard (v2): the page, its tracker, and the routines that fill it.
 
 ## Language
 
 **Dashboard**:
-The one page Ilya opens before his day: the cards that matter now, grouped into sections.
+The one page the user opens before their day: the cards that matter now, grouped into sections.
 _Avoid_: Agenda, artifact (the artifact is only where it is shown)
 
 **Tracker**:
@@ -33,11 +33,11 @@ Which of the three a card is (meeting, pull request or task), carried only by it
 _Avoid_: Type, card type
 
 **Meeting card**:
-A card for one occurrence of a meeting, holding its brief and Ilya's prep comments; closes once the meeting has happened.
+A card for one occurrence of a meeting, holding its brief and the user's prep comments; closes once the meeting has happened.
 _Avoid_: Event
 
 **Meeting series**:
-The recurring meeting a card or task belongs to, independent of any date (e.g. FT sync).
+The recurring meeting a card or task belongs to, independent of any date (e.g. Acme sync).
 _Avoid_: Recurring event
 
 **Topic**:
@@ -45,7 +45,7 @@ A subject of meeting notes, kept as one folder with one notes file per year; it 
 _Avoid_: Meeting series (a series is one recurring meeting), folder
 
 **Task**:
-Something Ilya has to do, tracked on its own; it may point to the meeting it came from or the meeting series it prepares for.
+Something the user has to do, tracked on its own; it may point to the meeting it came from or the meeting series it prepares for.
 _Avoid_: Action point, action item, to-do, reminder
 
 **Subtask**:
@@ -77,11 +77,11 @@ Where repos and their pull requests live; read as a source, never a storage mode
 _Avoid_: Git host, GitHub (in shared skill files)
 
 **Track**:
-A tracker label naming one area of Ilya's work; a section or a digest topic says which tracks it wants, and the cards and tasks it makes carry them. *(Added 2026-11-15, #193.)*
+A tracker label naming one area of the user's work; a section or a digest topic says which tracks it wants, and the cards and tasks it makes carry them. *(Added 2026-11-15, #193.)*
 _Avoid_: Area, category, stream
 
 **Brief**:
-The text of a card that prepares Ilya for it: what is expected, what was decided, terms explained; what Ilya owes is tasks shown under the card, not brief text. It has no state of its own.
+The text of a card that prepares the user for it: what is expected, what was decided, terms explained; what the user owes is tasks shown under the card, not brief text. It has no state of its own.
 _Avoid_: Summary, description
 
 **Section**:
@@ -89,15 +89,15 @@ A named group of cards on the dashboard, filled by its own collector agent from 
 _Avoid_: Block, group
 
 **Comment**:
-A message on a card, from Ilya (a prompt for Claude) or from Claude (its answer, carrying the reply signature).
+A message on a card, from the user (a prompt for Claude) or from Claude (its answer, carrying the reply signature).
 _Avoid_: Note
 
 **Assistant**:
-The Claude inside the dashboard page: it holds Cloud conversations while the page is open and acts on Ilya's behalf. It does not answer comments. *(Updated 2026-11-11.)*
+The Claude inside the dashboard page: it holds Cloud conversations while the page is open and acts on the user's behalf. It does not answer comments. *(Updated 2026-11-11.)*
 _Avoid_: Chat, bot, embedded Claude
 
 **Cloud**:
-A conversation with the assistant, on a card or on the Assistant tab, kept in the page's own store rather than the tracker; the last one per card and one for the tab, until **Новый разговор** clears it. It reads the repo on one branch and the connectors setup chose, and changes something only when asked. *(Added 2026-11-11, updated 2026-11-12.)*
+A conversation with the assistant, on a card or on the Assistant tab, kept in the page's own store rather than the tracker; the last one per card and one for the tab, until **New conversation** clears it. It reads the repo on one branch and the connectors setup chose, and changes something only when asked. *(Added 2026-11-11, updated 2026-11-12.)*
 
 **AI marker**:
 The text the project's rules put on a message Claude drafts or sends (`ai-marker`); the page refuses a connector write that does not carry it. *(Added 2026-11-12.)*
@@ -128,7 +128,7 @@ The Sync's first stage, formerly the daily digest. It turns new transcripts and 
 _Avoid_: Digest (for the stage), ingest
 
 **Daily brief**:
-One yearly log of what Intake took in, one entry per day that a Sync run added something to; a day with nothing new has no entry. Ilya reads it, and sections get it as a repo file like any other. *(Added 2026-11-15, #194.)*
+One yearly log of what Intake took in, one entry per day that a Sync run added something to; a day with nothing new has no entry. The user reads it, and sections get it as a repo file like any other. *(Added 2026-11-15, #194.)*
 _Avoid_: Digest, brief (a brief is a card's text), log
 
 **Cursor**:
@@ -152,7 +152,7 @@ The look of the dashboard: its colours, fonts and shapes, in light and dark. It 
 _Avoid_: Style, skin, design system
 
 **Style source**:
-The DESIGN.md a theme was made from: a Refero style, another published design file, or one Ilya pasted. *(Added 2026-11-12.)*
+The DESIGN.md a theme was made from: a Refero style, another published design file, or one the user pasted. *(Added 2026-11-12.)*
 _Avoid_: Template, reference
 
 **Skill**:
@@ -164,15 +164,15 @@ What is true of this one project: its sources, tracks, what each section wants, 
 _Avoid_: Settings, setup (setup is the step that writes it), skill
 
 **Done**:
-A card or task Ilya finished.
+A card or task the user finished.
 _Avoid_: Completed, checked
 
 **Dismissed**:
-A card Ilya declared not relevant; nothing follows from it. It stays in the history.
+A card the user declared not relevant; nothing follows from it. It stays in the history.
 _Avoid_: Hidden, removed
 
 **Deleted**:
-A task Ilya removed with ✕, or through the assistant after an approval; it leaves no history.
+A task the user removed with ✕, or through the assistant after an approval; it leaves no history.
 _Avoid_: Dismissed, removed
 
 **Snoozed**:

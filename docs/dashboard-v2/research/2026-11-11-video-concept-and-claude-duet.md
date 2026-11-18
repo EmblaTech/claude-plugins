@@ -1,6 +1,6 @@
 # Research: the "software factory" video and Claude Duet
 
-Preliminary research for [#136](https://github.com/Debatt-AS/embla-docs/issues/136) and [#137](https://github.com/Debatt-AS/embla-docs/issues/137), 2026-11-11. Asks: what the video's concept is, what Claude Duet is, what dashboard v2 could borrow, and which parts of v2 may be outdated.
+Preliminary research for two issues in the source project, 2026-11-11. Asks: what the video's concept is, what Claude Duet is, what dashboard v2 could borrow, and which parts of v2 may be outdated.
 
 ## The video
 
@@ -49,7 +49,7 @@ Each idea checked against what v2 already has (load-bearing test).
 | Park and ask on the issue when unclear (NEEDS-INFO) | factory | `dsh:needs-you` + question reply | Already have |
 | Scripts decide mechanics, agents judge | factory | PRD Conventions: mechanics in page tool code (`DSH.*`), judgement in the rules turn | Already have |
 | One writer of state that refuses illegal moves | factory (`bin/job`) | tracker.md "one writer"; no explicit state machine | Stricter version; new only if illegal transitions show up in practice |
-| Label as trust boundary (only triage/write can add it) | factory | repo private to Ilya | Not needed while single-user; worth a line in setup when others install the skill |
+| Label as trust boundary (only triage/write can add it) | factory | repo private to the user | Not needed while single-user; worth a line in setup when others install the skill |
 | Per-run cost from subagent transcripts, shown on the status issue | factory | nothing | **New.** Useful for the 30-min `update` cost question; carries the same undocumented-format risk |
 | Skimmable per-stage files with a summary line | factory | collectors return cards; no per-run record beyond the status issue | Probably not needed: the tracker's comment history is the record |
 | A `dsh:task` handed to a factory-style pipeline that opens a PR | factory | Future: "hands-free Run Claude" | **New, optional.** A local `/factory run` on a labelled issue is a hands-free path the PRD has not tried; only for repo-code tasks, not this docs repo |
@@ -61,19 +61,19 @@ Each idea checked against what v2 already has (load-bearing test).
 
 **By the factory video: none.** It is a code-delivery pipeline, not a personal prep page. It confirms v2's main choices (issues as queue, labels as state, scripts for mechanics, ask-and-park). Nothing in v2 is superseded by it.
 
-**By Claude Duet: possibly some, but only if Ilya gets access.** Today Duet is a US-only waitlist, so nothing is outdated now. If it becomes available to Ilya, these PRD parts overlap and may become redundant:
+**By Claude Duet: possibly some, but only if the user gets access.** Today Duet is a US-only waitlist, so nothing is outdated now. If it becomes available to the user, these PRD parts overlap and may become redundant:
 - **Meeting briefs and the tasks radar** vs Duet's morning brief.
 - **PushNotification for needs-you and new PR reviews** vs Duet's proactive messages.
-- **Assistant tab, Спросить mode** (still unbuilt) vs Duet's one ongoing thread with all connectors. Strongest case to pause: it is not built yet.
+- **Assistant tab, Ask mode** (still unbuilt) vs Duet's one ongoing thread with all connectors. Strongest case to pause: it is not built yet.
 - **Long-task fallback (deep link to Claude Code) and the Future item "hands-free Run Claude"** vs Duet's background tasks on its own VM.
 
 What Duet does not replace, as far as the official page shows:
 - per-card comment threads on a shared, durable tracker (ADR 0001) with history and the GitHub mobile app;
 - filing information into meeting notes and editing the repo;
-- local MCP servers (Bitbucket PRs) and Embla-specific PR grouping and recommendations;
+- local MCP servers (Bitbucket PRs) and organisation-specific PR grouping and recommendations;
 - a skill other people can install with their own config (ADR 0003).
 
-**Suggested next step.** Join the Duet waitlist to learn whether it is open outside the US; until then keep v2 as is, and hold the unbuilt Спросить mode until Duet's availability is known.
+**Suggested next step.** Join the Duet waitlist to learn whether it is open outside the US; until then keep v2 as is, and hold the unbuilt Ask mode until Duet's availability is known.
 
 ## Sources
 

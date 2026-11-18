@@ -4,7 +4,7 @@ Facts learned while building and running dashboard v2 that shape its mechanics. 
 
 ## Sync change detection (2026-11-15, #186)
 
-**PR updated time** was checked on 12 PRs: Bitbucket `ftweb` and `ftwebcore`, and GitHub `EmblaTech/claude-plugins`.
+**PR updated time** was checked on 12 PRs: two Bitbucket repos and GitHub `EmblaTech/claude-plugins`.
 - `updated_on` (Bitbucket) and `updated_at` (GitHub) moved with every comment, approval, change request, push and merge.
   - Bitbucket `ftweb` PR 1440: an approval's `participated_on` equalled `updated_on` to the microsecond.
   - Bitbucket PR 1439: a comment bumped `updated_on` 17 ms later.
@@ -52,7 +52,7 @@ Built and checked in headless Chromium with stubbed `mcp` and `sample`: catch-up
 
 ## Assistant spike tails (2026-11-10)
 
-Tested in [Claude Launch Lab](https://claude.ai/artifact/RrmHw2CWdYipApfzQ22dXA) v7, Claude desktop app, chat through `sample` with page tools.
+Tested in Claude Launch Lab (a private test artifact) v7, Claude desktop app, chat through `sample` with page tools.
 
 - **Create a task from the chat works.** `issue_write` create through a `sample` tool, behind the Allow click, made #120 with labels `dsh:task`, `dsh:on` and issue fields `Priority` = High, `Target date` = 2026-11-14 in one call (about 23 s). The page doubled the `[spike]` title prefix: a page bug, not a connector one.
 - **`search_code` covers only the default branch.** A string only on `wip` gave 0 hits, a string on `main` gave 32. So search cannot find new files on a working branch; reading by path is the way there.
@@ -65,7 +65,7 @@ Tested in [Claude Launch Lab](https://claude.ai/artifact/RrmHw2CWdYipApfzQ22dXA)
 
 ## Launching Claude from a dashboard card (2026-11-09)
 
-**Goal.** A card button that starts Claude on the card's task, billed to the subscription, not the API. Tested with a scratch artifact, [Claude Launch Lab](https://claude.ai/artifact/RrmHw2CWdYipApfzQ22dXA) (private; its click log is in its `lab/journal` db doc). All tests: artifact opened in the Claude desktop app on Ilya's Windows machine.
+**Goal.** A card button that starts Claude on the card's task, billed to the subscription, not the API. Tested with a scratch artifact, Claude Launch Lab (private; its click log is in its `lab/journal` db doc). All tests: artifact opened in the Claude desktop app on the user's Windows machine.
 
 **Works: deep links that prefill the prompt.** The user presses Enter to send.
 - `claude://code/new?folder=<path>&q=<prompt>` opens a new Code chat in the desktop app. Docs: [Open Claude Desktop with a link](https://support.claude.com/en/articles/14729294-open-claude-desktop-with-a-link).
@@ -88,7 +88,7 @@ Tested in [Claude Launch Lab](https://claude.ai/artifact/RrmHw2CWdYipApfzQ22dXA)
 - The journal stores outcomes, not message text, so what Claude answered is not recorded.
 - Confirmed by the user: a full chat with history, working in the page.
 
-**Open: how the chat learns the dashboard conventions.** `sample` has no system prompt, so instructions go in a leading user turn. The conventions (labels, comment signature, card types) live in `.claude/skills/dashboard-v2/references/` (`tracker.md`, `comments.md`, `card.md`, about 10 KB together). Options under consideration, none chosen:
+**Open: how the chat learns the dashboard conventions.** `sample` has no system prompt, so instructions go in a leading user turn. The conventions (labels, comment signature, card types) live in `plugins/office/skills/dashboard-v2/references/` (`tracker.md`, `comments.md`, `card.md`, about 10 KB together). Options under consideration, none chosen:
 - Enforce mechanical rules in the page's tool code (reply signature, `dsh:` labels, the full-set rewrite of `labels`, approval before writes) and keep only judgement rules in the prompt.
 - Fill the prompt at setup time, when `page.html` is built and published (`references/setup.md`, step 3), so it follows the skill files.
 - Read the files from the repo at chat start through the `github` connector. Needs a file-read tool declared in the manifest; not checked.
@@ -119,7 +119,7 @@ Tested in [Claude Launch Lab](https://claude.ai/artifact/RrmHw2CWdYipApfzQ22dXA)
 
 ## Artifact db: nested paths and approval click (2026-11-18, #256)
 
-Test artifact `https://claude.ai/artifact/Gcju6TAM38g4rpQ3udt25o` (page declares `db`, holds test docs only; an earlier test artifact was gone by 2026-11-18). Checked with `ArtifactData` from an interactive session.
+A private test artifact (page declares `db`, holds test docs only; an earlier test artifact was gone by 2026-11-18). Checked with `ArtifactData` from an interactive session.
 
 - **Nested path works.** `set`, `list`, `query` (`where` on a data field), `update` with `if_version` and `batch` (a `records/<key>` doc plus `records/<key>/comments/<id>`, atomic) all succeed on `records/<key>/comments`. A stale `if_version` returns `version_mismatch`. The flat `comments/` fallback (#225) is not needed.
 - **No `updatedSince`.** The `ArtifactData` schema has none, and `updatedAt` is envelope metadata, not a data field, so `where updatedAt` matches nothing. A cursor-style read needs a client-written field (e.g. `ts`) to filter on.

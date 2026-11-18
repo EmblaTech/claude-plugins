@@ -1,6 +1,6 @@
 # Artifact db: comment overflow
 
-Dormant. Read this only when the artifact-db storage mode nears its document cap (decided in [#224](https://github.com/Debatt-AS/embla-docs/issues/224)).
+Dormant. Read this only when the artifact-db storage mode nears its document cap.
 
 **The problem.** The artifact db holds at most 25,000 documents and 100 MB. In the artifact-db storage mode every comment is its own document, `records/<key>/comments/<ISO-ts>_<rand>`, so a user who comments a lot can reach the document cap long before the size cap. Past the cap, creates fail with `quota_exceeded`: no new record, no new comment. Facts: `docs/dashboard-v2/research/2026-11-16-artifact-db-capabilities.md` on branch `research/artifact-db-capabilities`.
 
