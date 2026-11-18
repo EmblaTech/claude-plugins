@@ -71,6 +71,8 @@ export const DSH = (() => {
   // What a card needs to know about its place in the tree: the `rel` of a `get`, none before one.
   const relOf = r => r?.rel || { parent: null, hasParent: false, total: 0, completed: 0, type: "", blockedBy: [] };
   const countLabel = r => r.total ? r.completed + "/" + r.total : "";
+  // The words on the «Tasks: N» / «Subtasks: N» buttons: English, or the config's `labels`.
+  const uiLabels = labels => ({ tasks: labels?.tasks || "Tasks", subtasks: labels?.subtasks || "Subtasks" });
   const canDone = r => r.total - r.completed <= 0;
   const openSubs = list => (list || []).filter(isOpen).sort(byId);
   const isBlocked = r => (r.blockedBy || []).some(isOpen);
@@ -379,5 +381,5 @@ export const DSH = (() => {
   const isRateLimit = x => !!x && RATE_LIMIT.test([x.code, x.message,
     ...(x.isError && Array.isArray(x.content) ? x.content.map(c => c?.text) : [])].filter(Boolean).join(" "));
 
-  return { LABELS, rowIssue, detailParts, hierarchyText, isOpen, relOf, countLabel, canDone, openSubs, isBlocked, lazyTree, walkUp, liftMap, seriesLabels, seriesOnPage, seriesTasks, topLevel, MARK, MAX_ROUNDS, splitMark, continueInput, deepLink, folderOptions, rememberFolder, themeChoice, HOUR_MS, pollDelay, recentCalls, isRateLimit, commitDate, lastActive, fileText, fitBytes, fitSchema, pickTools, hasMarker, fitConversation, nextTurns, cardView, needsClick, trimTurns, newTask, isStale, parseCard, labelNames, withoutLabel, isVisible, byOrder, snoozeDate, snoozeUntil, isClaude, byTime, unanswered, withLinks, md, esc };
+  return { LABELS, rowIssue, detailParts, hierarchyText, isOpen, relOf, countLabel, uiLabels, canDone, openSubs, isBlocked, lazyTree, walkUp, liftMap, seriesLabels, seriesOnPage, seriesTasks, topLevel, MARK, MAX_ROUNDS, splitMark, continueInput, deepLink, folderOptions, rememberFolder, themeChoice, HOUR_MS, pollDelay, recentCalls, isRateLimit, commitDate, lastActive, fileText, fitBytes, fitSchema, pickTools, hasMarker, fitConversation, nextTurns, cardView, needsClick, trimTurns, newTask, isStale, parseCard, labelNames, withoutLabel, isVisible, byOrder, snoozeDate, snoozeUntil, isClaude, byTime, unanswered, withLinks, md, esc };
 })();

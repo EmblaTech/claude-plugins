@@ -488,6 +488,15 @@ test("relations: a record read before its get has none; the count reads 9/18", (
   assert.equal(DSH.countLabel(DSH.relOf(undefined)), "");
 });
 
+test("ui labels: the count buttons read English when the config sets no labels", () => {
+  assert.deepEqual(DSH.uiLabels(undefined), { tasks: "Tasks", subtasks: "Subtasks" });
+});
+
+test("ui labels: the config's labels replace the English words; a word it leaves out stays English", () => {
+  assert.deepEqual(DSH.uiLabels({ tasks: "Oppgaver", subtasks: "Deloppgaver" }), { tasks: "Oppgaver", subtasks: "Deloppgaver" });
+  assert.deepEqual(DSH.uiLabels({ subtasks: "Deloppgaver" }), { tasks: "Tasks", subtasks: "Deloppgaver" });
+});
+
 test("relations: ✓ is allowed only when no subtask is open", () => {
   assert.equal(DSH.canDone(rel({ completed: 9, total: 18 })), false);
   assert.equal(DSH.canDone(rel({ completed: 3, total: 3 })), true);

@@ -40,7 +40,7 @@ GitHub-flavoured Markdown; the page renders it in full, so links, lists, tables 
 - `## Prompts`: fenced blocks, each a standalone prompt the user can copy into a fresh session in this project: the task, where it came from, what to read, what done looks like. Only for the user's own work that Claude can move forward.
 - `## Suggestions`: up to three `- ` lines, each a ready comment the user might post: a concrete next action naming who and what. Leave out when no next action is clear.
 
-A card with subtasks shows «Подзадачи: N», the way a meeting shows its tasks: under the gist while collapsed, after the description once expanded. Expanded, a card shows its description (the Brief after the gist), the subtasks, Prepare and prompts, then Cloud and Local. A task shown as a row under a parent or a meeting expands into the same detail, with the whole Brief as its description and its subtasks after it, so a task's first paragraph must also read well without a collapsed card above it.
+A card with subtasks shows «Subtasks: N», the way a meeting shows its tasks: under the gist while collapsed, after the description once expanded. Expanded, a card shows its description (the Brief after the gist), the subtasks, Prepare and prompts, then Cloud and Local. A task shown as a row under a parent or a meeting expands into the same detail, with the whole Brief as its description and its subtasks after it, so a task's first paragraph must also read well without a collapsed card above it.
 
 Every claim names its source inline (file + date, or a link). Where sources are thin, say so.
 
