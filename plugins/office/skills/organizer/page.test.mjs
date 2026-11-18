@@ -492,13 +492,13 @@ test("relations: a record read before its get has none; the count reads 9/18", (
   assert.equal(OZ.countLabel(OZ.relOf(undefined)), "");
 });
 
-test("ui labels: the count buttons read English when the config sets no labels", () => {
-  assert.deepEqual(OZ.uiLabels(undefined), { tasks: "Tasks", subtasks: "Subtasks" });
+test("button words: the count buttons read English when the config sets none", () => {
+  assert.deepEqual(OZ.buttonWords(undefined), { tasks: "Tasks", subtasks: "Subtasks" });
 });
 
-test("ui labels: the config's labels replace the English words; a word it leaves out stays English", () => {
-  assert.deepEqual(OZ.uiLabels({ tasks: "Oppgaver", subtasks: "Deloppgaver" }), { tasks: "Oppgaver", subtasks: "Deloppgaver" });
-  assert.deepEqual(OZ.uiLabels({ subtasks: "Deloppgaver" }), { tasks: "Tasks", subtasks: "Deloppgaver" });
+test("button words: the config's words replace the English ones; a word it leaves out stays English", () => {
+  assert.deepEqual(OZ.buttonWords({ tasks: "Oppgaver", subtasks: "Deloppgaver" }), { tasks: "Oppgaver", subtasks: "Deloppgaver" });
+  assert.deepEqual(OZ.buttonWords({ subtasks: "Deloppgaver" }), { tasks: "Tasks", subtasks: "Deloppgaver" });
 });
 
 test("relations: ✓ is allowed only when no subtask is open", () => {

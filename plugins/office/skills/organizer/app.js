@@ -10,7 +10,7 @@ import { githubTracker, artifactDbTracker } from "./tracker.js";
   // `repo` is the GitHub storage mode's store and the repo the Assistant reads; another storage mode may leave it out.
   const [OWNER, REPO] = String(CFG.repo || "").split("/");
   const POLL_MS = Math.max(30, CFG.pollSeconds || 60) * 1000;
-  const UI = OZ.uiLabels(CFG.labels);
+  const WORDS = OZ.buttonWords(CFG.buttonWords);
   const el = (tag, cls, text) => { const n = document.createElement(tag); if (cls) n.className = cls; if (text != null) n.textContent = text; return n; };
   const onCtrlEnter = (ta, f) => { ta.onkeydown = e => { if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) { e.preventDefault(); f(); } }; };
   const ymd = d => d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0");
@@ -325,7 +325,7 @@ import { githubTracker, artifactDbTracker } from "./tracker.js";
     // «Tasks: N»: the open tasks of this meeting's series, as full rows, opened on click.
     const ser = labels.includes(L.meeting) ? seriesOf(issue) : [];
     if (ser.length) {
-      const k = "s" + n, box = el("div", "series"), t = el("button", "mk outline", UI.tasks + ": " + ser.length + (EXP.has(k) ? " ▾" : " ▸"));
+      const k = "s" + n, box = el("div", "series"), t = el("button", "mk outline", WORDS.tasks + ": " + ser.length + (EXP.has(k) ? " ▾" : " ▸"));
       t.type = "button"; t.setAttribute("aria-expanded", String(EXP.has(k)));
       t.onclick = () => { if (EXP.has(k)) EXP.delete(k); else EXP.add(k); render(true); };
       box.append(t);
@@ -335,7 +335,7 @@ import { githubTracker, artifactDbTracker } from "./tracker.js";
     let subBox = null;
     // «Subtasks: N»: the same box as a meeting's tasks; the level is read when it first opens.
     if (rel?.total) {
-      const k = "c" + n, open = EXP.has(k), box = el("div", "series"), t = el("button", "mk outline", UI.subtasks + ": " + rel.total + (open ? " ▾" : " ▸"));
+      const k = "c" + n, open = EXP.has(k), box = el("div", "series"), t = el("button", "mk outline", WORDS.subtasks + ": " + rel.total + (open ? " ▾" : " ▸"));
       t.type = "button"; t.setAttribute("aria-expanded", String(open));
       t.onclick = () => { if (EXP.has(k)) EXP.delete(k); else EXP.add(k); render(true); };
       box.append(t);
