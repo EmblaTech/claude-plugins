@@ -1,6 +1,6 @@
-# dashboard-v2 (in development)
+# organizer (in development)
 
-Before you edit a Markdown file in the skill folder `plugins/office/skills/dashboard-v2/` (`SKILL.md`, `references/`, `sections/`), invoke `mattpocock-skills:writing-for-agents` and apply it to the edit: agents read these files at run time.
+Before you edit a Markdown file in the skill folder `plugins/office/skills/organizer/` (`SKILL.md`, `references/`, `sections/`), invoke `mattpocock-skills:writing-for-agents` and apply it to the edit: agents read these files at run time.
 
 ## Page UI
 
@@ -11,9 +11,9 @@ How the page is built and themed; the why is in [ADR 0006](adr/0006-theme-as-tok
 - **Token names** follow the DESIGN.md spec (`--color-*`, `--type-<level>-*`, `--rounded-*`, `--space-*`, plus `--elevation-*`, which the spec keeps in prose); the required set is the `Required tokens` comment in `base.css`, and the test reads it from there.
 - **Style by level, not by value:** a component takes a whole type level and steps from the rounded and spacing scales; a one-off size or radius is a sign the component belongs to another level or step. The type tokens appear only in the per-level rules at the top of `base.css`, plus `--type-emphasis-weight` for bold inside body text. Derived values stay token-based (`calc(var(--space-xs) / 2)`, `color-mix()` of two tokens).
 - **A theme is values, never layout.** Every theme gives the whole required set in its light `:root` block; its two dark blocks (`prefers-color-scheme` + `[data-theme]` selectors) override the colours only, plus `--elevation-raised` when the dark shadow differs.
-- **A theme comes from a style source** (a DESIGN.md) through setup's [Theme](../../plugins/office/skills/dashboard-v2/references/setup.md#theme) step, which keeps both in the config.
+- **A theme comes from a style source** (a DESIGN.md) through setup's [Theme](../../plugins/office/skills/organizer/references/setup.md#theme) step, which keeps both in the config.
 - **Behaviour lives in `logic.js`** where it can be pure, so it stays under test; `app.js` stays thin.
 
 ## Checking the live page
 
-Open the published artifact in Claude in Chrome: the desktop app's built-in browser pane renders it blank (the artifact frame loads with origin `null`). Run `node --test "plugins/office/skills/dashboard-v2/*.test.mjs"` from the repo root after changing the page files.
+Open the published artifact in Claude in Chrome: the desktop app's built-in browser pane renders it blank (the artifact frame loads with origin `null`). Run `node --test "plugins/office/skills/organizer/*.test.mjs"` from the repo root after changing the page files.

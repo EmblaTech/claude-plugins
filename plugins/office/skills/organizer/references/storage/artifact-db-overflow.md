@@ -2,7 +2,7 @@
 
 Dormant. Read this only when the artifact-db storage mode nears its document cap.
 
-**The problem.** The artifact db holds at most 25,000 documents and 100 MB. In the artifact-db storage mode every comment is its own document, `records/<key>/comments/<ISO-ts>_<rand>`, so a user who comments a lot can reach the document cap long before the size cap. Past the cap, creates fail with `quota_exceeded`: no new record, no new comment. Facts: `docs/dashboard-v2/research/2026-11-16-artifact-db-capabilities.md` on branch `research/artifact-db-capabilities`.
+**The problem.** The artifact db holds at most 25,000 documents and 100 MB. In the artifact-db storage mode every comment is its own document, `records/<key>/comments/<ISO-ts>_<rand>`, so a user who comments a lot can reach the document cap long before the size cap. Past the cap, creates fail with `quota_exceeded`: no new record, no new comment. Facts: `docs/organizer/research/2026-11-16-artifact-db-capabilities.md` on branch `research/artifact-db-capabilities`.
 
 **The fix: chunks plus an inbox.** Once overflow is on, Sync folds each thread's single comments into chunk documents in the same collection, `records/<key>/comments/c0001`, `c0002`, ..., each holding a `comments` array kept under about 200 KiB. A new chunk starts when the next entry would pass that. The page and agents keep writing every new comment as a single document, as before (the "inbox"); only Sync, through `ArtifactData` with `if_version`, ever writes a chunk. So the page never does an array read-modify-write, and two runs folding at once cannot lose an entry: the stale one is refused, re-reads and retries. At about 1 KiB a comment, one chunk replaces about 200 documents.
 

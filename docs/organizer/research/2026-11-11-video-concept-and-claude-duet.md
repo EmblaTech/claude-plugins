@@ -1,6 +1,6 @@
 # Research: the "software factory" video and Claude Duet
 
-Preliminary research for two issues in the source project, 2026-11-11. Asks: what the video's concept is, what Claude Duet is, what dashboard v2 could borrow, and which parts of v2 may be outdated.
+Preliminary research for two issues in the source project, 2026-11-11. Asks: what the video's concept is, what Claude Duet is, what the Organizer dashboard could borrow, and which parts of v2 may be outdated.
 
 ## The video
 
@@ -39,7 +39,7 @@ Preliminary research for two issues in the source project, 2026-11-11. Asks: wha
 
 **Unverified.** Whether Duet can use the GitHub connector specifically, whether it has an API or any way to drive it from a page or routine, whether it can work on a repo, and when it reaches users outside the US.
 
-## What dashboard v2 could borrow
+## What the Organizer dashboard could borrow
 
 Each idea checked against what v2 already has (load-bearing test).
 

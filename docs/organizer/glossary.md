@@ -1,10 +1,10 @@
-# Dashboard
+# Organizer dashboard
 
-Vocabulary of the user's meeting-prep dashboard (v2): the page, its tracker, and the routines that fill it.
+Vocabulary of the user's meeting-prep dashboard, the Organizer: the page, its tracker, and the routines that fill it.
 
 ## Language
 
-**Dashboard**:
+**Organizer dashboard**:
 The one page the user opens before their day: the cards that matter now, grouped into sections.
 _Avoid_: Agenda, artifact (the artifact is only where it is shown)
 

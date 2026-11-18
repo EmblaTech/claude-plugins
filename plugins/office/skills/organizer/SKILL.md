@@ -11,7 +11,7 @@ The skill holds only the mechanics. Everything about this project and this user 
 
 ## Commands
 
-The first word after `/office:organizer` picks the command; text is a command only when that word is `sync` or `setup` ([ADR 0009](https://github.com/EmblaTech/claude-plugins/blob/main/docs/dashboard-v2/adr/0009-one-change-driven-sync-with-intake.md)).
+The first word after `/office:organizer` picks the command; text is a command only when that word is `sync` or `setup` ([ADR 0009](https://github.com/EmblaTech/claude-plugins/blob/main/docs/organizer/adr/0009-one-change-driven-sync-with-intake.md)).
 
 | Command | Does |
 |---|---|

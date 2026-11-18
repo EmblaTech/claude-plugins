@@ -6,7 +6,7 @@ status: accepted
 
 The full Sync and the Light sync of [ADR 0007](0007-sync-and-light-sync-commands.md) differed in three things. The Sync built meeting cards, read sources that only the daily digest changes (the daily brief, the notes, the client dossier), and retired cards that no source held any more. All three can be triggered by change instead of by command, so they now are. The daily digest ran once a weekday as a separate routine and was a second writer to the tracker. It becomes the Sync's first stage, so its notes and cross-references reach the meeting briefs within the hour.
 
-`/dashboard-v2 sync [section] [params]` is the only pass, scheduled hourly. In order:
+`/office:organizer sync [section] [params]` is the only pass, scheduled hourly. In order:
 1. **Quota gate.** Below the threshold the pass skips, and the next pass catches up.
 2. **Intake.** New transcripts and mail since the cursor become per-topic meeting notes, cross-references, the daily brief and tasks.
 3. **Sources.** Each source is read once with its cursor, and the delta is routed to the sections.
@@ -22,7 +22,7 @@ The skill names no provider: sources, cursors and deltas are its terms. The setu
 - **Postpone a Sync to the quota reset (#183).** Rejected. Creating the one-time task always prompts in a scheduled session, so an unattended postponement blocks. The next hourly pass already covers the gap.
 - **Graph delta queries for mail and calendar.** Rejected for now. They exist only in the ms365 MCP, whose token expires often in scheduled runs. The cursor is a received or modified time filter on the official connector.
 - **A run-lock on the status issue.** Not built. A Desktop scheduled task skips a run while the previous one is still going, and one task holds the whole pass. If that stops holding, a lease on the status issue is the fallback.
-- **Off-the-shelf products.** None covers the whole job: see the [PRD](../../prd/dashboard-v2.md#off-the-shelf-comparison).
+- **Off-the-shelf products.** None covers the whole job: see the [PRD](../../prd/organizer.md#off-the-shelf-comparison).
 
 ## Consequences
 

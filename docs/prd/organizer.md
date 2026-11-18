@@ -1,6 +1,6 @@
-# Dashboard v2 — PRD
+# Organizer dashboard — PRD
 
-Status: draft, 2026-11-04. Vocabulary: [glossary.md](../dashboard-v2/glossary.md). Decisions: [adr/](../dashboard-v2/adr/).
+Status: draft, 2026-11-04. Vocabulary: [glossary.md](../organizer/glossary.md). Decisions: [adr/](../organizer/adr/).
 
 ## Why
 
@@ -17,7 +17,7 @@ v2 splits **presentation** (the page) from **data** (the tracker), and **mechani
 
 - One tracker of record for cards, tasks and comments. The page only shows a selection of it.
 - When a routine changes the tracker, the open page shows it without a republish.
-- The user talks to Claude in two ways and picks by where they type ([ADR 0005](../dashboard-v2/adr/0005-cloud-and-local-surfaces.md)): **Cloud**, a dialogue with the assistant in the page, answered at once; **Local**, a comment on a card, a prompt that the next sync acts on with local tools and answers in the same thread, and the user can reply again.
+- The user talks to Claude in two ways and picks by where they type ([ADR 0005](../organizer/adr/0005-cloud-and-local-surfaces.md)): **Cloud**, a dialogue with the assistant in the page, answered at once; **Local**, a comment on a card, a prompt that the next sync acts on with local tools and answers in the same thread, and the user can reply again.
 - ✓ / ✕ / ⏸ act on a card or task with one click and remove it from view: done and dismissed for good, snoozed until its date. ✕ on a task deletes it; ✕ on a PR card dismisses it. *(Confirmed 2026-11-05.)*
 - A skill anyone can install. Everything personal lives in `.claude/organizer/`.
 
@@ -37,9 +37,9 @@ v2 splits **presentation** (the page) from **data** (the tracker), and **mechani
 
 Setup offers a choice of two modes. Both show the same page and have the same skill commands.
 
-How each mode stores cards, tasks, comments and the status is in its storage reference: [github](../../plugins/office/skills/dashboard-v2/references/storage/github.md) (mode B, the user's: issues in a repo with the org's issue fields; suits technical users, history and the mobile app come free) and [artifact-db](../../plugins/office/skills/dashboard-v2/references/storage/artifact-db.md) (mode A, self-contained: the artifact's own `db`; suits anyone without GitHub).
+How each mode stores cards, tasks, comments and the status is in its storage reference: [github](../../plugins/office/skills/organizer/references/storage/github.md) (mode B, the user's: issues in a repo with the org's issue fields; suits technical users, history and the mobile app come free) and [artifact-db](../../plugins/office/skills/organizer/references/storage/artifact-db.md) (mode A, self-contained: the artifact's own `db`; suits anyone without GitHub).
 
-Both modes are in v2 scope (confirmed 2026-11-04). Build order: B first, then A ([ADR 0003](../dashboard-v2/adr/0003-two-storage-modes-one-tracker-contract.md)).
+Both modes are in v2 scope (confirmed 2026-11-04). Build order: B first, then A ([ADR 0003](../organizer/adr/0003-two-storage-modes-one-tracker-contract.md)).
 
 ## Tracker model (mode B)
 
@@ -62,7 +62,7 @@ The repo's agent-issue workflow (`docs/agents/issue-tracker.md`, triage labels) 
 
 **Meeting series** is a label: `oz:mtg/<series>` (e.g. `oz:mtg/ft-sync`).
 
-**Relations** ([ADR 0008](../dashboard-v2/adr/0008-meeting-tasks-by-series-subtasks-native.md), #169, *decided 2026-11-14*). A subtask is a native sub-issue of its parent task; native sub-issues are the only list of children, and no body keeps a checklist of them. A blocked task has a native blocked-by dependency, never a "blocked by #n" line in prose. Tasks get the issue type Epic, Story or Task; meeting and PR cards get none, and the `oz:*` type labels stay. A task is never a sub-issue of a meeting card: it attaches to meetings only through the series label. Collectors and `create_task` accept an optional parent, blocked-by and type; relations the user sets by hand on GitHub are read the same way.
+**Relations** ([ADR 0008](../organizer/adr/0008-meeting-tasks-by-series-subtasks-native.md), #169, *decided 2026-11-14*). A subtask is a native sub-issue of its parent task; native sub-issues are the only list of children, and no body keeps a checklist of them. A blocked task has a native blocked-by dependency, never a "blocked by #n" line in prose. Tasks get the issue type Epic, Story or Task; meeting and PR cards get none, and the `oz:*` type labels stay. A task is never a sub-issue of a meeting card: it attaches to meetings only through the series label. Collectors and `create_task` accept an optional parent, blocked-by and type; relations the user sets by hand on GitHub are read the same way.
 
 **Card metadata.** Each issue body ends with one hidden line:
 
@@ -98,21 +98,21 @@ Runs find the existing issue by this key and update it in place; they never crea
   - **Mode B:** a claude.ai GitHub connector through the artifact `mcp` capability, polled every ≥30 s.
   - **Mode A:** `db` `onSnapshot`.
 
-  The spike verified mode B on 2026-11-04 ([ADR 0002](../dashboard-v2/adr/0002-page-reads-tracker-live-by-label.md)).
+  The spike verified mode B on 2026-11-04 ([ADR 0002](../organizer/adr/0002-page-reads-tracker-live-by-label.md)).
 - Shows open items labelled `oz:on`, grouped into sections. Within each group they are ordered as above.
 - Hides an item while its `Start date` is after today, and shows it again on that date.
 - Cards that are `oz:needs-you` go first.
 - Each card shows:
   - a one-line gist, with the brief on expand. When the card stands for an origin item elsewhere (a PR, a ticket, a mail or chat thread, a calendar event), the gist opens with a link to that item, its key as text, so one click from the collapsed card reaches the item itself *(requirement added 2026-11-06)*;
   - a "Claude replied" badge while it has `oz:replied` *(requirement added 2026-11-05)*;
-  - at its end two sections ([ADR 0005](../dashboard-v2/adr/0005-cloud-and-local-surfaces.md)): **Cloud chat** with the assistant, and **Local**, its comment thread with a comment box, loaded when the card is expanded *(decided 2026-11-11)*;
+  - at its end two sections ([ADR 0005](../organizer/adr/0005-cloud-and-local-surfaces.md)): **Cloud chat** with the assistant, and **Local**, its comment thread with a comment box, loaded when the card is expanded *(decided 2026-11-11)*;
   - ✓ / ✕ / ⏸ (unless the section sets `card-actions = false`, as meetings do);
   - an open-in-new-tab icon (GitHub's link-external) in the title row, linking to the card's own issue *(requirement added 2026-11-06; replaced the "Open on GitHub" link inside the expanded card)*.
-- Relations ([ADR 0008](../dashboard-v2/adr/0008-meeting-tasks-by-series-subtasks-native.md), #169, *decided 2026-11-14*):
+- Relations ([ADR 0008](../organizer/adr/0008-meeting-tasks-by-series-subtasks-native.md), #169, *decided 2026-11-14*):
   - a parent task shows a done count ("9/18") and "Subtasks: N" under its head, the way a meeting shows its tasks; a click lists all its open subtasks, with or without `oz:on` *(changed 2026-11-15, #169)*; each level loads only on click, so the tree can be opened as deep as the user likes and a cycle never makes the page loop;
   - a subtask is shown only under its parent. When one needs the user, the page walks up to its root (visited set, at most 8 levels, a cycle mark if a node repeats), places the root card as if it needed the user, and opens the path to the subtask;
   - a meeting card shows "Tasks: N" for the open tasks of its series, listed on click; each is a full task row with its own ✓ / ✕ / ⏸;
-  - a blocked task carries a "Blocked" mark and stays where it would be *(the page's GitHub connector has no dependencies tool, so the page cannot read blockers yet: [findings](../dashboard-v2/findings.md), #169)*;
+  - a blocked task carries a "Blocked" mark and stays where it would be *(the page's GitHub connector has no dependencies tool, so the page cannot read blockers yet: [findings](../organizer/findings.md), #169)*;
   - ✓ on a parent is disabled while it has open subtasks;
   - a **task row** (a subtask or a series task) *(decided 2026-11-14, #169)*:
     - clicking the row or its caret expands it inline into the same detail a top-level card has. The caret is a real button with `aria-expanded` on every row, and the title does the same as the caret. The GitHub link is an open-in-new-tab icon in the row, as on cards;
@@ -127,28 +127,28 @@ Runs find the existing issue by this key and update it in place; they never crea
 - PR filter chips (author with avatar, repo, last activity: 24 h / week / all), at most one chip of each kind.
 - Text is selectable. Both themes work. The page works at phone width.
 
-## Skill: `dashboard-v2`
+## Skill: `organizer`
 
-One skill replaces `meeting-dashboard` and `dashboard-notes`. It is named `dashboard-v2` while v1 runs alongside it *(decided 2026-11-05)*.
+One skill replaces `meeting-dashboard` and `dashboard-notes`. It was first named for v2 while v1 ran alongside it *(decided 2026-11-05)* and is `organizer` since 2026-11 (#41).
 
 | Command | Does |
 |---|---|
-| `/dashboard-v2` | Help: the commands and the section ids from the config; runs nothing. |
-| `/dashboard-v2 sync [section] [params]` | A **Sync**, the one hourly run and change-driven *(changed 2026-11-15, #188)*: follows up on new comments (below) and carries out agent tasks, then every source is read once since its own cursor (a map in the status issue's metadata) and each section's collector gets the whole delta and keeps what its prompt asks for (or one section's; params are free text for its agent, e.g. `sync meetings ABC-1396 high priority`), the tracker is updated, `oz:on` is recomputed and `Priority` set. Sources only a git commit changes (brief, dossier, repo docs) are read only when a commit touched them. A card leaves the page only when its origin is plainly resolved (issue closed, PR merged, meeting over) or it comes back without `oz:on`. A Sync run with nothing new reports `no changes` and starts no subagents. |
-| `/dashboard-v2 setup` | Idempotent and prompt-driven: explores the project and what the session can reach, asks section by section (sources, gaps in what the project states), writes the config, labels and status issue (asks before creating a missing org issue field), publishes the page, installs the routines, offers a first `sync` *(added 2026-11-12, #168)*, and ends by telling the user how to live with the page (see Skill boundary). Page settings include the Theme, made from a Style source and kept with it in the config *(added 2026-11-12, #160)*. |
-| `/dashboard-v2 setup <text>` | Targeted setup: only the steps the text touches (e.g. "make the theme lighter", "add a section"), republishing the page if it changed; text that matches no step gets a question. Replaces `setup theme` *(added 2026-11-12, #168)*. |
-| `/dashboard-v2 <any other text>` | An instruction, like the Local input on the Assistant tab, carried out at once in that session with local tools. |
+| `/office:organizer` | Help: the commands and the section ids from the config; runs nothing. |
+| `/office:organizer sync [section] [params]` | A **Sync**, the one hourly run and change-driven *(changed 2026-11-15, #188)*: follows up on new comments (below) and carries out agent tasks, then every source is read once since its own cursor (a map in the status issue's metadata) and each section's collector gets the whole delta and keeps what its prompt asks for (or one section's; params are free text for its agent, e.g. `sync meetings ABC-1396 high priority`), the tracker is updated, `oz:on` is recomputed and `Priority` set. Sources only a git commit changes (brief, dossier, repo docs) are read only when a commit touched them. A card leaves the page only when its origin is plainly resolved (issue closed, PR merged, meeting over) or it comes back without `oz:on`. A Sync run with nothing new reports `no changes` and starts no subagents. |
+| `/office:organizer setup` | Idempotent and prompt-driven: explores the project and what the session can reach, asks section by section (sources, gaps in what the project states), writes the config, labels and status issue (asks before creating a missing org issue field), publishes the page, installs the routines, offers a first `sync` *(added 2026-11-12, #168)*, and ends by telling the user how to live with the page (see Skill boundary). Page settings include the Theme, made from a Style source and kept with it in the config *(added 2026-11-12, #160)*. |
+| `/office:organizer setup <text>` | Targeted setup: only the steps the text touches (e.g. "make the theme lighter", "add a section"), republishing the page if it changed; text that matches no step gets a question. Replaces `setup theme` *(added 2026-11-12, #168)*. |
+| `/office:organizer <any other text>` | An instruction, like the Local input on the Assistant tab, carried out at once in that session with local tools. |
 
-*(Commands changed 2026-11-12, #168, [ADR 0007](../dashboard-v2/adr/0007-sync-and-light-sync-commands.md): the bare call was the full run, `update` the 30-minute cycle.)*
+*(Commands changed 2026-11-12, #168, [ADR 0007](../organizer/adr/0007-sync-and-light-sync-commands.md): the bare call was the full run, `update` the 30-minute cycle.)*
 
-**Change decided 2026-11-15** ([ADR 0009](../dashboard-v2/adr/0009-one-change-driven-sync-with-intake.md), #186; supersedes ADR 0007):
+**Change decided 2026-11-15** ([ADR 0009](../organizer/adr/0009-one-change-driven-sync-with-intake.md), #186; supersedes ADR 0007):
 - `sync` becomes the only run, run hourly and change-driven (done, #188).
 - The daily digest becomes its Intake stage.
 - `sync light` is gone (done, #188).
-- The spec is [sync-pipeline.md](../dashboard-v2/sync-pipeline.md).
+- The spec is [sync-pipeline.md](../organizer/sync-pipeline.md).
 - This section is rewritten as the slices land; until then the table above is what runs.
 
-**Following up on comments** (inside sync). They are the only ones that answer comments: the page no longer does ([ADR 0005](../dashboard-v2/adr/0005-cloud-and-local-surfaces.md), *2026-11-11*; the split answer of ADR 0004 is gone). A user comment is unanswered when no later comment in its thread ends with the reply signature (config `reply-signature`, default `— 🤖 Claude`); the Sync run answers each one in full.
+**Following up on comments** (inside sync). They are the only ones that answer comments: the page no longer does ([ADR 0005](../organizer/adr/0005-cloud-and-local-surfaces.md), *2026-11-11*; the split answer of ADR 0004 is gone). A user comment is unanswered when no later comment in its thread ends with the reply signature (config `reply-signature`, default `— 🤖 Claude`); the Sync run answers each one in full.
 - Read the comment with its card and its whole thread in view:
   - **information** goes to the meeting's notes file, as in v1, without asking, when the card is a meeting card; for other cards the notes are usually left alone;
   - **an action** is carried out with the most local, reversible means available: a repo edit, a new task, or a mail or Teams draft, using local tools (a local MCP server such as Bitbucket, the repo) where needed;
@@ -199,7 +199,7 @@ avatars/
   - `id`, `title`, `prompt` (path to its `.md`);
   - flags: `card-actions`, `filters` (e.g. the PR authors and repos table, formerly `pr-filters.json`), (the `light-sync` flag went away in #188).
 
-Page order = file order. Every section is filled by its own subagent. The skill ships project-neutral templates for meetings, PRs and tasks (`plugins/office/skills/dashboard-v2/sections/`); setup copies the chosen ones into the config folder with their sources filled in, and they are edited there.
+Page order = file order. Every section is filled by its own subagent. The skill ships project-neutral templates for meetings, PRs and tasks (`plugins/office/skills/organizer/sections/`); setup copies the chosen ones into the config folder with their sources filled in, and they are edited there.
 
 A section's `.md` is plain prose for its agent:
 - what it wants, by meaning and track, from the Sync run's delta (tool names, "where to look" and provider quirks live in `sources/<id>.md` and the provider's gotchas reference) *(changed 2026-11-15, #193)*;
@@ -211,7 +211,7 @@ A section's `.md` is plain prose for its agent:
 
 ## Assistant
 
-The Claude inside the page. It runs on artifact `sample` with page tools that call the viewer's connectors, billed to the viewer's plan, and only while the page is open. It holds **Cloud** conversations and does not answer comments ([ADR 0005](../dashboard-v2/adr/0005-cloud-and-local-surfaces.md), superseding [ADR 0004](../dashboard-v2/adr/0004-assistant-answers-live-routine-follows-up.md)). *(Designed 2026-11-10, reshaped 2026-11-11.)*
+The Claude inside the page. It runs on artifact `sample` with page tools that call the viewer's connectors, billed to the viewer's plan, and only while the page is open. It holds **Cloud** conversations and does not answer comments ([ADR 0005](../organizer/adr/0005-cloud-and-local-surfaces.md), superseding [ADR 0004](../organizer/adr/0004-assistant-answers-live-routine-follows-up.md)). *(Designed 2026-11-10, reshaped 2026-11-11.)*
 
 **Two tabs** at the top: **Cards** (the dashboard) and **Assistant** (for anything not tied to a card).
 
@@ -228,7 +228,7 @@ Comments and Cloud conversations of other tasks are never included. The one-docu
 
 **Claude Duet:** the earlier hold on Ask until Duet ships is overridden; Cloud chat is built now and dropped if Duet covers it later *(2026-11-11)*.
 
-**Built** *(2026-11-10, #125)*: both tabs and **New task**. The rules turn is [`references/assistant.md`](../../plugins/office/skills/dashboard-v2/references/assistant.md), baked in by setup; its tool `create_task` writes the card format, key (`task_<slug>_<YYYYMMDD-HHMM>`: a new matter, so no lookup), labels (`oz:task`, `oz:on`, plus only `oz:mtg/*` and track labels already on the page) and valid fields, and the reply always carries the task link. The chat history is trimmed to half of `maxPromptBytes`, oldest first, the rules turn always kept. The New task / Ask switch went with the two sections (#129): creating a task became something Cloud does when asked.
+**Built** *(2026-11-10, #125)*: both tabs and **New task**. The rules turn is [`references/assistant.md`](../../plugins/office/skills/organizer/references/assistant.md), baked in by setup; its tool `create_task` writes the card format, key (`task_<slug>_<YYYYMMDD-HHMM>`: a new matter, so no lookup), labels (`oz:task`, `oz:on`, plus only `oz:mtg/*` and track labels already on the page) and valid fields, and the reply always carries the task link. The chat history is trimmed to half of `maxPromptBytes`, oldest first, the rules turn always kept. The New task / Ask switch went with the two sections (#129): creating a task became something Cloud does when asked.
 
 **Built** *(2026-11-12, #129)*: Cloud chat on every card and on the Assistant tab. One chat implementation serves both. The turns live in `db` at `cloud/tab` and `cloud/card-<n>` and are written once per exchange, trimmed oldest first to fit one document (`OZ.fitConversation`). A history that does not load within 10 s is not saved over. **New conversation** deletes the document. The card context is read fresh on every message: the brief and the whole thread, labelled User / Claude, oldest comments dropped first to fit (`OZ.cardView`). Tools: `create_task`, `delete_task`, `post_comment`, `close_card` / `snooze_card` (cards with buttons), `read_file`, `search_code`, `set_branch`, then the connector tools from `[assistant] tools`, cut to 16 (`OZ.pickTools`). `post_comment` signs the comment. It refuses while the thread has a user comment waiting for a sync, because a signed comment would mark that one answered. The assistant does not get an edit-the-brief tool: ask for it in the comments.
 
@@ -236,7 +236,7 @@ Comments and Cloud conversations of other tasks are never included. The one-docu
 
 **Removed** *(built 2026-11-10 in #128, removed 2026-11-12 in #151)*: catch-up on open, the card queue, and the page's `reply` into threads. A card run read the thread, called `sample` with `reply`, `create_task`, `close_card` and `snooze_card`, and labelled the reply itself (`OZ.needsReply`, `OZ.signed`, `OZ.replyLabels`). `close_card` and `snooze_card` stay for Cloud on cards with ✓ / ✕ / ⏸.
 
-**Long tasks** (Cloud, #130): the page continues `sample` calls in a loop, up to about 5, with progress and a Stop button. Beyond that it offers **Open in Claude Code**: a `claude://code/new` deep link prefilled with the task; the user presses Enter (deep links only prefill, see [findings.md](../dashboard-v2/findings.md)).
+**Long tasks** (Cloud, #130): the page continues `sample` calls in a loop, up to about 5, with progress and a Stop button. Beyond that it offers **Open in Claude Code**: a `claude://code/new` deep link prefilled with the task; the user presses Enter (deep links only prefill, see [findings.md](../organizer/findings.md)).
 
 **Built** *(2026-11-13, #130)*: the long-task loop is in `run()` of the Cloud chat. Claude ends an unfinished answer with `[[continue]]` (rules, "Long tasks"); the page strips it and calls `sample` again with what was said so far (`OZ.continueInput`), up to `OZ.MAX_ROUNDS` = 5 calls, with a "Step n of 5" line and the existing Stop. Past the cap it shows **Open in Claude Code**: `OZ.deepLink(folder, task)` with the user's message, the card reference and the last 2000 characters of progress, plus a select of `project-folder` (config; setup asks) and the folders this viewer used (browser storage, five, newest first). Whether a call ended on the round cap is not exposed by `sample`, so the marker is Claude's own report.
 
@@ -274,7 +274,7 @@ How this skill is meant to be written. Check every change against it. *(Agreed 2
 
 ## Off-the-shelf comparison
 
-Researched on 2026-11-15 for #186. Vendor docs were read through one deep search pass, not page by page. [ADR 0001](../dashboard-v2/adr/0001-github-issues-as-dashboard-tracker.md) points here.
+Researched on 2026-11-15 for #186. Vendor docs were read through one deep search pass, not page by page. [ADR 0001](../organizer/adr/0001-github-issues-as-dashboard-tracker.md) points here.
 
 | Product | Covers | Missing for us |
 |---|---|---|
@@ -293,7 +293,7 @@ Researched on 2026-11-15 for #186. Vendor docs were read through one deep search
 - replies to card comments;
 - cross-references per topic.
 
-So the build stays custom. What we adopt instead is a time-filter cursor per source ([findings](../dashboard-v2/findings.md#sync-change-detection-2026-11-15-186)).
+So the build stays custom. What we adopt instead is a time-filter cursor per source ([findings](../organizer/findings.md#sync-change-detection-2026-11-15-186)).
 
 ## References
 
@@ -303,9 +303,9 @@ So the build stays custom. What we adopt instead is a time-filter cursor per sou
 ## Open questions
 
 - ~~**Page language.**~~ Resolved 2026-11-05: the template's own strings are English; setup translates them into the user's language when publishing.
-- ~~**Mail and Teams: daily-digest or the dashboard?**~~ Resolved 2026-11-15 ([ADR 0009](../dashboard-v2/adr/0009-one-change-driven-sync-with-intake.md)): the digest becomes the Sync's Intake stage, and each source is read once per Sync run and routed to the topics and sections. The original question follows. Setup now offers each section the sources this session can reach (mail, Teams, Bitbucket, GitHub, calendar…) as a checklist, so the tasks section can read mail and Teams itself. daily-digest already reads mail too. Options: (a) drop mail from daily-digest entirely; (b) keep daily-digest filing mail into meeting notes as the record, but move finding action points and questions waiting on the user to the dashboard; (c) leave both. Leaning to (b): one owner per job, the digest keeps the record and the dashboard keeps what is still open. *(Raised by the user, 2026-11-05.)*
+- ~~**Mail and Teams: daily-digest or the dashboard?**~~ Resolved 2026-11-15 ([ADR 0009](../organizer/adr/0009-one-change-driven-sync-with-intake.md)): the digest becomes the Sync's Intake stage, and each source is read once per Sync run and routed to the topics and sections. The original question follows. Setup now offers each section the sources this session can reach (mail, Teams, Bitbucket, GitHub, calendar…) as a checklist, so the tasks section can read mail and Teams itself. daily-digest already reads mail too. Options: (a) drop mail from daily-digest entirely; (b) keep daily-digest filing mail into meeting notes as the record, but move finding action points and questions waiting on the user to the dashboard; (c) leave both. Leaning to (b): one owner per job, the digest keeps the record and the dashboard keeps what is still open. *(Raised by the user, 2026-11-05.)*
 
-- **Assistant spike tails**: results in [findings](../dashboard-v2/findings.md#assistant-spike-tails-2026-11-10). Creating a task with fields, reading a file by branch, mail drafts and the prompt size work; search covers only the default branch; the last active branch is worked out once on open. Still open:
+- **Assistant spike tails**: results in [findings](../organizer/findings.md#assistant-spike-tails-2026-11-10). Creating a task with fields, reading a file by branch, mail drafts and the prompt size work; search covers only the default branch; the last active branch is worked out once on open. Still open:
   - ~~`add_issue_comment` from inside a `sample` tool (the card dialogue's `reply`)~~: moot, `reply` is removed (#151); a comment Cloud posts on request still goes through the write rule;
   - two Cloud chats (a card and the Assistant tab) calling `sample` at the same time: not tested;
   - at most 16 tools per `sample` call: setup picks the assistant's tools across connectors, tracker tools first.
@@ -378,7 +378,7 @@ Collected from sessions 2026-11-01..04.
 
 ## Future
 
-- A hands-free "Run Claude" on a card. The 2026-11-01 attempt failed with 403; per [findings.md](../dashboard-v2/findings.md) (2026-11-09) deep links only prefill a prompt, so v2 uses them as the assistant's long-task fallback. Agent tasks (`ready-for-agent`, run by the sync) now cover hands-free work at up to an hour' delay *(2026-11-11)*; the routine fire API and GitHub Actions stay untested.
+- A hands-free "Run Claude" on a card. The 2026-11-01 attempt failed with 403; per [findings.md](../organizer/findings.md) (2026-11-09) deep links only prefill a prompt, so v2 uses them as the assistant's long-task fallback. Agent tasks (`ready-for-agent`, run by the sync) now cover hands-free work at up to an hour' delay *(2026-11-11)*; the routine fire API and GitHub Actions stay untested.
 - A GitHub bot account for Claude's comments and as `agent-assignee`.
 
 ## Spike result (2026-11-04)
@@ -389,7 +389,7 @@ The throwaway page Dashboard Spike (a private artifact) used the claude.ai conne
 - `issue_write` `update` with `issue_fields` sets dates and options, and with `state` / `state_reason` closes an issue;
 - `add_issue_comment` posts a comment.
 
-Later findings (connector writes that hang from Claude Code, and more): [findings.md](../dashboard-v2/findings.md).
+Later findings (connector writes that hang from Claude Code, and more): [findings.md](../organizer/findings.md).
 
 The connector exposes only `get_me`, `list_issues`, `search_issues`, `issue_read`, `issue_write` and `add_issue_comment`. It has no Projects tools, so v2 uses issue fields instead of a Project.
 

@@ -1,6 +1,6 @@
 # Spec: one hourly change-driven Sync with Intake
 
-Decided 2026-11-15 ([ADR 0009](adr/0009-one-change-driven-sync-with-intake.md), #186). The slices are the sub-issues of #186. The terms are from the [glossary](glossary.md). Status: implemented on branch `dashboard-v2-sync-pipeline` (#193, #194, #195).
+Decided 2026-11-15 ([ADR 0009](adr/0009-one-change-driven-sync-with-intake.md), #186). The slices are the sub-issues of #186. The terms are from the [glossary](glossary.md). Status: implemented (#193, #194, #195).
 
 ## Problem Statement
 
@@ -18,7 +18,7 @@ That causes these problems:
 
 ## Solution
 
-One command, `/dashboard-v2 sync`, runs every hour and does only what changed since the last pass:
+One command, `/office:organizer sync`, runs every hour and does only what changed since the last pass:
 1. It checks the GitHub quota and skips when the quota is low.
 2. It takes in new transcripts and mail into the meeting notes and the daily brief (the former digest).
 3. It reads each source once.

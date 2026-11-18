@@ -1,6 +1,8 @@
-# Dashboard v2: findings
+# Organizer: findings
 
-Facts learned while building and running dashboard v2 that shape its mechanics. Newest first.
+Until 2026-11 called Dashboard v2; labels were `dsh:*`.
+
+Facts learned while building and running the Organizer dashboard that shape its mechanics. Newest first.
 
 ## Sync change detection (2026-11-15, #186)
 
@@ -88,7 +90,7 @@ Tested in Claude Launch Lab (a private test artifact) v7, Claude desktop app, ch
 - The journal stores outcomes, not message text, so what Claude answered is not recorded.
 - Confirmed by the user: a full chat with history, working in the page.
 
-**Open: how the chat learns the dashboard conventions.** `sample` has no system prompt, so instructions go in a leading user turn. The conventions (labels, comment signature, card types) live in `plugins/office/skills/dashboard-v2/references/` (`tracker.md`, `comments.md`, `card.md`, about 10 KB together). Options under consideration, none chosen:
+**Open: how the chat learns the dashboard conventions.** `sample` has no system prompt, so instructions go in a leading user turn. The conventions (labels, comment signature, card types) live in `plugins/office/skills/organizer/references/` (`tracker.md`, `comments.md`, `card.md`, about 10 KB together). Options under consideration, none chosen:
 - Enforce mechanical rules in the page's tool code (reply signature, `oz:` labels, the full-set rewrite of `labels`, approval before writes) and keep only judgement rules in the prompt.
 - Fill the prompt at setup time, when `page.html` is built and published (`references/setup.md`, step 3), so it follows the skill files.
 - Read the files from the repo at chat start through the `github` connector. Needs a file-read tool declared in the manifest; not checked.

@@ -36,7 +36,7 @@ A card, a task or the status is a **record**:
 
 ## Relations
 
-Hierarchy, blocking and type ([ADR 0008](https://github.com/EmblaTech/claude-plugins/blob/main/docs/dashboard-v2/adr/0008-meeting-tasks-by-series-subtasks-native.md)): set them when the source says so, and read the ones the user set by hand.
+Hierarchy, blocking and type ([ADR 0008](https://github.com/EmblaTech/claude-plugins/blob/main/docs/organizer/adr/0008-meeting-tasks-by-series-subtasks-native.md)): set them when the source says so, and read the ones the user set by hand.
 - **Tasks only.** A meeting or PR card gets no type and no parent; `oz:*` labels stay the card kind.
 - **Parent is a task, never a meeting card.** A task that prepares for a meeting carries the series label `oz:mtg/<series>`.
 - **The relation is the only record.** No child checklist in a parent's body, no "blocked by" line. Subtask counts and "has open subtasks" come from `children()`.
