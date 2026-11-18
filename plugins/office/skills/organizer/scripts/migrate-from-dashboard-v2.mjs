@@ -57,12 +57,15 @@ export async function migrate({ repo, dryRun = false }, io) {
   for (const [from, to] of cfg.conflicts) io.log(`config conflict: both ${from} and ${to} exist; merge them by hand`);
   conflicts += cfg.conflicts.length;
   if (!cfg.moves.length && !cfg.conflicts.length) io.log("config: nothing left to move");
-  io.log(dryRun ? "Dry run: nothing changed." : "Now republish the page: run /office:organizer setup republish the page.");
+  io.log(dryRun ? "Dry run: nothing changed."
+    : conflicts ? "Settle the conflicts above and rerun this script before republishing."
+    : "Now republish the page: run /office:organizer setup republish the page.");
   return conflicts;
 }
 
 // CLI: node migrate-from-dashboard-v2.mjs [--dry-run] [--repo owner/name], from the project root.
-if (process.argv[1] && import.meta.url === (await import("node:url")).pathToFileURL(process.argv[1]).href) {
+// Matched by file name, not URL: a symlinked plugin path or a drive-letter case would make a URL check skip the run silently.
+if (/migrate-from-dashboard-v2\.mjs$/.test(process.argv[1] || "")) {
   const { execFileSync } = await import("node:child_process");
   const fs = await import("node:fs");
   const args = process.argv.slice(2), at = args.indexOf("--repo");
