@@ -60,7 +60,7 @@ The repo's agent-issue workflow (`docs/agents/issue-tracker.md`, triage labels) 
 - `Start date`: snoozed until. The card stays hidden before this date. The field is reused for this purpose; GitHub's own wording is "when work begins".
 - `Priority` (Urgent / High / Medium / Low): the order of cards within a group.
 
-**Meeting series** is a label: `oz:mtg/<series>` (e.g. `oz:mtg/ft-sync`).
+**Meeting series** is a label: `oz:mtg/<series>` (e.g. `oz:mtg/weekly-sync`).
 
 **Relations** ([ADR 0008](../organizer/adr/0008-meeting-tasks-by-series-subtasks-native.md), #169, *decided 2026-11-14*). A subtask is a native sub-issue of its parent task; native sub-issues are the only list of children, and no body keeps a checklist of them. A blocked task has a native blocked-by dependency, never a "blocked by #n" line in prose. Tasks get the issue type Epic, Story or Task; meeting and PR cards get none, and the `oz:*` type labels stay. A task is never a sub-issue of a meeting card: it attaches to meetings only through the series label. Collectors and `create_task` accept an optional parent, blocked-by and type; relations the user sets by hand on GitHub are read the same way.
 
