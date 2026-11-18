@@ -4,7 +4,7 @@ status: accepted (spike passed 2026-11-04)
 
 # The page reads the tracker live by label and keeps no copy
 
-The page queries the tracker for open issues labelled `dsh:on` through the viewer's claude.ai GitHub connector (artifact `mcp` capability, polled every ≥30 s), and writes ✓ / ✕ / ⏸ and comments straight back. Routines decide what is on the dashboard by setting the label and the `Priority` issue field, so the page has no selection logic and is never republished for data. The rich brief lives in the issue body under fixed Markdown headings.
+The page queries the tracker for open issues labelled `oz:on` through the viewer's claude.ai GitHub connector (artifact `mcp` capability, polled every ≥30 s), and writes ✓ / ✕ / ⏸ and comments straight back. Routines decide what is on the dashboard by setting the label and the `Priority` issue field, so the page has no selection logic and is never republished for data. The rich brief lives in the issue body under fixed Markdown headings.
 
 ## Considered options
 

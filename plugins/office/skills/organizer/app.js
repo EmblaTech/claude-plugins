@@ -1,27 +1,27 @@
 // The page's DOM and wiring: reads the config, talks to the tracker and Cloud, renders the cards.
-import { DSH } from "./logic.js";
+import { OZ } from "./logic.js";
 import { githubTracker, artifactDbTracker } from "./tracker.js";
 
 (() => {
-  const CFG = JSON.parse(document.getElementById("dsh-config").textContent);
+  const CFG = JSON.parse(document.getElementById("oz-config").textContent);
   // The contract's labels (logic.js), the same in every storage mode.
-  const L = DSH.LABELS, SIG = CFG.replySignature || "— 🤖 Claude", SERVER = CFG.server || "github";
+  const L = OZ.LABELS, SIG = CFG.replySignature || "— 🤖 Claude", SERVER = CFG.server || "github";
   const GITHUB = (CFG.storage || "github") === "github";
   // `repo` is the GitHub storage mode's store and the repo the Assistant reads; another storage mode may leave it out.
   const [OWNER, REPO] = String(CFG.repo || "").split("/");
   const POLL_MS = Math.max(30, CFG.pollSeconds || 60) * 1000;
-  const UI = DSH.uiLabels(CFG.labels);
+  const UI = OZ.uiLabels(CFG.labels);
   const el = (tag, cls, text) => { const n = document.createElement(tag); if (cls) n.className = cls; if (text != null) n.textContent = text; return n; };
   const onCtrlEnter = (ta, f) => { ta.onkeydown = e => { if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) { e.preventDefault(); f(); } }; };
   const ymd = d => d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0");
   const today = () => ymd(new Date());
-  // A new task's key carries the minute it was made (see DSH.newTask): YYYYMMDD-HHMM.
+  // A new task's key carries the minute it was made (see OZ.newTask): YYYYMMDD-HHMM.
   const keyStamp = () => { const d = new Date(); return ymd(d).replace(/-/g, "") + "-" + String(d.getHours()).padStart(2, "0") + String(d.getMinutes()).padStart(2, "0"); };
   const dm = s => String(s || "").slice(8, 10).replace(/^0/, "") + "." + String(s || "").slice(5, 7);
   const when = iso => { try { return new Date(iso).toLocaleString(undefined, { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" }); } catch { return ""; } };
   // `#N` becomes a link only where the storage mode says what it points to.
-  const mdr = text => DSH.md(text, tracker ? tracker.mdBase : "");
-  // `markup` always comes from DSH.md / DSH.esc, which escape everything.
+  const mdr = text => OZ.md(text, tracker ? tracker.mdBase : "");
+  // `markup` always comes from OZ.md / OZ.esc, which escape everything.
   const html = (cls, markup) => { const d = el("div", "md" + (cls ? " " + cls : "")); d.innerHTML = markup; return d; };
   document.getElementById("h").textContent = CFG.title || "Dashboard";
 
@@ -33,14 +33,14 @@ import { githubTracker, artifactDbTracker } from "./tracker.js";
   // and whether GitHub said the rate limit was hit (then it stays slow for an hour). The artifact db reports its own
   // budget errors through `rateLimited`.
   let CALLS = [], LIMITED_UNTIL = 0;
-  const rateLimited = () => { LIMITED_UNTIL = Date.now() + DSH.HOUR_MS; };
+  const rateLimited = () => { LIMITED_UNTIL = Date.now() + OZ.HOUR_MS; };
   async function callTool(server, tool, input) {
-    const github = GITHUB && server === SERVER, limited = x => { if (github && DSH.isRateLimit(x)) rateLimited(); };
-    if (github) CALLS = DSH.recentCalls(CALLS, Date.now()).concat(Date.now());
+    const github = GITHUB && server === SERVER, limited = x => { if (github && OZ.isRateLimit(x)) rateLimited(); };
+    if (github) CALLS = OZ.recentCalls(CALLS, Date.now()).concat(Date.now());
     try { const r = await mcp.callTool(server, tool, input, { cache: false }); if (r?.isError) limited(r); return r; }
     catch (e) { limited(e); throw e; }
   }
-  const pollDelay = () => DSH.pollDelay(POLL_MS, CALLS, Date.now(), LIMITED_UNTIL);
+  const pollDelay = () => OZ.pollDelay(POLL_MS, CALLS, Date.now(), LIMITED_UNTIL);
   const arr = (x, k) => Array.isArray(x) ? x : (x && Array.isArray(x[k]) ? x[k] : []);
   const failText = e => tracker ? tracker.failText(e) : (e?.code || "error") + (e?.message ? ": " + e.message : "");
 
@@ -55,9 +55,9 @@ import { githubTracker, artifactDbTracker } from "./tracker.js";
   // ROWS: task rows expanded in place; ROWGET: the one `get` each of them reads (an Error when it failed). EXP holds only
   // the series lists a meeting card opens ("s<n>").
   const LIFTED = {}, EXP = new Set(), TREE = {}, WALKED = new Set(), ROWS = new Set(), ROWGET = {}, T_LOADING = new Map();
-  const tree = DSH.lazyTree(n => tracker.children(n));
+  const tree = OZ.lazyTree(n => tracker.children(n));
   // Silence is the signal: no fresh run means nothing could report the failure.
-  const stale = () => !LOAD_ERR && DSH.isStale(STATUS?.meta.updated, Date.now(), CFG.staleHours || 26);
+  const stale = () => !LOAD_ERR && OZ.isStale(STATUS?.meta.updated, Date.now(), CFG.staleHours || 26);
 
   // ---- Filters: a section with `filters` gets author / repo / last-activity chips, at most one of each on.
   const FKEY = "organizer.filter";
@@ -114,14 +114,14 @@ import { githubTracker, artifactDbTracker } from "./tracker.js";
   const showErr = (n, text) => document.querySelectorAll("[data-err]").forEach(b => { if (b.dataset.err === String(n)) b.textContent = text; });
   async function act(issue, kind, arg) {
     const n = issue.id;
-    if (kind === "done" && RELS[n] && !DSH.canDone(RELS[n])) {
+    if (kind === "done" && RELS[n] && !OZ.canDone(RELS[n])) {
       showErr(n, "Not done: it still has open subtasks."); return;
     }
     GONE.set(n, 0); render(true);
     try {
       if (kind === "done") await tracker.setState(n, "done");
       else if (kind === "dismiss") {
-        if (DSH.labelNames(issue).includes(L.task)) await tracker.delete(n);
+        if (OZ.labelNames(issue).includes(L.task)) await tracker.delete(n);
         else await tracker.setState(n, "dismissed");
       } else if (kind === "snooze") await tracker.setField(n, "startDate", arg);
     } catch (e) {
@@ -137,14 +137,14 @@ import { githubTracker, artifactDbTracker } from "./tracker.js";
     if (sec.cardActions === false) return box;
     const b = (t, title, f) => { const x = el("button", "mk", t); x.type = "button"; x.title = title; x.onclick = e => { e.stopPropagation(); f(); }; box.append(x); return x; };
     const ok = b("✓", "Done", () => act(issue, "done"));
-    if (rel && !DSH.canDone(rel)) { ok.disabled = true; ok.title = "Open subtasks first"; }
-    b("✕", DSH.labelNames(issue).includes(L.task) ? "Delete task" : "Dismiss", () => act(issue, "dismiss"));
+    if (rel && !OZ.canDone(rel)) { ok.disabled = true; ok.title = "Open subtasks first"; }
+    b("✕", OZ.labelNames(issue).includes(L.task) ? "Delete task" : "Dismiss", () => act(issue, "dismiss"));
     // The day choice is a popover under ⏸, so it never adds a line to the row.
     const pick = el("span", "popover"); pick.hidden = true;
     b("⏸", "Snooze", () => { const was = pick.hidden; document.querySelectorAll(".popover").forEach(p => { p.hidden = true; }); pick.hidden = !was; });
     [["tomorrow", false], ["next week", true]].forEach(([t, wk]) => {
       const x = el("button", "mk outline", t); x.type = "button";
-      x.onclick = e => { e.stopPropagation(); act(issue, "snooze", DSH.snoozeDate(today(), wk)); }; pick.append(x);
+      x.onclick = e => { e.stopPropagation(); act(issue, "snooze", OZ.snoozeDate(today(), wk)); }; pick.append(x);
     });
     box.append(pick);
     return box;
@@ -158,9 +158,9 @@ import { githubTracker, artifactDbTracker } from "./tracker.js";
       const cs = THREADS[n];
       if (cs === undefined) { list.append(el("div", "cm-meta", "Loading comments…")); return; }
       if (cs instanceof Error) { list.append(el("div", "err", "Comments did not load: " + failText(cs))); return; }
-      const waiting = new Set(DSH.unanswered(cs, SIG).map(c => c.id));
+      const waiting = new Set(OZ.unanswered(cs, SIG).map(c => c.id));
       cs.forEach(c => {
-        const claude = DSH.isClaude(c, SIG), d = el("div", "cm" + (claude ? " claude" : ""));
+        const claude = OZ.isClaude(c, SIG), d = el("div", "cm" + (claude ? " claude" : ""));
         d.append(html("", mdr(c.body)));
         const meta = el("div", "cm-meta", (claude ? "Claude" : "You") + " · " + when(c.created_at) + (waiting.has(c.id) ? " · waiting for Claude" : ""));
         if (c.url) { const a = el("a", null, "on " + tracker.name); a.href = c.url; a.target = "_blank"; a.rel = "noopener"; meta.append(" · ", a); }
@@ -208,15 +208,15 @@ import { githubTracker, artifactDbTracker } from "./tracker.js";
     loadChildren(n);   // cached within a poll, read again after it, so a level opened before is never stale
     if (kids === undefined) { box.append(el("div", "cm-meta", "Loading subtasks…")); return box; }
     if (kids instanceof Error) { box.append(el("div", "err", "Subtasks did not load: " + failText(kids))); return box; }
-    const open = DSH.openSubs(kids).filter(i => !GONE.has(i.id));
+    const open = OZ.openSubs(kids).filter(i => !GONE.has(i.id));
     open.forEach(i => box.append(taskRow(i, depth)));
     if (!open.length) box.append(el("div", "cm-meta", "No open subtasks."));
     return box;
   }
   const relBadges = (bs, n, rel) => {
-    if (DSH.countLabel(rel)) bs.append(el("span", "badge accent", DSH.countLabel(rel)));
+    if (OZ.countLabel(rel)) bs.append(el("span", "badge accent", OZ.countLabel(rel)));
     if (rel.type) bs.append(el("span", "badge", rel.type));
-    if (DSH.isBlocked(rel)) bs.append(el("span", "badge warn", "Blocked"));
+    if (OZ.isBlocked(rel)) bs.append(el("span", "badge warn", "Blocked"));
     if (LIFT.get(n)?.cycle) bs.append(el("span", "badge warn", "cycle in parents"));
   };
   // The link-external icon: the record where it lives, in a new tab; a `#<key>` link opens it in place on this page.
@@ -228,10 +228,10 @@ import { githubTracker, artifactDbTracker } from "./tracker.js";
     return a;
   };
 
-  // The detail a card and a task row share, in one order (DSH.detailParts): description, subtasks, Prepare and prompts,
+  // The detail a card and a task row share, in one order (OZ.detailParts): description, subtasks, Prepare and prompts,
   // Cloud, Local (ADR 0005). `o.open`: build what needs the network now (a card's detail is built hidden and filled on click).
   function detail(issue, sec, c, o) {
-    const n = issue.id, det = el("div", "detail"), parts = DSH.detailParts(c, { total: o.depth ? o.rel?.total : 0, gistShown: o.gistShown });
+    const n = issue.id, det = el("div", "detail"), parts = OZ.detailParts(c, { total: o.depth ? o.rel?.total : 0, gistShown: o.gistShown });
     const part = (title, markup) => { const d = el("div"); if (title) d.append(el("h3", "part", title)); d.append(html("", markup)); det.append(d); return d; };
     const th = thread(issue, c.suggestions);
     parts.order.forEach(id => {
@@ -241,7 +241,7 @@ import { githubTracker, artifactDbTracker } from "./tracker.js";
         if (o.open) box.append(subtree(n, o.depth + 1));
       } else if (id === "prepare") part("Prepare", mdr(c.prepare));
       else if (id === "prompts") c.prompts.forEach(p => {
-        const d = el("div", "prompt"); d.append(html("", "<pre><code>" + DSH.esc(p) + "</code></pre>"));
+        const d = el("div", "prompt"); d.append(html("", "<pre><code>" + OZ.esc(p) + "</code></pre>"));
         const b = el("button", "btn", "Copy"); b.type = "button";
         b.onclick = async () => { try { await navigator.clipboard.writeText(p); b.textContent = "Copied"; } catch { b.textContent = "Select and copy"; } setTimeout(() => { b.textContent = "Copy"; }, 2500); };
         d.append(b); det.append(d);
@@ -261,12 +261,12 @@ import { githubTracker, artifactDbTracker } from "./tracker.js";
 
   // One `get` when a row opens: the body, the subtask count, the type and the blockers. Until then only the list item shows.
   function loadRow(n) {
-    return tracker.get(n).then(g => { ROWGET[n] = g; RELS[n] = DSH.relOf(g); }, e => { ROWGET[n] = Object.assign(new Error(e?.message || ""), { code: e?.code }); }).then(() => render(true));
+    return tracker.get(n).then(g => { ROWGET[n] = g; RELS[n] = OZ.relOf(g); }, e => { ROWGET[n] = Object.assign(new Error(e?.message || ""), { code: e?.code }); }).then(() => render(true));
   }
   // A task as a row, under its parent or under a meeting. Its caret, its title and a click on the row open it in place into the
   // card's detail; a subtask with subtasks of its own lists them there, so the tree goes as deep as it is opened.
   function taskRow(issue, depth = 1) {
-    const n = issue.id, open = ROWS.has(n), got = ROWGET[n], ri = DSH.rowIssue(issue, got), rel = RELS[n] || DSH.relOf(ri);
+    const n = issue.id, open = ROWS.has(n), got = ROWGET[n], ri = OZ.rowIssue(issue, got), rel = RELS[n] || OZ.relOf(ri);
     const onPath = [...LIFT.values()].some(e => e.path.has(n));
     const row = el("div", "task-row" + (onPath ? " path" : "") + (open ? " open" : "")), head = el("div", "task-head");
     row.style.setProperty("--depth", depth);
@@ -289,17 +289,17 @@ import { githubTracker, artifactDbTracker } from "./tracker.js";
       if (got === undefined) body.append(el("div", "cm-meta", "Loading…"));
       else {
         if (got instanceof Error) body.append(el("div", "err", "Details did not load: " + failText(got)));
-        body.append(detail(ri, {}, DSH.parseCard(ri.body), { open: true, rel, depth, gistShown: false }));
+        body.append(detail(ri, {}, OZ.parseCard(ri.body), { open: true, rel, depth, gistShown: false }));
       }
       row.append(body);
     }
     return row;
   }
   // The open tasks of the series a meeting card carries, the same under every occurrence.
-  const seriesOf = issue => DSH.seriesTasks(Object.values(SERIES).flat(), DSH.seriesLabels(issue)).filter(t => !GONE.has(t.id) && !RELS[t.id]?.hasParent);
+  const seriesOf = issue => OZ.seriesTasks(Object.values(SERIES).flat(), OZ.seriesLabels(issue)).filter(t => !GONE.has(t.id) && !RELS[t.id]?.hasParent);
 
   function card(issue, sec) {
-    const c = DSH.parseCard(issue.body), meta = issue.meta, n = issue.id, labels = DSH.labelNames(issue), rel = RELS[n];
+    const c = OZ.parseCard(issue.body), meta = issue.meta, n = issue.id, labels = OZ.labelNames(issue), rel = RELS[n];
     const node = el("article", "card" + (labels.includes(L.needsYou) ? " needs-you" : ""));
     node.dataset.card = n;
     node.append(el("div", "lead", meta.lead || issue.ref || "—"));
@@ -317,7 +317,7 @@ import { githubTracker, artifactDbTracker } from "./tracker.js";
     // The gist is the brief's first paragraph; the rest opens in place.
     const err = el("div", "err"); err.dataset.err = n;
     const det = detail(issue, sec, c, { open: OPEN.has(n), rel, depth: 0, gistShown: true });
-    head.append(html("gist", mdr(DSH.detailParts(c).gist)), err);
+    head.append(html("gist", mdr(OZ.detailParts(c).gist)), err);
     addTerms(head, c.terms);
     node.append(head);
     det.hidden = !OPEN.has(n);
@@ -352,7 +352,7 @@ import { githubTracker, artifactDbTracker } from "./tracker.js";
       if (det.hidden) { OPEN.delete(n); return; }
       // The thread and the Cloud history load only when a card opens, never on the poll.
       OPEN.add(n); loadThread(n, det._th._fill); CLOUD[chatKey(n)]?.load();
-      // Opening the card is reading Claude's reply: drop `dsh:replied` and its badge.
+      // Opening the card is reading Claude's reply: drop `oz:replied` and its badge.
       if (labels.includes(L.replied)) {
         tracker.removeLabel(n, L.replied)
           .then(keep => { issue.labels = keep.map(name => ({ name })); render(true); })
@@ -375,20 +375,20 @@ import { githubTracker, artifactDbTracker } from "./tracker.js";
     lastSig = sig;
     const t = today();
     [...ISSUES, ...Object.values(LIFTED)].forEach(i => { delete i._lifted; });
-    const shown0 = ISSUES.filter(i => DSH.isVisible(i, t) && !GONE.has(i.id));
+    const shown0 = ISSUES.filter(i => OZ.isVisible(i, t) && !GONE.has(i.id));
     // Subtasks show under their parent and series tasks under their meeting; a root lifted by a subtask that needs the user stays.
-    const cards = DSH.topLevel(shown0, RELS, DSH.seriesOnPage(shown0));
+    const cards = OZ.topLevel(shown0, RELS, OZ.seriesOnPage(shown0));
     LIFT.forEach((e, root) => {
       const i = ISSUES.find(x => x.id === root) || LIFTED[root];
       if (i && !GONE.has(root)) { i._lifted = true; if (!cards.includes(i)) cards.push(i); }
     });
-    const visible = cards.map(i => Object.assign(i, { _meta: i.meta })).sort(DSH.byOrder);
+    const visible = cards.map(i => Object.assign(i, { _meta: i.meta })).sort(OZ.byOrder);
     const banners = document.getElementById("banners"); banners.textContent = "";
     if (LOAD_ERR) { const b = el("div", "banner error"); b.append(el("strong", null, "Tracker not read: "), LOAD_ERR); banners.append(b); }
     if (REL_ERR) { const b = el("div", "banner error"); b.append(el("strong", null, "Subtasks not read: "), REL_ERR); banners.append(b); }
     if (HASH_MISS) { const b = el("div", "banner"); b.append(el("strong", null, "Not a card on the page: "), HASH_MISS + " (a subtask, a meeting's task or a closed record)"); banners.append(b); }
     if (stale()) { const u = STATUS?.meta.updated; const b = el("div", "banner"); b.append(el("strong", null, "Routine stalled: "), u ? "last run " + new Date(u).toLocaleString() : "no run yet"); banners.append(b); }
-    const status = STATUS && DSH.parseCard(STATUS.body).brief;
+    const status = STATUS && OZ.parseCard(STATUS.body).brief;
     if (status) { const b = el("div", "banner"); b.append(html("", mdr(status))); banners.append(b); }
     const root = document.getElementById("sections"), nav = document.getElementById("nav");
     root.textContent = ""; nav.textContent = "";
@@ -426,21 +426,21 @@ import { githubTracker, artifactDbTracker } from "./tracker.js";
   // Relations of the cards just read: one `get` per task (the list call has none), the series' open tasks, the walk up from
   // every subtask that needs the user. A failure shows as a banner, never as "no subtasks".
   async function loadRelations(items) {
-    const t = today(), isTask = i => DSH.labelNames(i).includes(L.task);
-    const onPage = DSH.seriesOnPage(items.filter(i => DSH.isVisible(i, t)));
+    const t = today(), isTask = i => OZ.labelNames(i).includes(L.task);
+    const onPage = OZ.seriesOnPage(items.filter(i => OZ.isVisible(i, t)));
     const series = {};
     await Promise.all([...onPage].map(async l => { series[l] = await tracker.list({ labels: [L.task, l] }); }));
     const tasks = new Map();
     [...items.filter(isTask), ...Object.values(series).flat()].forEach(i => tasks.set(i.id, i));
     const rels = {};
     const raw = {};
-    await Promise.all([...tasks.keys()].map(async n => { raw[n] = await tracker.get(n); rels[n] = DSH.relOf(raw[n]); }));
+    await Promise.all([...tasks.keys()].map(async n => { raw[n] = await tracker.get(n); rels[n] = OZ.relOf(raw[n]); }));
     const parentOf = async n => {
-      if (!rels[n]) rels[n] = DSH.relOf(await tracker.get(n));
+      if (!rels[n]) rels[n] = OZ.relOf(await tracker.get(n));
       return rels[n].parent ?? (rels[n].hasParent ? await tracker.parent(n) : null);
     };
-    const needs = items.filter(i => DSH.labelNames(i).includes(L.needsYou) && rels[i.id]?.hasParent);
-    const walks = await Promise.all(needs.map(i => DSH.walkUp(i.id, parentOf)));
+    const needs = items.filter(i => OZ.labelNames(i).includes(L.needsYou) && rels[i.id]?.hasParent);
+    const walks = await Promise.all(needs.map(i => OZ.walkUp(i.id, parentOf)));
     await Promise.all(walks.filter(w => !items.some(i => i.id === w.root)).map(async w => { LIFTED[w.root] = await tracker.get(w.root); }));
     // Open the path once, when the walk first finds it; after that the user's own clicks decide.
     walks.forEach(w => {
@@ -451,11 +451,11 @@ import { githubTracker, artifactDbTracker } from "./tracker.js";
     // Rows open in place (the path above included) are read again, so their body and counts are as fresh as a card's.
     // A closed or removed row is dropped; a task already read above is not read twice.
     ROWS.forEach(n => { if (GONE.has(n)) ROWS.delete(n); });
-    await Promise.all([...ROWS].map(async n => { try { const g = raw[n] || await tracker.get(n); ROWGET[n] = g; rels[n] = DSH.relOf(g); } catch {} }));
+    await Promise.all([...ROWS].map(async n => { try { const g = raw[n] || await tracker.get(n); ROWGET[n] = g; rels[n] = OZ.relOf(g); } catch {} }));
     // Open levels are read again, so a poll shows subtasks closed or added since.
     tree.reset();
     await Promise.all([...ROWS, ...OPEN].filter(n => rels[n]?.total).map(async n => { try { TREE[n] = await tree.expand(n); } catch {} }));
-    RELS = rels; SERIES = series; LIFT = DSH.liftMap(walks);
+    RELS = rels; SERIES = series; LIFT = OZ.liftMap(walks);
   }
   async function poll() {
     let stamp;
@@ -493,7 +493,7 @@ import { githubTracker, artifactDbTracker } from "./tracker.js";
     if (save) try { localStorage.setItem(THKEY, t); } catch {}
   };
   document.querySelectorAll("#theme button").forEach(b => { b.onclick = () => setTheme(b.value, true); });
-  setTheme(DSH.themeChoice((() => { try { return localStorage.getItem(THKEY); } catch { return null; } })()), false);
+  setTheme(OZ.themeChoice((() => { try { return localStorage.getItem(THKEY); } catch { return null; } })()), false);
 
   // ---- Assistant: Cloud chats (ADR 0005), one on the Assistant tab and one per card. The page keeps the turns in the
   // artifact `db` (the last conversation per chat, until "New conversation"); every call starts with the rules turn
@@ -513,7 +513,7 @@ import { githubTracker, artifactDbTracker } from "./tracker.js";
   // What Claude needs on every call: the date, the cards on the page, and where repo reads go.
   const board = () => {
     const d = new Date(), lines = ISSUES.map(i => "#" + i.id + " [" + (i.meta.section || "") + "] " + i.title
-      + " (" + DSH.labelNames(i).filter(l => l.startsWith(L.series) || !l.startsWith(L.prefix)).join(", ") + ")");
+      + " (" + OZ.labelNames(i).filter(l => l.startsWith(L.series) || !l.startsWith(L.prefix)).join(", ") + ")");
     return "Today is " + WEEKDAY[d.getDay()] + ", " + today() + ".\nRepo " + OWNER + "/" + REPO + ": file reads go to branch "
       + (BRANCH || "(none chosen: ask the user, then call set_branch)") + "; code search covers only the default branch.\nCards on the dashboard:\n" + (lines.join("\n") || "none");
   };
@@ -524,8 +524,8 @@ import { githubTracker, artifactDbTracker } from "./tracker.js";
   const gated = (chat, { annotations, tracker: inTracker, preview, check, execute, ...tool }) => Object.assign(tool, {
     async execute(input) {
       check?.(input);
-      if (DSH.needsClick(annotations, inTracker)
-        && !await chat.approve(preview ? preview(input) : "<pre><code>" + DSH.esc(JSON.stringify(input, null, 2)) + "</code></pre>"))
+      if (OZ.needsClick(annotations, inTracker)
+        && !await chat.approve(preview ? preview(input) : "<pre><code>" + OZ.esc(JSON.stringify(input, null, 2)) + "</code></pre>"))
         throw new Error("The user denied this action: nothing was done.");
       return execute(input);
     },
@@ -541,17 +541,17 @@ import { githubTracker, artifactDbTracker } from "./tracker.js";
       brief: { type: "string", description: "One sentence in the user's language: what is to be done and why now. More detail may follow after a blank line. Not the priority, date or link: those go in their own fields." },
       priority: { type: "string", enum: ["Urgent", "High", "Medium", "Low"], description: "Only when the message makes it clear." },
       target: { type: "string", description: "Due date as YYYY-MM-DD, only when the message makes it clear." },
-      series: { type: "string", description: "The <series> of a dsh:mtg/<series> label in the card list, when the task prepares for that meeting." },
+      series: { type: "string", description: "The <series> of a oz:mtg/<series> label in the card list, when the task prepares for that meeting." },
       card: { type: tracker.idType, description: "The id of the card the task belongs to" + (card ? " (this card, #" + card + ", unless the user names another)." : ", when the message points to one.") },
-      track: { type: "string", description: "A label without the dsh: prefix from the card list, when the task clearly belongs to that track." },
+      track: { type: "string", description: "A label without the oz: prefix from the card list, when the task clearly belongs to that track." },
       parent: { type: tracker.idType, description: "The id of a task this one is a subtask of, only when the user says so. Not a meeting card." },
       blockedBy: { type: "array", items: { type: tracker.idType }, description: "Ids of tasks that must be done first." + (tracker.canBlock ? "" : " This page cannot set it yet: it is refused.") },
       type: { type: "string", enum: ["Epic", "Story", "Task"], description: "The issue type, only when the user names one." },
     } },
     async execute(input) {
       if (!tracker.canBlock && (input.blockedBy || []).length) throw new Error("Blocked-by cannot be set from this page: the " + tracker.name + " connector has no dependencies tool. Nothing was created; offer the task without it.");
-      const known = [...new Set(ISSUES.flatMap(DSH.labelNames))];
-      const r = await tracker.create(DSH.newTask(input, { stamp: keyStamp(), section: CFG.taskSection, known, parseId: tracker.parseId, refMd: tracker.refMd }));
+      const known = [...new Set(ISSUES.flatMap(OZ.labelNames))];
+      const r = await tracker.create(OZ.newTask(input, { stamp: keyStamp(), section: CFG.taskSection, known, parseId: tracker.parseId, refMd: tracker.refMd }));
       run.made.push(r);
       return r;
     },
@@ -560,7 +560,7 @@ import { githubTracker, artifactDbTracker } from "./tracker.js";
   const taskCard = n => {
     const id = tracker.parseId(n), i = ISSUES.find(x => x.id === id && !GONE.has(x.id));
     if (!i) throw new Error("#" + n + " is not a card on the dashboard");
-    if (!DSH.labelNames(i).includes(L.task)) throw new Error("#" + n + " is not a task: only tasks can be deleted");
+    if (!OZ.labelNames(i).includes(L.task)) throw new Error("#" + n + " is not a task: only tasks can be deleted");
     return i;
   };
   const deleteTool = run => ({
@@ -568,7 +568,7 @@ import { githubTracker, artifactDbTracker } from "./tracker.js";
     name: "delete_task",
     description: "Delete one task card from the dashboard, as its ✕ button does. The user confirms it on the page first.",
     inputSchema: { type: "object", required: ["card"], properties: { card: { type: tracker.idType, description: "The id of the task card to delete." } } },
-    preview: input => { const i = taskCard(input.card); return "Delete task " + mdr(tracker.refMd(i.id)) + " " + DSH.esc(i.title) + "?"; },
+    preview: input => { const i = taskCard(input.card); return "Delete task " + mdr(tracker.refMd(i.id)) + " " + OZ.esc(i.title) + "?"; },
     async execute(input) {
       const i = taskCard(input.card);
       await tracker.delete(i.id);
@@ -589,7 +589,7 @@ import { githubTracker, artifactDbTracker } from "./tracker.js";
     async execute({ card: c, body }) {
       const n = tracker.parseId(c ?? card);
       if (!ISSUES.some(i => i.id === n)) throw new Error("#" + n + " is not a card on the dashboard");
-      if (DSH.unanswered(await tracker.comments(n), SIG).length)
+      if (OZ.unanswered(await tracker.comments(n), SIG).length)
         throw new Error("#" + n + " has a comment waiting for the sync; a signed comment now would mark it answered. Nothing was posted.");
       await tracker.addComment(n, String(body || "").trim() + "\n\n" + SIG);
       run.posted.push(n);
@@ -603,7 +603,7 @@ import { githubTracker, artifactDbTracker } from "./tracker.js";
     description: "Close this card, as its ✓ (done) or ✕ (dismiss) button does, only when the user says so. A task card can only be closed as done here.",
     inputSchema: { type: "object", required: ["done"], properties: { done: { type: "boolean", description: "True when the matter is done, false when it is dismissed." } } },
     async execute({ done }) {
-      if (!done && DSH.labelNames(issue).includes(L.task)) throw new Error("Deleting a task needs the user's click: they can press ✕ on the card.");
+      if (!done && OZ.labelNames(issue).includes(L.task)) throw new Error("Deleting a task needs the user's click: they can press ✕ on the card.");
       await tracker.setState(issue.id, done ? "done" : "dismissed");
       run.hide.push(issue.id);
       return { closed: issue.id };
@@ -615,7 +615,7 @@ import { githubTracker, artifactDbTracker } from "./tracker.js";
     description: "Hide this card until a date, as its ⏸ button does, only when the user says so; it comes back by itself on that date.",
     inputSchema: { type: "object", required: ["until"], properties: { until: { type: "string", description: "YYYY-MM-DD, after today." } } },
     async execute({ until }) {
-      const d = DSH.snoozeUntil(until, today());
+      const d = OZ.snoozeUntil(until, today());
       if (!d) throw new Error("\"" + until + "\" is not a date after today (YYYY-MM-DD).");
       await tracker.setField(issue.id, "startDate", d);
       run.hide.push(issue.id);
@@ -639,10 +639,10 @@ import { githubTracker, artifactDbTracker } from "./tracker.js";
   async function findBranch() {
     const names = (await branchNames()).slice(0, 20);
     const heads = await Promise.all(names.map(async name => {
-      try { return { name, date: DSH.commitDate(arr(payload(await raw("list_commits", { sha: name, perPage: 1, fields: ["sha", "commit"] })), "commits")[0]) }; }
+      try { return { name, date: OZ.commitDate(arr(payload(await raw("list_commits", { sha: name, perPage: 1, fields: ["sha", "commit"] })), "commits")[0]) }; }
       catch { return { name, date: "" }; }
     }));
-    return DSH.lastActive(heads);
+    return OZ.lastActive(heads);
   }
   const repoTools = () => [{
     annotations: READ, name: "read_file",
@@ -655,7 +655,7 @@ import { githubTracker, artifactDbTracker } from "./tracker.js";
       await branchReady;
       const ref = branch || BRANCH;
       if (!ref) throw new Error("No branch is chosen: ask the user which branch, then call set_branch.");
-      return { branch: ref, path, text: short(DSH.fileText(await raw("read_file", { path, ref: "refs/heads/" + ref })), 60000) };
+      return { branch: ref, path, text: short(OZ.fileText(await raw("read_file", { path, ref: "refs/heads/" + ref })), 60000) };
     },
   }, {
     annotations: READ, name: "search_code",
@@ -694,7 +694,7 @@ import { githubTracker, artifactDbTracker } from "./tracker.js";
     const used = new Set([createTool(run), deleteTool(run), commentTool(run), closeTool(any, run), snoozeTool(any, run), ...repoTools(), ...CONNECTORS].map(t => t.name));
     await Promise.all(missing.map(async ({ server, tool }) => {
       let d; try { d = await mcp.describeTool(server, tool); } catch { return; }
-      const inputSchema = DSH.fitSchema(d?.inputSchema || { type: "object" }, 4000);
+      const inputSchema = OZ.fitSchema(d?.inputSchema || { type: "object" }, 4000);
       if (!inputSchema) return;
       let name = String(tool).replace(/[^A-Za-z0-9_-]/g, "_").slice(0, 60);
       if (used.has(name)) name = (String(server).replace(/[^A-Za-z0-9]/g, "") + "_" + name).slice(0, 64);
@@ -702,14 +702,14 @@ import { githubTracker, artifactDbTracker } from "./tracker.js";
       const write = !d?.annotations?.readOnlyHint;
       DESCRIBED[server + "/" + tool] = {
         server, tool, name, annotations: d?.annotations, tracker: false,
-        description: (tail => DSH.fitBytes("[" + server + "] " + (d?.description || tool), 1000 - new TextEncoder().encode(tail).length) + tail)(write ? " Put the marker \"" + (CFG.aiMarker || "") + "\" in the text you send." : ""),
+        description: (tail => OZ.fitBytes("[" + server + "] " + (d?.description || tool), 1000 - new TextEncoder().encode(tail).length) + tail)(write ? " Put the marker \"" + (CFG.aiMarker || "") + "\" in the text you send." : ""),
         inputSchema,
-        check: input => { if (write && !DSH.hasMarker(input, CFG.aiMarker)) throw new Error("Not sent: the text must carry the AI marker \"" + (CFG.aiMarker || "(none set: run setup)") + "\". Add it and call again."); },
-        preview: input => "<strong>" + DSH.esc(server) + " · " + DSH.esc(tool) + "</strong><pre><code>" + DSH.esc(JSON.stringify(input, null, 2)) + "</code></pre>",
+        check: input => { if (write && !OZ.hasMarker(input, CFG.aiMarker)) throw new Error("Not sent: the text must carry the AI marker \"" + (CFG.aiMarker || "(none set: run setup)") + "\". Add it and call again."); },
+        preview: input => "<strong>" + OZ.esc(server) + " · " + OZ.esc(tool) + "</strong><pre><code>" + OZ.esc(JSON.stringify(input, null, 2)) + "</code></pre>",
         async execute(input) {
           const r = await callTool(server, tool, input);
           const p = r?.payload;
-          return short(p !== undefined && typeof p !== "string" ? JSON.stringify(p) : String(p ?? DSH.fileText(r)), 30000);
+          return short(p !== undefined && typeof p !== "string" ? JSON.stringify(p) : String(p ?? OZ.fileText(r)), 30000);
         },
       };
     }));
@@ -724,9 +724,9 @@ import { githubTracker, artifactDbTracker } from "./tracker.js";
   // Folders for «Open in Claude Code»: the config default plus the ones this viewer used, kept in the page (a viewer's own
   // browser storage, not the shared `db`); an artifact frame without storage keeps them until the page closes.
   let recentMem = null;
-  const getRecent = () => recentMem || (recentMem = (() => { try { return JSON.parse(localStorage.getItem("dsh-folders") || "[]"); } catch { return []; } })());
-  const setRecent = l => { recentMem = l; try { localStorage.setItem("dsh-folders", JSON.stringify(l)); } catch {} };
-  const folders = pick => DSH.folderOptions(pick || CFG.projectFolder, getRecent());
+  const getRecent = () => recentMem || (recentMem = (() => { try { return JSON.parse(localStorage.getItem("oz-folders") || "[]"); } catch { return []; } })());
+  const setRecent = l => { recentMem = l; try { localStorage.setItem("oz-folders", JSON.stringify(l)); } catch {} };
+  const folders = pick => OZ.folderOptions(pick || CFG.projectFolder, getRecent());
   function cloudChat(key, opts) {
     if (CLOUD[key]) { CLOUD[key].opts = opts; return CLOUD[key].node; }
     const node = el("div", "editor"), list = el("div", "chat"); list.setAttribute("aria-live", "polite");
@@ -737,7 +737,7 @@ import { githubTracker, artifactDbTracker } from "./tracker.js";
     row.append(send, stop, fresh, prog, err); node.append(list, ta, row, hand);
     const st = CLOUD[key] = { node, opts, turns: null, loading: null, ctl: null, gen: 0, pending: new Set() };
     const say = (cls, markup) => { const d = html("msg " + cls, markup); list.append(d); return d; };
-    const show = () => { list.textContent = ""; (st.turns || []).forEach(t => say(t.role === "user" ? "you" : "claude", t.role === "user" ? DSH.esc(t.content) : mdr(t.content))); };
+    const show = () => { list.textContent = ""; (st.turns || []).forEach(t => say(t.role === "user" ? "you" : "claude", t.role === "user" ? OZ.esc(t.content) : mdr(t.content))); };
     st.approve = markup => new Promise(resolve => {
       const d = say("approve", markup), r = el("div", "row"), yes = el("button", "btn primary", "Allow"), no = el("button", "btn", "Deny");
       yes.type = no.type = "button";
@@ -760,7 +760,7 @@ import { githubTracker, artifactDbTracker } from "./tracker.js";
     })());
     const save = async () => {
       if (!db || st.noSave) return;
-      try { await doc().set({ turns: DSH.fitConversation(st.turns, DOC_MAX), updated: new Date().toISOString() }); }
+      try { await doc().set({ turns: OZ.fitConversation(st.turns, DOC_MAX), updated: new Date().toISOString() }); }
       catch (e) { err.textContent = "Not saved (" + (e?.code || "error") + ")."; }
     };
     // After the cap: «Open in Claude Code», a deep link with the task prefilled, in a folder chosen here (#130).
@@ -769,10 +769,10 @@ import { githubTracker, artifactDbTracker } from "./tracker.js";
       const sel = el("select"), a = el("a", "btn primary", "Open in Claude Code");
       sel.setAttribute("aria-label", "Project folder");
       const fill = pick => { sel.textContent = ""; folders(pick).forEach(f => sel.append(new Option(f, f))); sel.value = pick || sel.value; };
-      const link = () => { a.href = DSH.deepLink(sel.value, (st.opts.ref ? st.opts.ref + "\n\n" : "") + task + "\n\nProgress so far:\n" + said.slice(-2000)); };
+      const link = () => { a.href = OZ.deepLink(sel.value, (st.opts.ref ? st.opts.ref + "\n\n" : "") + task + "\n\nProgress so far:\n" + said.slice(-2000)); };
       fill(); link(); sel.onchange = link;
-      a.target = "_blank"; a.rel = "noopener"; a.onclick = () => { if (sel.value) { setRecent(DSH.rememberFolder(getRecent(), sel.value)); } };
-      const note = el("span", "cm-meta", "Not finished in " + DSH.MAX_ROUNDS + " steps. The link only fills the message: press Enter there.");
+      a.target = "_blank"; a.rel = "noopener"; a.onclick = () => { if (sel.value) { setRecent(OZ.rememberFolder(getRecent(), sel.value)); } };
+      const note = el("span", "cm-meta", "Not finished in " + OZ.MAX_ROUNDS + " steps. The link only fills the message: press Enter there.");
       hand.append(...(sel.options.length ? [sel] : []), a, note);
     };
     async function run() {
@@ -780,36 +780,36 @@ import { githubTracker, artifactDbTracker } from "./tracker.js";
       if (!sample) { err.textContent = "Claude is not available on this page."; return; }
       await st.load();
       ta.value = ""; err.textContent = ""; hand.textContent = "";
-      st.turns = DSH.nextTurns(st.turns, text); show();
+      st.turns = OZ.nextTurns(st.turns, text); show();
       // `gen` changes on "New conversation": a run it interrupted no longer writes into the cleared chat.
-      const out = say("claude", DSH.esc("Thinking…")), r = { made: [], hide: [], posted: [] }, gen = st.gen;
+      const out = say("claude", OZ.esc("Thinking…")), r = { made: [], hide: [], posted: [] }, gen = st.gen;
       st.ctl = new AbortController(); send.disabled = true; stop.disabled = false;
       try {
         await connectorsReady;
         if (mcp) await (connectorsReady = loadConnectors(true).catch(() => {}));
         const ctx = await st.opts.context();
-        const input = DSH.trimTurns(RULES, [...st.turns.slice(0, -1), { role: "user", content: ctx + "\n\nThe user's message:\n" + text }], budget);
+        const input = OZ.trimTurns(RULES, [...st.turns.slice(0, -1), { role: "user", content: ctx + "\n\nThe user's message:\n" + text }], budget);
         if (!tracker) throw { code: "no_tracker", message: "the tracker is not reachable on this page" };
-        const tools = DSH.pickTools(st.opts.tools(r), CONNECTORS, GITHUB ? SERVER : null).map(t => gated(st, t));
+        const tools = OZ.pickTools(st.opts.tools(r), CONNECTORS, GITHUB ? SERVER : null).map(t => gated(st, t));
         // A long task: one `sample` call allows few tool rounds, so continue while Claude marks the answer unfinished (#130).
         let said = "", more = true, round = 0;
-        while (more && round < DSH.MAX_ROUNDS) {
+        while (more && round < OZ.MAX_ROUNDS) {
           round++;
-          prog.textContent = "Step " + round + " of up to " + DSH.MAX_ROUNDS + "…";
-          const got = await sample(round === 1 ? input : DSH.continueInput(input, said), { signal: st.ctl.signal, cache: false, tools,
+          prog.textContent = "Step " + round + " of up to " + OZ.MAX_ROUNDS + "…";
+          const got = await sample(round === 1 ? input : OZ.continueInput(input, said), { signal: st.ctl.signal, cache: false, tools,
             onText: ({ text: t }) => { out.innerHTML = mdr(said ? said + "\n\n" + t : t); } });
-          const part = DSH.splitMark(got.text);
+          const part = OZ.splitMark(got.text);
           said = said ? said + "\n\n" + part.text : part.text; more = part.more;
           out.innerHTML = mdr(said);
         }
         prog.textContent = "";
-        const reply = DSH.withLinks(said, r.made);
+        const reply = OZ.withLinks(said, r.made);
         out.innerHTML = mdr(reply);
         if (gen === st.gen) st.turns.push({ role: "assistant", content: reply });
         if (more) handoff(text, said);
       } catch (e) {
         if (e?.text) out.innerHTML = mdr(e.text); else out.remove();
-        say("note", DSH.esc(sampleText(e)) + r.made.map(m => " " + mdr(tracker.refMd(m.id))).join(""));
+        say("note", OZ.esc(sampleText(e)) + r.made.map(m => " " + mdr(tracker.refMd(m.id))).join(""));
         if (gen === st.gen && (r.made.length || r.hide.length || r.posted.length))
           st.turns.push({ role: "assistant", content: "Done before the stop: " + [...r.made.map(m => "created #" + m.id), ...r.hide.map(n => "closed or snoozed #" + n), ...r.posted.map(n => "commented on #" + n)].join(", ") + "." });
       } finally {
@@ -837,10 +837,10 @@ import { githubTracker, artifactDbTracker } from "./tracker.js";
   // brief and its siblings. Nothing further up, and no comments or chats of the others.
   async function hierarchyOf(n) {
     try {
-      const rel = RELS[n] || DSH.relOf(await tracker.get(n));
+      const rel = RELS[n] || OZ.relOf(await tracker.get(n));
       const pn = rel.parent ?? (rel.hasParent ? await tracker.parent(n) : null);
       const [kids, parent, sibs] = await Promise.all([rel.total ? tracker.children(n) : [], pn != null ? tracker.get(pn) : null, pn != null ? tracker.children(pn) : []]);
-      return DSH.hierarchyText(n, { rel, kids, parent, sibs, relOf: i => RELS[i.id] || DSH.relOf(i) });
+      return OZ.hierarchyText(n, { rel, kids, parent, sibs, relOf: i => RELS[i.id] || OZ.relOf(i) });
     } catch (e) { return "(Its place in the hierarchy could not be read: " + failText(e) + ")"; }
   }
   // A card's chat: the card and its whole thread, read fresh on every message, then the conversation.
@@ -854,7 +854,7 @@ import { githubTracker, artifactDbTracker } from "./tracker.js";
         let cs = THREADS[n];
         try { cs = THREADS[n] = await tracker.comments(n); } catch {}
         const room = Math.floor(budget / 4);
-        return "Mode: Cloud chat on #" + n + ".\n" + board() + "\n\n" + DSH.cardView(i, Array.isArray(cs) ? cs : [], SIG, room, await hierarchyOf(n));
+        return "Mode: Cloud chat on #" + n + ".\n" + board() + "\n\n" + OZ.cardView(i, Array.isArray(cs) ? cs : [], SIG, room, await hierarchyOf(n));
       },
       tools: r => {
         const i = ISSUES.find(x => x.id === n) || issue;
@@ -896,7 +896,7 @@ import { githubTracker, artifactDbTracker } from "./tracker.js";
       try {
         // The text is often not English, so the slug can not come from it; a short time suffix keeps two tasks in one minute apart.
         const slug = "agent-" + Date.now().toString(36).slice(-4);
-        const r = await tracker.create(DSH.newTask({ slug, brief: text }, { stamp: keyStamp(), section: CFG.taskSection, assignee: CFG.agentAssignee }));
+        const r = await tracker.create(OZ.newTask({ slug, brief: text }, { stamp: keyStamp(), section: CFG.taskSection, assignee: CFG.agentAssignee }));
         ta.value = ""; msg.textContent = ""; msg.className = "cm-meta";
         const a = el("a", null, r.ref || "the task"); a.href = r.url;
         if (!String(r.url).startsWith("#")) { a.target = "_blank"; a.rel = "noopener"; }

@@ -45,14 +45,14 @@ Each idea checked against what v2 already has (load-bearing test).
 
 | Idea | Source | v2 today | Verdict |
 |---|---|---|---|
-| GitHub issues as the queue, gated by a label | factory | ADR 0001, `dsh:on` | Already have: validates ADR 0001 |
-| Park and ask on the issue when unclear (NEEDS-INFO) | factory | `dsh:needs-you` + question reply | Already have |
-| Scripts decide mechanics, agents judge | factory | PRD Conventions: mechanics in page tool code (`DSH.*`), judgement in the rules turn | Already have |
+| GitHub issues as the queue, gated by a label | factory | ADR 0001, `oz:on` | Already have: validates ADR 0001 |
+| Park and ask on the issue when unclear (NEEDS-INFO) | factory | `oz:needs-you` + question reply | Already have |
+| Scripts decide mechanics, agents judge | factory | PRD Conventions: mechanics in page tool code (`OZ.*`), judgement in the rules turn | Already have |
 | One writer of state that refuses illegal moves | factory (`bin/job`) | tracker.md "one writer"; no explicit state machine | Stricter version; new only if illegal transitions show up in practice |
 | Label as trust boundary (only triage/write can add it) | factory | repo private to the user | Not needed while single-user; worth a line in setup when others install the skill |
 | Per-run cost from subagent transcripts, shown on the status issue | factory | nothing | **New.** Useful for the 30-min `update` cost question; carries the same undocumented-format risk |
 | Skimmable per-stage files with a summary line | factory | collectors return cards; no per-run record beyond the status issue | Probably not needed: the tracker's comment history is the record |
-| A `dsh:task` handed to a factory-style pipeline that opens a PR | factory | Future: "hands-free Run Claude" | **New, optional.** A local `/factory run` on a labelled issue is a hands-free path the PRD has not tried; only for repo-code tasks, not this docs repo |
+| A `oz:task` handed to a factory-style pipeline that opens a PR | factory | Future: "hands-free Run Claude" | **New, optional.** A local `/factory run` on a labelled issue is a hands-free path the PRD has not tried; only for repo-code tasks, not this docs repo |
 | "Check every few hours, message only when something needs attention" | Duet | `update` every 30 min, PushNotification on new needs-you / failures | Already have; Duet's cadence (hours) hints 30 min may be more than needed |
 | Morning brief across apps | Duet | meeting briefs + tasks radar | Already have, narrower scope |
 | Approval shows exactly what will be done | Duet | write rule: preview + Allow/Deny | Already have, same pattern |

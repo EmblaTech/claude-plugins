@@ -7,9 +7,9 @@
 // `rel` is { parent, hasParent, total, completed, type, blockedBy: [{ id, state }] }.
 // A comment is { id, body, created_at, url }. Fields are named as in the contract's artifact-db encoding:
 // `priority`, `targetDate`, `startDate` (snooze).
-import { DSH } from "./logic.js";
+import { OZ } from "./logic.js";
 
-const L = DSH.LABELS;
+const L = OZ.LABELS;
 const day = v => (v == null || v === "" ? null : String(v).slice(0, 10));
 const arr = (x, k) => Array.isArray(x) ? x : (x && Array.isArray(x[k]) ? x[k] : []);
 
@@ -32,7 +32,7 @@ export function githubTracker({ call, owner, repo, server = "github" }) {
   const record = i => {
     const { meta, body } = splitMeta(i.body);
     return { id: i.number, key: meta.key || "", ref: "#" + i.number, url: i.html_url && String(i.html_url).includes("/issues/") ? i.html_url : base + "/issues/" + i.number,
-      title: i.title || "", body, meta, labels: DSH.labelNames(i), priority: field(i, FIELD.priority) || null,
+      title: i.title || "", body, meta, labels: OZ.labelNames(i), priority: field(i, FIELD.priority) || null,
       targetDate: day(field(i, FIELD.targetDate)), startDate: day(field(i, FIELD.startDate)), state: state(i),
       comments: typeof i.comments === "number" ? i.comments : undefined, updated: i.updated_at || "" };
   };
@@ -60,7 +60,7 @@ export function githubTracker({ call, owner, repo, server = "github" }) {
     async parent(id) { const r = await again(() => call("issue_read", { method: "get_parent", issue_number: id })); return r?.number ?? r?.parent?.number ?? r?.issue?.number ?? null; },
     async children(id) { return arr(await again(() => call("issue_read", { method: "get_sub_issues", issue_number: id, perPage: 100 })), "sub_issues").map(record); },
     async comments(id) {
-      return DSH.byTime(arr(await call("issue_read", { method: "get_comments", issue_number: id, perPage: 100 }), "comments")
+      return OZ.byTime(arr(await call("issue_read", { method: "get_comments", issue_number: id, perPage: 100 }), "comments")
         .map(c => ({ id: c.id, body: c.body, created_at: c.created_at, url: c.html_url })));
     },
     addComment: (id, text) => call("add_issue_comment", { issue_number: id, body: text }),
@@ -82,15 +82,15 @@ export function githubTracker({ call, owner, repo, server = "github" }) {
     },
     setState: (id, s) => call("issue_write", s === "open" ? { method: "update", issue_number: id, state: "open" }
       : { method: "update", issue_number: id, state: "closed", state_reason: s === "done" ? "completed" : "not_planned" }),
-    // The connector cannot delete: close as not planned and tag `dsh:delete`; the next Sync deletes it.
+    // The connector cannot delete: close as not planned and tag `oz:delete`; the next Sync deletes it.
     async delete(id) {
       const read = await call("issue_read", { method: "get_labels", issue_number: id });
-      const names = DSH.labelNames({ labels: arr(read, "labels") });
-      return call("issue_write", { method: "update", issue_number: id, state: "closed", state_reason: "not_planned", labels: [...new Set([...names, "dsh:delete"])] });
+      const names = OZ.labelNames({ labels: arr(read, "labels") });
+      return call("issue_write", { method: "update", issue_number: id, state: "closed", state_reason: "not_planned", labels: [...new Set([...names, "oz:delete"])] });
     },
     // `labels` replaces the whole set: re-read first, since a run may have added labels since the poll.
     async removeLabel(id, label) {
-      const keep = DSH.withoutLabel(await call("issue_read", { method: "get_labels", issue_number: id }), label);
+      const keep = OZ.withoutLabel(await call("issue_read", { method: "get_labels", issue_number: id }), label);
       if (!keep) throw { code: "stale", message: "labels could not be read, nothing was written" };
       await call("issue_write", { method: "update", issue_number: id, labels: keep });
       return keep;
@@ -171,7 +171,7 @@ export function artifactDbTracker({ db, now = () => new Date().toISOString(), ra
     }),
     // Re-read just before writing: a run may have changed the labels since the poll.
     removeLabel: guard(async (key, label) => {
-      const keep = DSH.withoutLabel(await docOf(key).get().then(s => s.exists ? s.data() : null), label);
+      const keep = OZ.withoutLabel(await docOf(key).get().then(s => s.exists ? s.data() : null), label);
       if (!keep) throw { code: "stale", message: "labels could not be read, nothing was written" };
       await docOf(key).update({ labels: keep, updated: now() });
       return keep;

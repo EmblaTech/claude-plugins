@@ -29,7 +29,7 @@ One matter shown on the dashboard: a meeting, a pull request, or a task.
 _Avoid_: Item, ticket
 
 **Kind**:
-Which of the three a card is (meeting, pull request or task), carried only by its `dsh:meeting`, `dsh:pr` or `dsh:task` label. Not a task's type (Epic, Story, Task). *(Added 2026-11-18, #257.)*
+Which of the three a card is (meeting, pull request or task), carried only by its `oz:meeting`, `oz:pr` or `oz:task` label. Not a task's type (Epic, Story, Task). *(Added 2026-11-18, #257.)*
 _Avoid_: Type, card type
 
 **Meeting card**:

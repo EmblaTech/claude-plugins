@@ -43,7 +43,7 @@ Checked with the claude.ai GitHub connector's tool list and live calls on #131.
 
 *Historical since [ADR 0005](adr/0005-cloud-and-local-surfaces.md) (2026-11-11): the page no longer answers comments, so catch-up, the card queue and `reply` were removed in #151 (2026-11-12) and their unverified items below need no check. Two `sample` calls at once stays open: two Cloud chats can now run together.*
 
-Built and checked in headless Chromium with stubbed `mcp` and `sample`: catch-up on open answers a thread with an unanswered comment and skips one already signed, a comment sent from a card gets a signed reply plus `dsh:replied`, and a signed reply that lands during the run makes `reply` post nothing, a reply on an open card adds no `dsh:replied`, a question adds `dsh:needs-you`, and `snooze_card` hides the card while `close_card` refuses to dismiss a task. The stub showed one bug, fixed: a model that signs inline before the page appends the task link left two signatures, so `DSH.signed` now removes the signature anywhere in the model's text.
+Built and checked in headless Chromium with stubbed `mcp` and `sample`: catch-up on open answers a thread with an unanswered comment and skips one already signed, a comment sent from a card gets a signed reply plus `oz:replied`, and a signed reply that lands during the run makes `reply` post nothing, a reply on an open card adds no `oz:replied`, a question adds `oz:needs-you`, and `snooze_card` hides the card while `close_card` refuses to dismiss a task. The stub showed one bug, fixed: a model that signs inline before the page appends the task link left two signatures, so `OZ.signed` now removes the signature anywhere in the model's text.
 
 **Not yet verified, to check in the Claude desktop app** after setup republishes the page:
 - `add_issue_comment` called from inside a `sample` tool (`reply`) lands on the issue, with no Allow click (a tracker write under the write rule);
@@ -54,7 +54,7 @@ Built and checked in headless Chromium with stubbed `mcp` and `sample`: catch-up
 
 Tested in Claude Launch Lab (a private test artifact) v7, Claude desktop app, chat through `sample` with page tools.
 
-- **Create a task from the chat works.** `issue_write` create through a `sample` tool, behind the Allow click, made #120 with labels `dsh:task`, `dsh:on` and issue fields `Priority` = High, `Target date` = 2026-11-14 in one call (about 23 s). The page doubled the `[spike]` title prefix: a page bug, not a connector one.
+- **Create a task from the chat works.** `issue_write` create through a `sample` tool, behind the Allow click, made #120 with labels `oz:task`, `oz:on` and issue fields `Priority` = High, `Target date` = 2026-11-14 in one call (about 23 s). The page doubled the `[spike]` title prefix: a page bug, not a connector one.
 - **`search_code` covers only the default branch.** A string only on `wip` gave 0 hits, a string on `main` gave 32. So search cannot find new files on a working branch; reading by path is the way there.
 - **`get_file_contents` by `ref` works once the page tool reads every content block.** The first block is only "successfully downloaded text file (SHA: …)"; the file text comes in a second block, an embedded resource (`resource.text`, or `resource.blob` in base64). Launch Lab v8 collects all blocks: `openwiki/index.md` from `wip` read in full.
 - **Last active branch: 3 calls, about 12.8 s** for 2 branches (`list_branches`, then one `list_commits` per branch). Too slow per message: work it out once when the page opens.
@@ -89,7 +89,7 @@ Tested in Claude Launch Lab (a private test artifact) v7, Claude desktop app, ch
 - Confirmed by the user: a full chat with history, working in the page.
 
 **Open: how the chat learns the dashboard conventions.** `sample` has no system prompt, so instructions go in a leading user turn. The conventions (labels, comment signature, card types) live in `plugins/office/skills/dashboard-v2/references/` (`tracker.md`, `comments.md`, `card.md`, about 10 KB together). Options under consideration, none chosen:
-- Enforce mechanical rules in the page's tool code (reply signature, `dsh:` labels, the full-set rewrite of `labels`, approval before writes) and keep only judgement rules in the prompt.
+- Enforce mechanical rules in the page's tool code (reply signature, `oz:` labels, the full-set rewrite of `labels`, approval before writes) and keep only judgement rules in the prompt.
 - Fill the prompt at setup time, when `page.html` is built and published (`references/setup.md`, step 3), so it follows the skill files.
 - Read the files from the repo at chat start through the `github` connector. Needs a file-read tool declared in the manifest; not checked.
 - Input size cap: check `sample.limits()` before relying on a long prompt.

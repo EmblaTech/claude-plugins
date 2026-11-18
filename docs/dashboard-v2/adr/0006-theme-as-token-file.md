@@ -10,7 +10,7 @@ Token names follow the DESIGN.md spec (google-labs-code/design.md, Apache-2.0, a
 
 ## Considered options
 
-- **Tokens injected inline into `page.html`, like `__DASHBOARD_CONFIG__`.** Rejected: works for one theme, but a switcher would need every theme inside the page, and colours drift back into the markup.
+- **Tokens injected inline into `page.html`, like `__ORGANIZER_CONFIG__`.** Rejected: works for one theme, but a switcher would need every theme inside the page, and colours drift back into the markup.
 - **Each theme restyles the whole page, layout included.** Rejected: every theme becomes a fork of the page, and switching between them is no longer a file swap.
 - **Keep our own 14 token names and map each DESIGN.md onto them.** Rejected: DESIGN.md carries type scale, radii and spacing our names cannot hold; adopting the spec's names lets a style source map almost one to one.
 - **TypeScript with a build step.** Rejected for now: the repo has no build, and no requirement needs types. JSDoc with `// @ts-check` can be added later without rework.

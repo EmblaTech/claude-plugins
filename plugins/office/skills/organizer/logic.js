@@ -1,8 +1,8 @@
 // The page's pure logic, no DOM: app.js and page.test.mjs import it.
-export const DSH = (() => {
+export const OZ = (() => {
   // The contract's labels (references/tracker.md#labels), the same in every storage mode.
-  const LABELS = Object.freeze({ on: "dsh:on", task: "dsh:task", meeting: "dsh:meeting", status: "dsh:status",
-    needsYou: "dsh:needs-you", replied: "dsh:replied", series: "dsh:mtg/", agent: "ready-for-agent", prefix: "dsh:" });
+  const LABELS = Object.freeze({ on: "oz:on", task: "oz:task", meeting: "oz:meeting", status: "oz:status",
+    needsYou: "oz:needs-you", replied: "oz:replied", series: "oz:mtg/", agent: "ready-for-agent", prefix: "oz:" });
   const HEADS = { brief: "Brief", prepare: "Prepare", terms: "Terms", prompts: "Prompts", suggestions: "Suggestions" };
 
   // A record's body (tracker.js): the fixed `## ` headings. Its meta is the record's own, kept apart by the storage mode.
@@ -32,7 +32,7 @@ export const DSH = (() => {
   // Dates compare by day, whatever time part the store adds.
   const day = v => String(v || "").slice(0, 10);
   // A label write replaces the whole set: compute it from a fresh read, and refuse (null) unless the label is really
-  // there, so a bad read can never strip `dsh:on` and the rest.
+  // there, so a bad read can never strip `oz:on` and the rest.
   const withoutLabel = (read, label) => {
     const names = labelNames({ labels: (read && read.labels) || [] });
     return names.includes(label) ? names.filter(l => l !== label) : null;
@@ -254,7 +254,7 @@ export const DSH = (() => {
   }
 
   // What the "new task" tool writes: a record for the tracker's `create`. The rules a prompt could bend are fixed here:
-  // the `dsh:` labels, a key that does not collide (a new matter by definition, so it carries the minute it was made),
+  // the `oz:` labels, a key that does not collide (a new matter by definition, so it carries the minute it was made),
   // valid fields only. Ids (`card`, `parent`, `blockedBy`) go through the storage mode's `ctx.parseId`; `ctx.refMd`
   // writes the link to the card the task belongs to.
   const OPTIONS = ["Urgent", "High", "Medium", "Low"];

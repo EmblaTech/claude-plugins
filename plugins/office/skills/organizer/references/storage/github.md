@@ -7,14 +7,14 @@ How the [tracker contract](../tracker.md) runs on GitHub issues, for `storage = 
 | Contract operation | How |
 |---|---|
 | `list(labels, state, updatedSince, assignee)` | `list_issues` `labels: [...]`, `state: "OPEN"` / `"CLOSED"` / both, `since` for `updatedSince`, `fields` incl. `body`, `labels`, `field_values`, `assignees`; keep the issues whose `assignees` include the assignee; page with `after`, at most 100 a page (the page reads only the first and says "first 100" when it is full). |
-| `getByKey(key)` | `list_issues` on the record's kind label (`dsh:meeting`, `dsh:pr`, `dsh:task`, `dsh:status`), open and closed, and match `key` in the body's marker line ([Encoding](#encoding)) |
+| `getByKey(key)` | `list_issues` on the record's kind label (`oz:meeting`, `oz:pr`, `oz:task`, `oz:status`), open and closed, and match `key` in the body's marker line ([Encoding](#encoding)) |
 | `create(record)` | `issue_write` `method: "create"` with title, body (marker line included), labels, `assignees`, and `type` as the issue type (Epic / Story / Task; read back in `issue_read` `get` as `issue_type`); then set its fields (the page sends `issue_fields` in the same call) and its relations |
 | `update(title, body, meta)` | `issue_write` `method: "update"`; `meta` is rewritten inside the body's marker line |
 | `addLabel(label)` / `removeLabel(label)` | `issue_write` `method: "update"`: `labels` replaces the whole set, so read the labels fresh (`issue_read` `get_labels`) and send the full list |
 | `setField(name, value)` / `clearField(name)` | `gh api graphql` mutation `setIssueFieldValue(input: {issueId, issueFields: [{fieldId, dateValue \| singleSelectOptionId \| delete: true}]})`, all of one record's fields in one call; IDs below |
 | `setState(done)` / `setState(dismissed)` | `issue_write` `state: "closed"`, `state_reason: "completed"` / `"not_planned"` |
 | `setState(open)` | `issue_write` `state: "open"` |
-| `delete()` | `gh issue delete <n> --yes`. The page's connector cannot delete: its ✕ on a task closes it as not planned and adds `dsh:delete`, and every Sync run, before anything else, deletes each issue labelled `dsh:delete` this way |
+| `delete()` | `gh issue delete <n> --yes`. The page's connector cannot delete: its ✕ on a task closes it as not planned and adds `oz:delete`, and every Sync run, before anything else, deletes each issue labelled `oz:delete` this way |
 | `children()` / `parent()` / `setParent(record)` | native sub-issues: read `issue_read` `get_sub_issues` / `get_parent`; set with `gh issue create --parent <n>`, or `gh issue edit <parent> --add-sub-issue <child>` |
 | `addBlockedBy(record)` | native dependency: `gh api --method POST repos/<owner>/<repo>/issues/<n>/dependencies/blocked_by -F issue_id=<blocker-db-id>` (the blocker's database id, `gh api repos/<owner>/<repo>/issues/<b> --jq .id`) |
 | `comments()` / `addComment(text)` | `issue_read` `method: "get_comments"`; `add_issue_comment` |
@@ -35,7 +35,7 @@ Field values: `Start date` and `Target date` as `dateValue: "YYYY-MM-DD"`; `Prio
 ## Encoding
 
 - **Key and meta**: the body's last line, `<!-- dsh {"key":…, <meta fields>} -->`, with the meta fields [card.md](../card.md#metadata) lists. The status record's line holds its own fields ([Status record](#status-record)).
-- **Labels**: GitHub labels, as the contract names them, plus `dsh:delete` (see `delete()` above).
+- **Labels**: GitHub labels, as the contract names them, plus `oz:delete` (see `delete()` above).
 - **Fields**: the org's issue fields `Priority`, `Target date`, `Start date` (not Projects v2), read from `field_values`.
 - **Relations**: native sub-issues, blocked-by dependencies and issue types.
 - **Record links**: a record is `#<n>`, which renders as a link to `https://github.com/<owner>/<repo>/issues/<n>`; a card gist that points to an issue or PR writes `[#42](…)`.
@@ -44,13 +44,13 @@ Field values: `Start date` and `Target date` as `dateValue: "YYYY-MM-DD"`; `Prio
 
 ## Status record
 
-One open issue labelled `dsh:status`, pinned (`gh issue pin`). Its body is the banner text, then the marker line holding `key` and the status `meta`: `<!-- dsh {"key":"status","updated":…,"answered":…,"cursors":{…}} -->`; when all is well, the marker line alone.
+One open issue labelled `oz:status`, pinned (`gh issue pin`). Its body is the banner text, then the marker line holding `key` and the status `meta`: `<!-- dsh {"key":"status","updated":…,"answered":…,"cursors":{…}} -->`; when all is well, the marker line alone.
 
 ## Setup
 
 - Check the org's issue fields `Priority`, `Start date` and `Target date` with `list_issue_fields`; ask before creating a missing one.
 - Create every missing label from [tracker.md](../tracker.md#labels), and one per track, with `gh label create "<name>"`; create a missing label the same way before a run uses it.
-- Create the `dsh:status` issue when there is none, and pin it.
+- Create the `oz:status` issue when there is none, and pin it.
 - `dashboard.toml`: `repo` (`<owner>/<repo>`), `server` (the claude.ai GitHub connector's display name), `agent-assignee` (a GitHub login; recommend the current `gh` user, `gh api user -q .login`).
 - The page's `mcp` capability declares the connector named in `server` with these tools: `["list_issues", "issue_read", "issue_write", "sub_issue_write", "add_issue_comment", "get_file_contents", "search_code", "list_branches", "list_commits"]`. The last four are the Assistant's repo reads. This connector is never on the Assistant's tool list: the page reaches it only through its own tools, so no repo write is ever exposed. The first time the page opens, claude.ai asks once to allow it.
 

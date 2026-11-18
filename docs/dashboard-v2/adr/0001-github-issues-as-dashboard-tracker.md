@@ -18,4 +18,4 @@ Cards, tasks and comments live as issues in the user's private docs repo, which 
 
 - To Do is deprecated. Routines stop creating To Do tasks, and the root `CLAUDE.md` To Do rules must be rewritten.
 - Claude comments as the user, so its replies are told apart by a configurable signature at the end of the comment.
-- Everything the dashboard owns carries the `dsh:` label prefix, so it can be filtered out of anything else in the repo.
+- Everything the dashboard owns carries the `oz:` label prefix, so it can be filtered out of anything else in the repo.

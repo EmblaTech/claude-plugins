@@ -60,12 +60,12 @@ const META = { key: "task_x", section: "tasks", lead: "20.11" };
 const ISSUE = {
   number: 7, title: "Send report", state: "OPEN", updated_at: "2026-11-17T09:00:00Z", comments: 2,
   body: "## Brief\nDo it.\n\n<!-- dsh " + JSON.stringify(META) + " -->",
-  labels: [{ name: "dsh:task" }, { name: "dsh:on" }, { name: "Ops" }],
+  labels: [{ name: "oz:task" }, { name: "oz:on" }, { name: "Ops" }],
   field_values: [{ field: "Priority", value: "High" }, { field: "Target date", value: "2026-11-20T00:00:00Z" }, { field: "Start date", value: "2026-11-19" }],
 };
 const DOC = {
   key: "task_x", title: "Send report", body: "## Brief\nDo it.", meta: { section: "tasks", lead: "20.11" },
-  labels: ["dsh:task", "dsh:on", "Ops"], priority: "High", targetDate: "2026-11-20", startDate: "2026-11-19",
+  labels: ["oz:task", "oz:on", "Ops"], priority: "High", targetDate: "2026-11-20", startDate: "2026-11-19",
   state: "open", type: null, parent: null, blockedBy: [], assignee: null, updated: "2026-11-17T09:00:00Z",
 };
 
@@ -76,9 +76,9 @@ const shared = r => ({ key: r.key, title: r.title, body: r.body, meta: r.meta, l
 test("contract: list gives the same record in both modes", async () => {
   const gh = fakeGithub({ list_issues: { issues: [ISSUE] } }).tracker;
   const ad = dbTracker({ "records/task_x": DOC }).tracker;
-  const [a] = await gh.list({ labels: ["dsh:on"] }), [b] = await ad.list({ labels: ["dsh:on"] });
+  const [a] = await gh.list({ labels: ["oz:on"] }), [b] = await ad.list({ labels: ["oz:on"] });
   const want = { key: "task_x", title: "Send report", body: "## Brief\nDo it.", meta: { key: "task_x", section: "tasks", lead: "20.11" },
-    labels: ["dsh:task", "dsh:on", "Ops"], priority: "High", targetDate: "2026-11-20", startDate: "2026-11-19", state: "open" };
+    labels: ["oz:task", "oz:on", "Ops"], priority: "High", targetDate: "2026-11-20", startDate: "2026-11-19", state: "open" };
   assert.deepEqual(shared(a), want);
   assert.deepEqual(shared(b), want);
   assert.equal(a.id, 7); assert.equal(b.id, "task_x");
@@ -116,28 +116,28 @@ test("contract: get carries the relations — parent, done count, type, blockers
 test("github: the body's last dsh marker is the meta, and it never shows in the body; broken JSON leaves meta empty", async () => {
   const two = { ...ISSUE, body: "Text\n<!-- dsh {\"key\":\"old\"} -->\n<!-- dsh {\"key\":\"new\"} -->" };
   const bad = { ...ISSUE, number: 8, body: "Text\n<!-- dsh {broken -->" };
-  const [a, b] = await fakeGithub({ list_issues: { issues: [two, bad] } }).tracker.list({ labels: ["dsh:on"] });
+  const [a, b] = await fakeGithub({ list_issues: { issues: [two, bad] } }).tracker.list({ labels: ["oz:on"] });
   assert.deepEqual(a.meta, { key: "new" }); assert.equal(a.body, "Text");
   assert.deepEqual(b.meta, {}); assert.equal(b.body, "Text");
 });
 
 test("github: a closed issue is done, or dismissed when not planned; links point to github.com", async () => {
   const [d, x] = await fakeGithub({ list_issues: { issues: [{ ...ISSUE, state: "CLOSED", state_reason: "completed" },
-    { ...ISSUE, number: 8, state: "closed", state_reason: "not_planned" }] } }).tracker.list({ labels: ["dsh:task"], state: "closed" });
+    { ...ISSUE, number: 8, state: "closed", state_reason: "not_planned" }] } }).tracker.list({ labels: ["oz:task"], state: "closed" });
   assert.equal(d.state, "done"); assert.equal(x.state, "dismissed");
   assert.equal(d.url, "https://github.com/o/r/issues/7"); assert.equal(d.ref, "#7");
 });
 
 test("github: one page only, full at 100 or when GitHub says more", async () => {
   const many = Array.from({ length: 100 }, (_, i) => ({ ...ISSUE, number: i + 1 }));
-  assert.equal((await fakeGithub({ list_issues: { issues: many } }).tracker.list({ labels: ["dsh:on"] })).full, true);
-  assert.equal((await fakeGithub({ list_issues: { issues: [ISSUE], pageInfo: { hasNextPage: true } } }).tracker.list({ labels: ["dsh:on"] })).full, true);
-  assert.equal((await fakeGithub({ list_issues: { issues: [ISSUE] } }).tracker.list({ labels: ["dsh:on"] })).full, false);
+  assert.equal((await fakeGithub({ list_issues: { issues: many } }).tracker.list({ labels: ["oz:on"] })).full, true);
+  assert.equal((await fakeGithub({ list_issues: { issues: [ISSUE], pageInfo: { hasNextPage: true } } }).tracker.list({ labels: ["oz:on"] })).full, true);
+  assert.equal((await fakeGithub({ list_issues: { issues: [ISSUE] } }).tracker.list({ labels: ["oz:on"] })).full, false);
 });
 
 test("github: create writes the marker line, the issue fields and the assignee, then links the parent", async () => {
   const { calls, tracker } = fakeGithub({ "issue_write:create": { number: 12, id: 555, html_url: "https://github.com/o/r/issues/12" }, "sub_issue_write:add": {} });
-  const r = await tracker.create({ key: "task_n", meta: { section: "tasks" }, title: "T", body: "## Brief\nB", labels: ["dsh:task", "dsh:on"],
+  const r = await tracker.create({ key: "task_n", meta: { section: "tasks" }, title: "T", body: "## Brief\nB", labels: ["oz:task", "oz:on"],
     priority: "Urgent", targetDate: "2026-12-01", assignee: "bot", type: "Task", parent: 4 });
   assert.deepEqual(r, { id: 12, ref: "#12", url: "https://github.com/o/r/issues/12" });
   const c = calls[0].input;
@@ -163,17 +163,17 @@ test("github: snooze is the Start date issue field; done and dismissed close wit
     { method: "update", issue_number: 7, state: "closed", state_reason: "not_planned" }]);
 });
 
-test("github: delete closes as not planned with dsh:delete added to the labels read fresh; the Sync deletes it", async () => {
-  const { calls, tracker } = fakeGithub({ "issue_read:get_labels": { labels: [{ name: "dsh:task" }, { name: "dsh:on" }] }, "issue_write:update": {} });
+test("github: delete closes as not planned with oz:delete added to the labels read fresh; the Sync deletes it", async () => {
+  const { calls, tracker } = fakeGithub({ "issue_read:get_labels": { labels: [{ name: "oz:task" }, { name: "oz:on" }] }, "issue_write:update": {} });
   await tracker.delete(7);
-  assert.deepEqual(calls[1].input, { method: "update", issue_number: 7, state: "closed", state_reason: "not_planned", labels: ["dsh:task", "dsh:on", "dsh:delete"] });
+  assert.deepEqual(calls[1].input, { method: "update", issue_number: 7, state: "closed", state_reason: "not_planned", labels: ["oz:task", "oz:on", "oz:delete"] });
 });
 
 test("github: removeLabel writes the fresh set without it, and refuses when the label was not read", async () => {
-  const { calls, tracker } = fakeGithub({ "issue_read:get_labels": { labels: [{ name: "dsh:on" }, { name: "dsh:replied" }] }, "issue_write:update": {} });
-  assert.deepEqual(await tracker.removeLabel(7, "dsh:replied"), ["dsh:on"]);
-  assert.deepEqual(calls[1].input, { method: "update", issue_number: 7, labels: ["dsh:on"] });
-  await assert.rejects(tracker.removeLabel(7, "dsh:needs-you"), { code: "stale" });
+  const { calls, tracker } = fakeGithub({ "issue_read:get_labels": { labels: [{ name: "oz:on" }, { name: "oz:replied" }] }, "issue_write:update": {} });
+  assert.deepEqual(await tracker.removeLabel(7, "oz:replied"), ["oz:on"]);
+  assert.deepEqual(calls[1].input, { method: "update", issue_number: 7, labels: ["oz:on"] });
+  await assert.rejects(tracker.removeLabel(7, "oz:needs-you"), { code: "stale" });
 });
 
 test("github: ids are issue numbers, written #N", () => {
@@ -191,10 +191,10 @@ test("github: connector error codes read as plain sentences", () => {
 
 // ---- Artifact-db encoding.
 test("artifact-db: list filters state and every label; status is records/status", async () => {
-  const { tracker } = dbTracker({ "records/a": { ...DOC, key: "a" }, "records/b": { ...DOC, key: "b", labels: ["dsh:on"] },
-    "records/c": { ...DOC, key: "c", state: "done" }, "records/status": { ...DOC, key: "status", labels: ["dsh:status"], body: "Mail failed", meta: { updated: NOW } } });
-  assert.deepEqual((await tracker.list({ labels: ["dsh:on", "dsh:task"] })).map(r => r.id), ["a"]);
-  assert.deepEqual((await tracker.list({ labels: ["dsh:task"], state: "closed" })).map(r => r.id), ["c"]);
+  const { tracker } = dbTracker({ "records/a": { ...DOC, key: "a" }, "records/b": { ...DOC, key: "b", labels: ["oz:on"] },
+    "records/c": { ...DOC, key: "c", state: "done" }, "records/status": { ...DOC, key: "status", labels: ["oz:status"], body: "Mail failed", meta: { updated: NOW } } });
+  assert.deepEqual((await tracker.list({ labels: ["oz:on", "oz:task"] })).map(r => r.id), ["a"]);
+  assert.deepEqual((await tracker.list({ labels: ["oz:task"], state: "closed" })).map(r => r.id), ["c"]);
   const s = await tracker.status();
   assert.equal(s.body, "Mail failed"); assert.equal(s.meta.updated, NOW);
   assert.equal((await dbTracker({}).tracker.status()), null);
@@ -202,7 +202,7 @@ test("artifact-db: list filters state and every label; status is records/status"
 
 test("artifact-db: a record's link is #<key> in the page; a / in a key is ~ in its doc id", async () => {
   const { tracker, docs } = dbTracker({});
-  const r = await tracker.create({ key: "pr_a/b_1", meta: { section: "prs" }, title: "T", body: "B", labels: ["dsh:pr"] });
+  const r = await tracker.create({ key: "pr_a/b_1", meta: { section: "prs" }, title: "T", body: "B", labels: ["oz:pr"] });
   assert.deepEqual(r, { id: "pr_a/b_1", ref: "", url: "#pr_a/b_1" });
   assert.ok(docs.has("records/pr_a~b_1"));
   assert.equal(tracker.refMd("task_x"), "[task_x](#task_x)");
@@ -212,8 +212,8 @@ test("artifact-db: a record's link is #<key> in the page; a / in a key is ~ in i
 
 test("artifact-db: create sets every Encoding field once, open, with updated", async () => {
   const { tracker, docs } = dbTracker({});
-  await tracker.create({ key: "task_n", meta: { section: "tasks" }, title: "T", body: "B", labels: ["dsh:task"], priority: "Low", assignee: "claude", parent: "task_p", blockedBy: ["task_b"], type: "Task" });
-  assert.deepEqual(docs.get("records/task_n"), { key: "task_n", title: "T", body: "B", meta: { section: "tasks" }, labels: ["dsh:task"],
+  await tracker.create({ key: "task_n", meta: { section: "tasks" }, title: "T", body: "B", labels: ["oz:task"], priority: "Low", assignee: "claude", parent: "task_p", blockedBy: ["task_b"], type: "Task" });
+  assert.deepEqual(docs.get("records/task_n"), { key: "task_n", title: "T", body: "B", meta: { section: "tasks" }, labels: ["oz:task"],
     priority: "Low", targetDate: null, startDate: null, state: "open", type: "Task", parent: "task_p", blockedBy: ["task_b"], assignee: "claude", updated: NOW });
 });
 
@@ -227,10 +227,10 @@ test("artifact-db: the page writes by merge only its own fields, each with updat
 });
 
 test("artifact-db: removeLabel re-reads the labels first and refuses when the label is gone", async () => {
-  const { tracker, writes } = dbTracker({ "records/task_x": { ...DOC, labels: ["dsh:on", "dsh:replied", "late"] } });
-  assert.deepEqual(await tracker.removeLabel("task_x", "dsh:replied"), ["dsh:on", "late"]);
-  assert.deepEqual(writes, [{ op: "update", path: "records/task_x", d: { labels: ["dsh:on", "late"], updated: NOW } }]);
-  await assert.rejects(tracker.removeLabel("task_x", "dsh:replied"), { code: "stale" });
+  const { tracker, writes } = dbTracker({ "records/task_x": { ...DOC, labels: ["oz:on", "oz:replied", "late"] } });
+  assert.deepEqual(await tracker.removeLabel("task_x", "oz:replied"), ["oz:on", "late"]);
+  assert.deepEqual(writes, [{ op: "update", path: "records/task_x", d: { labels: ["oz:on", "late"], updated: NOW } }]);
+  await assert.rejects(tracker.removeLabel("task_x", "oz:replied"), { code: "stale" });
 });
 
 test("artifact-db: the record's updated moves, then the comment is its own document under the record", async () => {
@@ -263,7 +263,7 @@ test("artifact-db: a missing record is not-found; the db's budget error slows po
   const tracker = artifactDbTracker({ db: f.db, now: () => NOW, onRateLimit: () => slowed++ });
   await assert.rejects(tracker.get("nope"), { code: "not_found" });
   f.db.collection = () => { throw { code: "resource_exhausted", message: "scan" }; };
-  await assert.rejects(tracker.list({ labels: ["dsh:on"] }), { code: "resource_exhausted" });
+  await assert.rejects(tracker.list({ labels: ["oz:on"] }), { code: "resource_exhausted" });
   assert.equal(slowed, 1);
   assert.match(tracker.failText({ code: "resource_exhausted" }), /rate/i);
   assert.match(tracker.failText({ code: "quota_exceeded" }), /full/);

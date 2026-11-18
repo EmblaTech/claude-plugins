@@ -27,7 +27,7 @@ The skill names no provider: sources, cursors and deltas are its terms. The setu
 ## Consequences
 
 - `sync light`, the `light-sync` section flag and *full run only* sources are removed. A section name may now be `light`.
-- Card cleanup still only removes `dsh:on`. A card comes back by its key when a later pass returns it.
+- Card cleanup still only removes `oz:on`. A card comes back by its key when a later pass returns it.
 - The meetings section runs every pass. Reading the calendar is one call per window. A brief is rebuilt when its event changed, when the series' notes file gained a commit, or when a task carrying its series label was added or changed.
 - The daily brief and the meeting notes stay: the user reads them. Their size is #185.
 - One scheduled routine remains, the hourly Sync. The `daily-digest` routine and the v1 routines are retired (#194, #195).

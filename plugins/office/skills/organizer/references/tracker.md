@@ -1,6 +1,6 @@
 # Tracker contract
 
-The tracker is the one store of record for cards, tasks, their comments and the status. Every run and the page reach it through the operations below, written in one `op(args)` notation, e.g. `list(labels: [dsh:mtg/<series>], state: all)`. How each operation runs is in the **storage reference** that `storage` in `dashboard.toml` names: a built-in storage mode's is `storage/<storage>.md` in this folder; `custom` reads `.claude/dashboard/custom-storage.md`. Read it before the first tracker call.
+The tracker is the one store of record for cards, tasks, their comments and the status. Every run and the page reach it through the operations below, written in one `op(args)` notation, e.g. `list(labels: [oz:mtg/<series>], state: all)`. How each operation runs is in the **storage reference** that `storage` in `dashboard.toml` names: a built-in storage mode's is `storage/<storage>.md` in this folder; `custom` reads `.claude/dashboard/custom-storage.md`. Read it before the first tracker call.
 
 ## Record
 
@@ -37,19 +37,19 @@ A card, a task or the status is a **record**:
 ## Relations
 
 Hierarchy, blocking and type ([ADR 0008](https://github.com/EmblaTech/claude-plugins/blob/main/docs/dashboard-v2/adr/0008-meeting-tasks-by-series-subtasks-native.md)): set them when the source says so, and read the ones the user set by hand.
-- **Tasks only.** A meeting or PR card gets no type and no parent; `dsh:*` labels stay the card kind.
-- **Parent is a task, never a meeting card.** A task that prepares for a meeting carries the series label `dsh:mtg/<series>`.
+- **Tasks only.** A meeting or PR card gets no type and no parent; `oz:*` labels stay the card kind.
+- **Parent is a task, never a meeting card.** A task that prepares for a meeting carries the series label `oz:mtg/<series>`.
 - **The relation is the only record.** No child checklist in a parent's body, no "blocked by" line. Subtask counts and "has open subtasks" come from `children()`.
 
 ## Labels
 
-Every dashboard label carries the fixed prefix `dsh:`, except the reused `ready-for-agent` and track labels.
-- kind: `dsh:meeting`, `dsh:pr`, `dsh:task`
-- `dsh:on`: shown on the page; an open record without it is off the page
-- `dsh:needs-you`: Claude waits on the user
-- `dsh:replied`: Claude replied in the thread; the page removes it when the user opens the card
-- `dsh:status`: the status record
-- `dsh:mtg/<series>`: the meeting series a card or task belongs to
+Every dashboard label carries the fixed prefix `oz:`, except the reused `ready-for-agent` and track labels.
+- kind: `oz:meeting`, `oz:pr`, `oz:task`
+- `oz:on`: shown on the page; an open record without it is off the page
+- `oz:needs-you`: Claude waits on the user
+- `oz:replied`: Claude replied in the thread; the page removes it when the user opens the card
+- `oz:status`: the status record
+- `oz:mtg/<series>`: the meeting series a card or task belongs to
 - `ready-for-agent`, without the prefix: the repo's triage label, reused for agent tasks ([comments.md](comments.md#agent-tasks))
 - track labels without prefix, one per area the project splits its work into
 
@@ -66,7 +66,7 @@ An agent task's claim is a signed comment holding `<!-- dsh {"claim":"<run start
 
 ## Status record
 
-One open record, key `status`, labelled `dsh:status`. Each run rewrites its body: one line, in the user's language, per source that failed and per thing Claude could not do. Its `meta` holds `updated` (the run time, ISO), `answered` (see [comments.md](comments.md)) and `cursors` (`{"<source id>": "<ISO>"}`). `updated` is only the heartbeat of the last Sync run; `cursors` maps each source id to the time up to which it was read (the time its last successful read began), and a source missing from it is read in full. A Sync run rewrites only the entries of the sources it read. When all is well, the body is empty. The page shows the body as a banner. Send one PushNotification only when the body's problems change: a new problem, or a source that recovered. A source read again drops its line, which is its recovery. When the status record itself can not be written, send the problems in a PushNotification and end the run's report with them. A run that reports nothing at all shows on the page: it warns when `updated` is older than `stale-hours`.
+One open record, key `status`, labelled `oz:status`. Each run rewrites its body: one line, in the user's language, per source that failed and per thing Claude could not do. Its `meta` holds `updated` (the run time, ISO), `answered` (see [comments.md](comments.md)) and `cursors` (`{"<source id>": "<ISO>"}`). `updated` is only the heartbeat of the last Sync run; `cursors` maps each source id to the time up to which it was read (the time its last successful read began), and a source missing from it is read in full. A Sync run rewrites only the entries of the sources it read. When all is well, the body is empty. The page shows the body as a banner. Send one PushNotification only when the body's problems change: a new problem, or a source that recovered. A source read again drops its line, which is its recovery. When the status record itself can not be written, send the problems in a PushNotification and end the run's report with them. A run that reports nothing at all shows on the page: it warns when `updated` is older than `stale-hours`.
 
 ## Other storage modes
 

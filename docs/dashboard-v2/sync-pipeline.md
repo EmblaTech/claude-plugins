@@ -65,7 +65,7 @@ A pass with nothing new costs one cheap check per source. A meeting added mid-da
 **Cleanup**
 26. As the user, I want a card whose origin is resolved closed on the next pass, so that I do not wait for a daily run.
 27. As the user, I want cards that are stale by meaning swept once a day, so that judgement calls stay rare.
-28. As the user, I want a swept card only hidden (`dsh:on` removed), not deleted, so that it comes back with its history if it becomes relevant again.
+28. As the user, I want a swept card only hidden (`oz:on` removed), not deleted, so that it comes back with its history if it becomes relevant again.
 29. As the user, I want my snoozed cards left alone by the sweep, so that snoozing keeps working.
 
 **Records**
@@ -119,7 +119,7 @@ A pass with nothing new costs one cheap check per source. A meeting added mid-da
   - **Daily brief.** One `## <date>` entry per day, created by the first run that adds something; later runs append `### Update HH:MM`. A run with nothing new writes nothing, so there are no "nothing new" entries, ranges or weekend rule. The brief moves from `Automation/` to `daily-brief/2026-daily-brief.md`.
   - **Tasks.** Topic subagents return user-owned task rows; the main thread creates the issues with the other tracker writes (one writer). Notes keep `### Action points` until the v1 cutover (#195), since v1 briefs read them.
   - **Reference.** The digest command (`.claude/commands/daily-digest.md`) is deleted; its bootstrap (no log yet) and the M365 transcript troubleshooting move into the Intake reference. `Automation/setup.md` is deleted; setup lives in the skill.
-- **Cleanup.** Every pass checks each `dsh:on` card's origin (PR, issue, meeting) and closes the resolved ones. The first pass of a local day sweeps the cards stale by meaning. Cleanup only removes `dsh:on` and never touches a snoozed card.
+- **Cleanup.** Every pass checks each `oz:on` card's origin (PR, issue, meeting) and closes the resolved ones. The first pass of a local day sweeps the cards stale by meaning. Cleanup only removes `oz:on` and never touches a snoozed card.
 - **Scheduling.** One Desktop scheduled routine runs the Sync hourly. The daily-digest routine and the v1 routines are retired; the daily-digest task is disabled in the same change that turns Intake on, so no hour has two writers (#194). Overlap protection relies on Desktop skipping a run while the previous one is still going. A lease on the status issue is the fallback if that ever fails.
 - **Provider-neutral skill.** The skill speaks only of sources, cursors, deltas and items. Connector names and quirks live in the project config and in provider references (for Microsoft 365, the project's ms365 gotchas).
 

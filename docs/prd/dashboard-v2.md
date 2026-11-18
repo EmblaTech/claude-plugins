@@ -43,32 +43,32 @@ Both modes are in v2 scope (confirmed 2026-11-04). Build order: B first, then A 
 
 ## Tracker model (mode B)
 
-**Labels** all carry the fixed prefix `dsh:`. It is not configurable: routines, prompts and the page all use it, so a different prefix would quietly empty the page *(decided 2026-11-05)*.
-- `dsh:meeting`, `dsh:pr`, `dsh:task`: the card type
-- `dsh:on`: shown on the dashboard
-- `dsh:needs-you`: Claude is waiting on the user
-- `dsh:replied`: Claude answered in the thread and the user has not opened the card since
-- `dsh:status`: the single status issue (below)
-- `dsh:delete`: the user pressed ✕ on a task; the next run deletes the issue
+**Labels** all carry the fixed prefix `oz:`. It is not configurable: routines, prompts and the page all use it, so a different prefix would quietly empty the page *(decided 2026-11-05)*.
+- `oz:meeting`, `oz:pr`, `oz:task`: the card type
+- `oz:on`: shown on the dashboard
+- `oz:needs-you`: Claude is waiting on the user
+- `oz:replied`: Claude answered in the thread and the user has not opened the card since
+- `oz:status`: the single status issue (below)
+- `oz:delete`: the user pressed ✕ on a task; the next run deletes the issue
 
 Track labels (Acme, Ops, …) are task taxonomy, not dashboard-specific, so they carry no prefix. *(My call; flag if you want them prefixed.)*
 
-The repo's agent-issue workflow (`docs/agents/issue-tracker.md`, triage labels) ignores every issue labelled `dsh:*`, so dashboard cards never show as untriaged. One triage label is reused on cards: `ready-for-agent` on a `dsh:task` assigned to `agent-assignee` makes it an agent task for the sync (see Agent tasks) *(decided 2026-11-11)*.
+The repo's agent-issue workflow (`docs/agents/issue-tracker.md`, triage labels) ignores every issue labelled `oz:*`, so dashboard cards never show as untriaged. One triage label is reused on cards: `ready-for-agent` on a `oz:task` assigned to `agent-assignee` makes it an agent task for the sync (see Agent tasks) *(decided 2026-11-11)*.
 
 **Issue fields** already defined for the user's GitHub organisation. They are set on the issue itself, and no Project is needed:
 - `Target date`: the due date.
 - `Start date`: snoozed until. The card stays hidden before this date. The field is reused for this purpose; GitHub's own wording is "when work begins".
 - `Priority` (Urgent / High / Medium / Low): the order of cards within a group.
 
-**Meeting series** is a label: `dsh:mtg/<series>` (e.g. `dsh:mtg/ft-sync`).
+**Meeting series** is a label: `oz:mtg/<series>` (e.g. `oz:mtg/ft-sync`).
 
-**Relations** ([ADR 0008](../dashboard-v2/adr/0008-meeting-tasks-by-series-subtasks-native.md), #169, *decided 2026-11-14*). A subtask is a native sub-issue of its parent task; native sub-issues are the only list of children, and no body keeps a checklist of them. A blocked task has a native blocked-by dependency, never a "blocked by #n" line in prose. Tasks get the issue type Epic, Story or Task; meeting and PR cards get none, and the `dsh:*` type labels stay. A task is never a sub-issue of a meeting card: it attaches to meetings only through the series label. Collectors and `create_task` accept an optional parent, blocked-by and type; relations the user sets by hand on GitHub are read the same way.
+**Relations** ([ADR 0008](../dashboard-v2/adr/0008-meeting-tasks-by-series-subtasks-native.md), #169, *decided 2026-11-14*). A subtask is a native sub-issue of its parent task; native sub-issues are the only list of children, and no body keeps a checklist of them. A blocked task has a native blocked-by dependency, never a "blocked by #n" line in prose. Tasks get the issue type Epic, Story or Task; meeting and PR cards get none, and the `oz:*` type labels stay. A task is never a sub-issue of a meeting card: it attaches to meetings only through the series label. Collectors and `create_task` accept an optional parent, blocked-by and type; relations the user sets by hand on GitHub are read the same way.
 
 **Card metadata.** Each issue body ends with one hidden line:
 
 `<!-- dsh {"key":…, "section":…, "group":…, "groupRank":…, "collapsed":…, "lead":…, "badges":…, "author":…, "repo":…, "updated":…} -->`
 
-Routines write it, and the page reads it to place the card in its section and group and to drive the filter chips and counts. Within a group, cards are ordered by `dsh:needs-you` first, then `Priority`, then `Target date`. *(My call.)*
+Routines write it, and the page reads it to place the card in its section and group and to drive the filter chips and counts. Within a group, cards are ordered by `oz:needs-you` first, then `Priority`, then `Target date`. *(My call.)*
 
 **Identity.** The `key` in that line is:
 - `mtg_<series>_<YYYYMMDD>` for a meeting card, using the meeting's local date;
@@ -87,10 +87,10 @@ Runs find the existing issue by this key and update it in place; they never crea
 **Lifecycle:**
 - **Meeting card:** created when the meeting enters the window. It gets a full brief for today and the next working day, and a light brief for days 3–7. It closes as completed once the meeting is over, and its prep comments stay in its history.
 - **PR card:** one per open PR. It closes when the PR is merged or declined.
-- **Task:** created by any routine or by the user, on its own lifecycle. A task from a meeting links to that meeting card. A task that prepares for a later meeting carries that series' `dsh:mtg/<series>` label and shows under every card of that series on the page, however far away the meeting is; while one is on the page, the task is not repeated in its own section *(changed 2026-11-14, #169)*. A subtask lives on its own lifecycle and shows under its parent.
+- **Task:** created by any routine or by the user, on its own lifecycle. A task from a meeting links to that meeting card. A task that prepares for a later meeting carries that series' `oz:mtg/<series>` label and shows under every card of that series on the page, however far away the meeting is; while one is on the page, the task is not repeated in its own section *(changed 2026-11-14, #169)*. A subtask lives on its own lifecycle and shows under its parent.
 - **A card the agent defers:** for example, a comment says "make a task with a deadline later". The routine creates the task with `Target date`, closes or unlabels the card, and sets the task's `Start date` to 2 days before `Target date`, or to what the card's text implies. The task returns by itself.
 
-**Status issue** (`dsh:status`, one, pinned): each run rewrites its body with the run time, sources that failed, and anything Claude could not do. The page shows it as a banner when it is non-empty. A run sends one PushNotification only when it changes the body: a new problem appears, or a source recovers. Repeated failures stay silent. When the status issue itself can not be written (the GitHub connector is down), the run sends the problems in a PushNotification and ends its report with them. **Heartbeat:** the page warns "The routine has not run since …" when the status issue's run time is older than `stale-hours` (default 26), so a run that died, never started or could not write anything still shows. *(Agreed 2026-11-05.)* In mode A the same role is one `db` doc. *(Confirmed 2026-11-04.)*
+**Status issue** (`oz:status`, one, pinned): each run rewrites its body with the run time, sources that failed, and anything Claude could not do. The page shows it as a banner when it is non-empty. A run sends one PushNotification only when it changes the body: a new problem appears, or a source recovers. Repeated failures stay silent. When the status issue itself can not be written (the GitHub connector is down), the run sends the problems in a PushNotification and ends its report with them. **Heartbeat:** the page warns "The routine has not run since …" when the status issue's run time is older than `stale-hours` (default 26), so a run that died, never started or could not write anything still shows. *(Agreed 2026-11-05.)* In mode A the same role is one `db` doc. *(Confirmed 2026-11-04.)*
 
 ## Page
 
@@ -99,17 +99,17 @@ Runs find the existing issue by this key and update it in place; they never crea
   - **Mode A:** `db` `onSnapshot`.
 
   The spike verified mode B on 2026-11-04 ([ADR 0002](../dashboard-v2/adr/0002-page-reads-tracker-live-by-label.md)).
-- Shows open items labelled `dsh:on`, grouped into sections. Within each group they are ordered as above.
+- Shows open items labelled `oz:on`, grouped into sections. Within each group they are ordered as above.
 - Hides an item while its `Start date` is after today, and shows it again on that date.
-- Cards that are `dsh:needs-you` go first.
+- Cards that are `oz:needs-you` go first.
 - Each card shows:
   - a one-line gist, with the brief on expand. When the card stands for an origin item elsewhere (a PR, a ticket, a mail or chat thread, a calendar event), the gist opens with a link to that item, its key as text, so one click from the collapsed card reaches the item itself *(requirement added 2026-11-06)*;
-  - a "Claude replied" badge while it has `dsh:replied` *(requirement added 2026-11-05)*;
+  - a "Claude replied" badge while it has `oz:replied` *(requirement added 2026-11-05)*;
   - at its end two sections ([ADR 0005](../dashboard-v2/adr/0005-cloud-and-local-surfaces.md)): **Cloud chat** with the assistant, and **Local**, its comment thread with a comment box, loaded when the card is expanded *(decided 2026-11-11)*;
   - ✓ / ✕ / ⏸ (unless the section sets `card-actions = false`, as meetings do);
   - an open-in-new-tab icon (GitHub's link-external) in the title row, linking to the card's own issue *(requirement added 2026-11-06; replaced the "Open on GitHub" link inside the expanded card)*.
 - Relations ([ADR 0008](../dashboard-v2/adr/0008-meeting-tasks-by-series-subtasks-native.md), #169, *decided 2026-11-14*):
-  - a parent task shows a done count ("9/18") and "Subtasks: N" under its head, the way a meeting shows its tasks; a click lists all its open subtasks, with or without `dsh:on` *(changed 2026-11-15, #169)*; each level loads only on click, so the tree can be opened as deep as the user likes and a cycle never makes the page loop;
+  - a parent task shows a done count ("9/18") and "Subtasks: N" under its head, the way a meeting shows its tasks; a click lists all its open subtasks, with or without `oz:on` *(changed 2026-11-15, #169)*; each level loads only on click, so the tree can be opened as deep as the user likes and a cycle never makes the page loop;
   - a subtask is shown only under its parent. When one needs the user, the page walks up to its root (visited set, at most 8 levels, a cycle mark if a node repeats), places the root card as if it needed the user, and opens the path to the subtask;
   - a meeting card shows "Tasks: N" for the open tasks of its series, listed on click; each is a full task row with its own ✓ / ✕ / ⏸;
   - a blocked task carries a "Blocked" mark and stays where it would be *(the page's GitHub connector has no dependencies tool, so the page cannot read blockers yet: [findings](../dashboard-v2/findings.md), #169)*;
@@ -122,7 +122,7 @@ Runs find the existing issue by this key and update it in place; they never crea
 - ✓ / ✕ / ⏸ and new comments write straight to the tracker, and the item disappears from view at once.
   - ⏸ offers the next working day or +7 days.
   - Done and dismissed items are not shown. Closed issues are their history.
-  - ✕ on a task closes it as not planned and adds `dsh:delete`; every skill run deletes such issues with `gh issue delete`. The page cannot delete: GitHub has no REST delete, and the connector has no tool for the GraphQL `deleteIssue` (admin only). Meetings and PRs are never deleted, because the next run would recreate them from their source.
+  - ✕ on a task closes it as not planned and adds `oz:delete`; every skill run deletes such issues with `gh issue delete`. The page cannot delete: GitHub has no REST delete, and the connector has no tool for the GraphQL `deleteIssue` (admin only). Meetings and PRs are never deleted, because the next run would recreate them from their source.
 - Reads at most 100 cards (one page of `list_issues`). If the page is full, a note at the bottom says the limit was reached and more cards may exist. *(Requirement added 2026-11-05.)*
 - PR filter chips (author with avatar, repo, last activity: 24 h / week / all), at most one chip of each kind.
 - Text is selectable. Both themes work. The page works at phone width.
@@ -134,7 +134,7 @@ One skill replaces `meeting-dashboard` and `dashboard-notes`. It is named `dashb
 | Command | Does |
 |---|---|
 | `/dashboard-v2` | Help: the commands and the section ids from the config; runs nothing. |
-| `/dashboard-v2 sync [section] [params]` | A **Sync**, the one hourly run and change-driven *(changed 2026-11-15, #188)*: follows up on new comments (below) and carries out agent tasks, then every source is read once since its own cursor (a map in the status issue's metadata) and each section's collector gets the whole delta and keeps what its prompt asks for (or one section's; params are free text for its agent, e.g. `sync meetings ABC-1396 high priority`), the tracker is updated, `dsh:on` is recomputed and `Priority` set. Sources only a git commit changes (brief, dossier, repo docs) are read only when a commit touched them. A card leaves the page only when its origin is plainly resolved (issue closed, PR merged, meeting over) or it comes back without `dsh:on`. A Sync run with nothing new reports `no changes` and starts no subagents. |
+| `/dashboard-v2 sync [section] [params]` | A **Sync**, the one hourly run and change-driven *(changed 2026-11-15, #188)*: follows up on new comments (below) and carries out agent tasks, then every source is read once since its own cursor (a map in the status issue's metadata) and each section's collector gets the whole delta and keeps what its prompt asks for (or one section's; params are free text for its agent, e.g. `sync meetings ABC-1396 high priority`), the tracker is updated, `oz:on` is recomputed and `Priority` set. Sources only a git commit changes (brief, dossier, repo docs) are read only when a commit touched them. A card leaves the page only when its origin is plainly resolved (issue closed, PR merged, meeting over) or it comes back without `oz:on`. A Sync run with nothing new reports `no changes` and starts no subagents. |
 | `/dashboard-v2 setup` | Idempotent and prompt-driven: explores the project and what the session can reach, asks section by section (sources, gaps in what the project states), writes the config, labels and status issue (asks before creating a missing org issue field), publishes the page, installs the routines, offers a first `sync` *(added 2026-11-12, #168)*, and ends by telling the user how to live with the page (see Skill boundary). Page settings include the Theme, made from a Style source and kept with it in the config *(added 2026-11-12, #160)*. |
 | `/dashboard-v2 setup <text>` | Targeted setup: only the steps the text touches (e.g. "make the theme lighter", "add a section"), republishing the page if it changed; text that matches no step gets a question. Replaces `setup theme` *(added 2026-11-12, #168)*. |
 | `/dashboard-v2 <any other text>` | An instruction, like the Local input on the Assistant tab, carried out at once in that session with local tools. |
@@ -154,22 +154,22 @@ One skill replaces `meeting-dashboard` and `dashboard-notes`. It is named `dashb
   - **an action** is carried out with the most local, reversible means available: a repo edit, a new task, or a mail or Teams draft, using local tools (a local MCP server such as Bitbucket, the repo) where needed;
   - **sending** happens only when the comment says so, marked as sent by AI;
   - **heavy work** goes to an Opus subagent.
-- Re-read the thread before posting. Then reply in the thread with what was done, plus links, and add `dsh:replied`. If the comment is ambiguous, reply with a question, add `dsh:needs-you` and send one PushNotification. The label comes off when the user replies.
+- Re-read the thread before posting. Then reply in the thread with what was done, plus links, and add `oz:replied`. If the comment is ambiguous, reply with a question, add `oz:needs-you` and send one PushNotification. The label comes off when the user replies.
 - A comment can change the card: rewrite the brief, close it, defer it, or create tasks.
 
-**Agent tasks** (inside sync, #138; *decided 2026-11-11*). The Sync run also takes open `dsh:task` cards labelled `ready-for-agent` and assigned to `agent-assignee`, and carries each one out. The card is the assignment. How is the agent's call: a direct commit, a branch and PR, work in another repo, a clone when the task asks; merging and approving stay the user's.
+**Agent tasks** (inside sync, #138; *decided 2026-11-11*). The Sync run also takes open `oz:task` cards labelled `ready-for-agent` and assigned to `agent-assignee`, and carries each one out. The card is the assignment. How is the agent's call: a direct commit, a branch and PR, work in another repo, a clone when the task asks; merging and approving stay the user's.
 - Before work it posts a signed **claim** comment (hidden `<!-- dsh {"claim":…} -->` with the start time). A claimed card is never taken again: no retries, since a run cut off by a shut-down machine may resume and two runs on one repo would collide.
-- `ready-for-agent` comes off only when the work is finished and reported: a signed reply with links plus `dsh:replied`, or `dsh:needs-you` and one PushNotification when it needs the user.
+- `ready-for-agent` comes off only when the work is finished and reported: a signed reply with links plus `oz:replied`, or `oz:needs-you` and one PushNotification when it needs the user.
 - A claim that looks stuck gets no special rule: the agent is trusted to notice it and draw the user's attention. A scenario test checks that before release; a general sentence is added to the skill only if the test fails.
 - A full factory pipeline (intake, spec, review and test gates, as in the 2026-11-11 video research) is not built; if one is needed, an existing one is adopted.
 
 **Who does what** *(my calls)*:
-- A sync removes `dsh:needs-you` once the user has commented after Claude's question. The page writes clicks and comments, and removes `dsh:replied` when the user expands the card.
+- A sync removes `oz:needs-you` once the user has commented after Claude's question. The page writes clicks and comments, and removes `oz:replied` when the user expands the card.
 - A sync closes meeting cards whose meeting is over.
 - Scheduling stays as in v1 (local scheduled runs where the MCP servers are configured). `setup` offers to install the two routines itself when the session has Claude Desktop's `scheduled-tasks` tools; without them it recommends rerunning setup from Desktop or prints the routines for the user to add by hand. The daily run joined the daily-digest routine *(changed 2026-11-05)*; since #194 the digest is the Sync's Intake stage and the daily-digest task is retired, so the one hourly routine is the only writer.
 
 **Other routines:**
-- **daily-digest** (now the Intake stage of the Sync, #194) creates tasks from meeting transcripts as `dsh:task` issues with track labels, linked to the meeting card, and stops writing To Do tasks *(done 2026-11-05)*. It keeps writing `### Action points` while v1 runs, because v1 briefs read them; that stops at cutover.
+- **daily-digest** (now the Intake stage of the Sync, #194) creates tasks from meeting transcripts as `oz:task` issues with track labels, linked to the meeting card, and stops writing To Do tasks *(done 2026-11-05)*. It keeps writing `### Action points` while v1 runs, because v1 briefs read them; that stops at cutover.
 - **PR push:** when a PR newly needs the user's review or reply, send one PushNotification. Skip it while the PR card is snoozed.
 - **Failure push:** a run that hits a failure (unread section or source, a write that did not land) sends one PushNotification naming it. Successful runs stay silent: the Desktop "task complete" banner is off, since the hourly sync would fire it every cycle *(added 2026-11-06)*.
 
@@ -228,19 +228,19 @@ Comments and Cloud conversations of other tasks are never included. The one-docu
 
 **Claude Duet:** the earlier hold on Ask until Duet ships is overridden; Cloud chat is built now and dropped if Duet covers it later *(2026-11-11)*.
 
-**Built** *(2026-11-10, #125)*: both tabs and **New task**. The rules turn is [`references/assistant.md`](../../plugins/office/skills/dashboard-v2/references/assistant.md), baked in by setup; its tool `create_task` writes the card format, key (`task_<slug>_<YYYYMMDD-HHMM>`: a new matter, so no lookup), labels (`dsh:task`, `dsh:on`, plus only `dsh:mtg/*` and track labels already on the page) and valid fields, and the reply always carries the task link. The chat history is trimmed to half of `maxPromptBytes`, oldest first, the rules turn always kept. The New task / Ask switch went with the two sections (#129): creating a task became something Cloud does when asked.
+**Built** *(2026-11-10, #125)*: both tabs and **New task**. The rules turn is [`references/assistant.md`](../../plugins/office/skills/dashboard-v2/references/assistant.md), baked in by setup; its tool `create_task` writes the card format, key (`task_<slug>_<YYYYMMDD-HHMM>`: a new matter, so no lookup), labels (`oz:task`, `oz:on`, plus only `oz:mtg/*` and track labels already on the page) and valid fields, and the reply always carries the task link. The chat history is trimmed to half of `maxPromptBytes`, oldest first, the rules turn always kept. The New task / Ask switch went with the two sections (#129): creating a task became something Cloud does when asked.
 
-**Built** *(2026-11-12, #129)*: Cloud chat on every card and on the Assistant tab. One chat implementation serves both. The turns live in `db` at `cloud/tab` and `cloud/card-<n>` and are written once per exchange, trimmed oldest first to fit one document (`DSH.fitConversation`). A history that does not load within 10 s is not saved over. **New conversation** deletes the document. The card context is read fresh on every message: the brief and the whole thread, labelled User / Claude, oldest comments dropped first to fit (`DSH.cardView`). Tools: `create_task`, `delete_task`, `post_comment`, `close_card` / `snooze_card` (cards with buttons), `read_file`, `search_code`, `set_branch`, then the connector tools from `[assistant] tools`, cut to 16 (`DSH.pickTools`). `post_comment` signs the comment. It refuses while the thread has a user comment waiting for a sync, because a signed comment would mark that one answered. The assistant does not get an edit-the-brief tool: ask for it in the comments.
+**Built** *(2026-11-12, #129)*: Cloud chat on every card and on the Assistant tab. One chat implementation serves both. The turns live in `db` at `cloud/tab` and `cloud/card-<n>` and are written once per exchange, trimmed oldest first to fit one document (`OZ.fitConversation`). A history that does not load within 10 s is not saved over. **New conversation** deletes the document. The card context is read fresh on every message: the brief and the whole thread, labelled User / Claude, oldest comments dropped first to fit (`OZ.cardView`). Tools: `create_task`, `delete_task`, `post_comment`, `close_card` / `snooze_card` (cards with buttons), `read_file`, `search_code`, `set_branch`, then the connector tools from `[assistant] tools`, cut to 16 (`OZ.pickTools`). `post_comment` signs the comment. It refuses while the thread has a user comment waiting for a sync, because a signed comment would mark that one answered. The assistant does not get an edit-the-brief tool: ask for it in the comments.
 
-**Built** *(2026-11-12, #138)*: Local on the Assistant tab. Its text becomes an agent task through `DSH.newTask` with the `assignee` option: the first line is the title, the whole text the brief, labels `dsh:task`, `dsh:on`, `ready-for-agent`, assigned to `agentAssignee`. It is the user's click, so no Claude call and no approval. The input is disabled while the config has no `agent-assignee`. The sync claims, runs and reports these cards (`references/comments.md`, Agent tasks).
+**Built** *(2026-11-12, #138)*: Local on the Assistant tab. Its text becomes an agent task through `OZ.newTask` with the `assignee` option: the first line is the title, the whole text the brief, labels `oz:task`, `oz:on`, `ready-for-agent`, assigned to `agentAssignee`. It is the user's click, so no Claude call and no approval. The input is disabled while the config has no `agent-assignee`. The sync claims, runs and reports these cards (`references/comments.md`, Agent tasks).
 
-**Removed** *(built 2026-11-10 in #128, removed 2026-11-12 in #151)*: catch-up on open, the card queue, and the page's `reply` into threads. A card run read the thread, called `sample` with `reply`, `create_task`, `close_card` and `snooze_card`, and labelled the reply itself (`DSH.needsReply`, `DSH.signed`, `DSH.replyLabels`). `close_card` and `snooze_card` stay for Cloud on cards with ✓ / ✕ / ⏸.
+**Removed** *(built 2026-11-10 in #128, removed 2026-11-12 in #151)*: catch-up on open, the card queue, and the page's `reply` into threads. A card run read the thread, called `sample` with `reply`, `create_task`, `close_card` and `snooze_card`, and labelled the reply itself (`OZ.needsReply`, `OZ.signed`, `OZ.replyLabels`). `close_card` and `snooze_card` stay for Cloud on cards with ✓ / ✕ / ⏸.
 
 **Long tasks** (Cloud, #130): the page continues `sample` calls in a loop, up to about 5, with progress and a Stop button. Beyond that it offers **Open in Claude Code**: a `claude://code/new` deep link prefilled with the task; the user presses Enter (deep links only prefill, see [findings.md](../dashboard-v2/findings.md)).
 
-**Built** *(2026-11-13, #130)*: the long-task loop is in `run()` of the Cloud chat. Claude ends an unfinished answer with `[[continue]]` (rules, "Long tasks"); the page strips it and calls `sample` again with what was said so far (`DSH.continueInput`), up to `DSH.MAX_ROUNDS` = 5 calls, with a "Step n of 5" line and the existing Stop. Past the cap it shows **Open in Claude Code**: `DSH.deepLink(folder, task)` with the user's message, the card reference and the last 2000 characters of progress, plus a select of `project-folder` (config; setup asks) and the folders this viewer used (browser storage, five, newest first). Whether a call ended on the round cap is not exposed by `sample`, so the marker is Claude's own report.
+**Built** *(2026-11-13, #130)*: the long-task loop is in `run()` of the Cloud chat. Claude ends an unfinished answer with `[[continue]]` (rules, "Long tasks"); the page strips it and calls `sample` again with what was said so far (`OZ.continueInput`), up to `OZ.MAX_ROUNDS` = 5 calls, with a "Step n of 5" line and the existing Stop. Past the cap it shows **Open in Claude Code**: `OZ.deepLink(folder, task)` with the user's message, the card reference and the last 2000 characters of progress, plus a select of `project-folder` (config; setup asks) and the folders this viewer used (browser storage, five, newest first). Whether a call ended on the round cap is not exposed by `sample`, so the marker is Claude's own report.
 
-**Conventions:** mechanical rules (reply signature, `dsh:` labels, the full-set rewrite of `labels`, approvals) live in the page's tool code. Judgement rules (what goes where, when to ask) are baked into the first user turn when setup builds the page, from the skill's references. Nothing is read from the repo at chat start.
+**Conventions:** mechanical rules (reply signature, `oz:` labels, the full-set rewrite of `labels`, approvals) live in the page's tool code. Judgement rules (what goes where, when to ask) are baked into the first user turn when setup builds the page, from the skill's references. Nothing is read from the repo at chat start.
 
 **Connectors:** setup lists the connectors its session has and asks which to give the assistant; the page declares only those and uses the ones the viewer granted. The minimum is the tracker (the GitHub connector in mode B, `db` in mode A); everything else is optional, so the skill assumes no particular connector.
 
@@ -250,9 +250,9 @@ Comments and Cloud conversations of other tasks are never included. The one-docu
 - Any other write (a tool without `readOnlyHint`, outside the tracker: mail, chat, commits) needs a click on a preview of what will be sent. Text the assistant reads (mail, PRs) can carry injected instructions, so it never sends on its own.
 - Messages sent or drafted carry the AI marker, per the project's rules.
 
-**Built** *(2026-11-10, #127)*: one gate, `DSH.needsClick`, decides from the tool's annotations (MCP defaults, so a tool without them asks) and whether it is a tracker tool; every page tool goes through it. A click shows a preview with Allow / Deny in the chat (a tool without its own preview shows its input); Deny reaches Claude as a tool error. Stop, or the call ending any other way, denies every pending approval and removes its buttons. `delete_task` does what a task's ✕ does, only for task cards on the page, previewed with the page's own title. **AI marker** *(built 2026-11-12, #129)*: `ai-marker` in `dashboard.toml`. A connector write whose input carries the marker in none of its text fields is refused before any click (`DSH.hasMarker`); no marker configured refuses every connector write.
+**Built** *(2026-11-10, #127)*: one gate, `OZ.needsClick`, decides from the tool's annotations (MCP defaults, so a tool without them asks) and whether it is a tracker tool; every page tool goes through it. A click shows a preview with Allow / Deny in the chat (a tool without its own preview shows its input); Deny reaches Claude as a tool error. Stop, or the call ending any other way, denies every pending approval and removes its buttons. `delete_task` does what a task's ✕ does, only for task cards on the page, previewed with the page's own title. **AI marker** *(built 2026-11-12, #129)*: `ai-marker` in `dashboard.toml`. A connector write whose input carries the marker in none of its text fields is refused before any click (`OZ.hasMarker`); no marker configured refuses every connector write.
 
-**Repo:** read-only for the assistant, even when a write tool is available. It reads the branch set in `dashboard.toml` (`[assistant] branch`: last active, a name, or ask in chat; setup asks, default last active); the user can switch it by saying so in the chat (`set_branch`, until the page reloads). Last active is worked out once per page open, over at most 20 branches (`DSH.lastActive`). Code search covers only the default branch (verified 2026-11-10, findings); reading files by path works on any branch and collects every content block (`DSH.fileText`). *Built 2026-11-12, #129:* the GitHub connector's raw tools never reach the model, only the page's own read and tracker tools. Project-specific sources (a wiki index, mail, chat) are `dashboard.toml` values, never skill text.
+**Repo:** read-only for the assistant, even when a write tool is available. It reads the branch set in `dashboard.toml` (`[assistant] branch`: last active, a name, or ask in chat; setup asks, default last active); the user can switch it by saying so in the chat (`set_branch`, until the page reloads). Last active is worked out once per page open, over at most 20 branches (`OZ.lastActive`). Code search covers only the default branch (verified 2026-11-10, findings); reading files by path works on any branch and collects every content block (`OZ.fileText`). *Built 2026-11-12, #129:* the GitHub connector's raw tools never reach the model, only the page's own read and tracker tools. Project-specific sources (a wiki index, mail, chat) are `dashboard.toml` values, never skill text.
 
 ## Skill boundary
 
@@ -266,7 +266,7 @@ How this skill is meant to be written. Check every change against it. *(Agreed 2
 - **Setup explores before it asks.** It reads the project and what the session can reach, then asks only what is missing: one topic at a time, recommended answer first, checkboxes plus free text. A missing fact gets a recommended home, not a silent default. *(Source questions grouped by topic; setup suggests adding facts to `CLAUDE.md`.)*
 - **Setup hands over.** It ends by telling the user what runs, where problems show, and what to tune. The user owns the dashboard after setup, not the skill.
 - **Ready to start, free to change.** The skill ships templates the user edits in their project; nothing the user would want to change is buried in the skill. *(Ready section prompts.)*
-- **Configure only what can vary.** A setting that would silently break things when changed is fixed, not configurable. *(The `dsh:` prefix.)*
+- **Configure only what can vary.** A setting that would silently break things when changed is fixed, not configurable. *(The `oz:` prefix.)*
 - **Simple over defensive.** One normal path, no fallbacks for cases not yet seen; trust the agent with the obvious. *(No `gh` fallback for a broken connector; 30 min with no hourly fallback.)*
 - **Failures reach the user.** Every failure ends up where the user looks: the status banner, one push per new problem, and a heartbeat that turns silence into a warning.
 - **Written for agents.** Compact, intent over steps, positive phrasing, one source of truth per fact, every step ends on a checkable "done" (`mattpocock-skills:writing-for-agents`; setup modelled on `setup-matt-pocock-skills`). Precise wording: "or" where only one path runs, no filler sentences.
@@ -397,14 +397,14 @@ The page asks once for consent to the connector.
 
 Fallback, if the connector stops working: a snapshot in the artifact `db`, as described in ADR 0002.
 
-**Cutover is in scope** as the last phase of the build: the `dsh:*` exclusion in the agent-issue docs, the v1 note migration, the end of `### Action points`, and removal of the v1 skills. Until then v1 and v2 run in parallel and v1 keeps working. The `daily-digest` switch from To Do to `dsh:task` issues came early, with the v2 build *(2026-11-05)*.
+**Cutover is in scope** as the last phase of the build: the `oz:*` exclusion in the agent-issue docs, the v1 note migration, the end of `### Action points`, and removal of the v1 skills. Until then v1 and v2 run in parallel and v1 keeps working. The `daily-digest` switch from To Do to `oz:task` issues came early, with the v2 build *(2026-11-05)*.
 
 ## Calls I made (check these)
 
-- The `dsh:` prefix, and track labels without a prefix.
+- The `oz:` prefix, and track labels without a prefix.
 - Reusing `Start date` as snoozed-until, and `Priority` as the only ordering (no backlog).
-- Meeting series as a `dsh:mtg/<series>` label.
-- A hidden `dsh:key` marker in the body as the identity.
+- Meeting series as a `oz:mtg/<series>` label.
+- A hidden `oz:key` marker in the body as the identity.
 - Snooze for a deferred card: `Due` − 2 days unless the text implies otherwise.
 - A moved meeting: a new card, with the old one linked.
 - Deleting a task from the assistant needs a click; other tracker writes do not.

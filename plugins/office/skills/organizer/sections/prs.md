@@ -6,7 +6,7 @@ One card per open pull request.
 
 ## Every card
 
-- `title`: the PR title; `meta.lead`: `<repo> #<id>`; labels `dsh:pr` and the repo's track label
+- `title`: the PR title; `meta.lead`: `<repo> #<id>`; labels `oz:pr` and the repo's track label
 - `meta.author` (display name), `meta.repo` (slug), `meta.updated` (last update): the page's filter chips match on them
 - `meta.badges`: one `✓ <first name>` per approver, tone `ok` (the user's own approval as "me"); the kind (`feature`, `bugfix`, `refactor`, `config`, `docs`, `tests`, `deps`); `AI-config`, tone `ai`, when the PR touches AI configuration
 - `close: true` once it is merged or closed
