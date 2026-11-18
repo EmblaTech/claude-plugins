@@ -7,7 +7,7 @@ A prompt-driven setup, not a script: explore, present what you found, ask, then 
 Read what exists; assume nothing:
 - the project's `CLAUDE.md` / `AGENTS.md` files and `git remote -v`: where meeting notes live, how work splits into tracks, which language the user wants, rules for outgoing messages
 - what this session can reach: connected MCP servers, plugins, CLIs, and whether Claude Desktop's `scheduled-tasks` tools load (ToolSearch)
-- `.claude/organizer/`: an earlier setup's config and section prompts; an install from before the rename: [Migrating an older install](#migrating-an-older-install) first
+- `.claude/organizer/`: an earlier setup's config and section prompts
 - any earlier dashboard, filter list or scheduled routine in the project or in Desktop that this one could reuse or join
 - in the tracker, once the storage mode is chosen (below): what the storage reference's Setup lists, each checked as it says
 
@@ -63,17 +63,6 @@ Offer to run the first `/office:organizer sync` now, so the page does not open e
 ## Targeted setup
 
 `/office:organizer setup <text>` (e.g. `make the theme lighter`, `add a section`, `add a source to the prs section`) runs only the steps the text touches. Explore only what those steps need, take the text as the answer to their question (ask only what it leaves open), write what they write, and when the change reaches the page (a Theme, a page setting, a section's title or flags), fill and publish it as in **Page** and **Publish** of Write: the page is replaced, so it is filled, translated and declared exactly as in a full setup. Report what changed. Text that matches no step: ask what to change rather than running the full setup.
-
-## Migrating an older install
-
-A project set up while this skill was `dashboard-v2` keeps its config in `.claude/dashboard/dashboard.toml` and its cards under `dsh:*` labels, which this skill does not read. The page reads the tracker live by label, so migrate and republish in one go, from the project root:
-
-1. Run `node <this skill's folder>/scripts/migrate-from-dashboard-v2.mjs --dry-run` and show the user its plan; on a yes, run it without `--dry-run`. It renames every `dsh:*` label in the toml's `repo` to `oz:*` with `gh label edit` (issues keep their labels), moves `.claude/dashboard/` to `.claude/organizer/` and renames `dashboard.toml` to `organizer.toml`; a rerun skips what is done. A `conflict` line (old and new name both exist) exits 1: settle it with the user and rerun. In `artifact-db` mode it renames no labels: rewrite each record's `dsh:*` labels to `oz:*` with `ArtifactData`.
-2. The script moves files without reading them. Grep `.claude/organizer/` and the project's `CLAUDE.md` files for `dsh:`, `.claude/dashboard`, `dashboard.toml` and `/dashboard-v2`, and rewrite each hit to `oz:`, `.claude/organizer`, `organizer.toml` and `/office:organizer`.
-3. Replace the scheduled task `dashboard-v2-update`, which runs the old command, with the **Sync** task of [Schedule](#3-write).
-4. Republish the page as in **Page** and **Publish** of [Write](#3-write).
-
-Done when the script reports nothing left to do, the old task is gone and the republished page shows the cards.
 
 ## Sources
 

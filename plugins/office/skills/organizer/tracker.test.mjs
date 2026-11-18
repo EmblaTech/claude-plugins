@@ -1,5 +1,5 @@
 // The tracker contract on the page: both storage modes, run against fakes of their transport.
-// Run from the repo root: node --test "plugins/office/skills/organizer/*.test.mjs"
+// Run from the repo root: node --test "plugins/office/skills/organizer/**/*.test.mjs"
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { githubTracker, artifactDbTracker } from "./tracker.js";

@@ -16,4 +16,4 @@ How the page is built and themed; the why is in [ADR 0006](adr/0006-theme-as-tok
 
 ## Checking the live page
 
-Open the published artifact in Claude in Chrome: the desktop app's built-in browser pane renders it blank (the artifact frame loads with origin `null`). Run `node --test "plugins/office/skills/organizer/*.test.mjs"` from the repo root after changing the page files.
+Open the published artifact in Claude in Chrome: the desktop app's built-in browser pane renders it blank (the artifact frame loads with origin `null`). Run `node --test "plugins/office/skills/organizer/**/*.test.mjs"` from the repo root after changing the page files.
