@@ -34,7 +34,7 @@ Field values: `Start date` and `Target date` as `dateValue: "YYYY-MM-DD"`; `Prio
 
 ## Encoding
 
-- **Key and meta**: the body's last line, `<!-- dsh {"key":…, <meta fields>} -->`, with the meta fields [card.md](../card.md#metadata) lists. The status record's line holds its own fields ([Status record](#status-record)).
+- **Key and meta**: the body's last line, `<!-- oz {"key":…, <meta fields>} -->`, with the meta fields [card.md](../card.md#metadata) lists. The status record's line holds its own fields ([Status record](#status-record)).
 - **Labels**: GitHub labels, as the contract names them, plus `oz:delete` (see `delete()` above).
 - **Fields**: the org's issue fields `Priority`, `Target date`, `Start date` (not Projects v2), read from `field_values`.
 - **Relations**: native sub-issues, blocked-by dependencies and issue types.
@@ -44,7 +44,7 @@ Field values: `Start date` and `Target date` as `dateValue: "YYYY-MM-DD"`; `Prio
 
 ## Status record
 
-One open issue labelled `oz:status`, pinned (`gh issue pin`). Its body is the banner text, then the marker line holding `key` and the status `meta`: `<!-- dsh {"key":"status","updated":…,"answered":…,"cursors":{…}} -->`; when all is well, the marker line alone.
+One open issue labelled `oz:status`, pinned (`gh issue pin`). Its body is the banner text, then the marker line holding `key` and the status `meta`: `<!-- oz {"key":"status","updated":…,"answered":…,"cursors":{…}} -->`; when all is well, the marker line alone.
 
 ## Setup
 

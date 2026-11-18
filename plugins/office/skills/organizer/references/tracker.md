@@ -55,7 +55,7 @@ Every dashboard label carries the fixed prefix `oz:`, except the reused `ready-f
 
 ## Claim marker
 
-An agent task's claim is a signed comment holding `<!-- dsh {"claim":"<run start, ISO>"} -->` on its own line before the signature: a signed comment ends with the signature, so the marker goes above it.
+An agent task's claim is a signed comment holding `<!-- oz {"claim":"<run start, ISO>"} -->` on its own line before the signature: a signed comment ends with the signature, so the marker goes above it.
 
 ## Rules every run keeps
 

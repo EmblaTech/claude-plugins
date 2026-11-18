@@ -59,7 +59,7 @@ const dbTracker = seed => { const f = fakeDb(seed); return { ...f, tracker: arti
 const META = { key: "task_x", section: "tasks", lead: "20.11" };
 const ISSUE = {
   number: 7, title: "Send report", state: "OPEN", updated_at: "2026-11-17T09:00:00Z", comments: 2,
-  body: "## Brief\nDo it.\n\n<!-- dsh " + JSON.stringify(META) + " -->",
+  body: "## Brief\nDo it.\n\n<!-- oz " + JSON.stringify(META) + " -->",
   labels: [{ name: "oz:task" }, { name: "oz:on" }, { name: "Ops" }],
   field_values: [{ field: "Priority", value: "High" }, { field: "Target date", value: "2026-11-20T00:00:00Z" }, { field: "Start date", value: "2026-11-19" }],
 };
@@ -113,9 +113,9 @@ test("contract: get carries the relations — parent, done count, type, blockers
 });
 
 // ---- GitHub encoding.
-test("github: the body's last dsh marker is the meta, and it never shows in the body; broken JSON leaves meta empty", async () => {
-  const two = { ...ISSUE, body: "Text\n<!-- dsh {\"key\":\"old\"} -->\n<!-- dsh {\"key\":\"new\"} -->" };
-  const bad = { ...ISSUE, number: 8, body: "Text\n<!-- dsh {broken -->" };
+test("github: the body's last oz marker is the meta, and it never shows in the body; broken JSON leaves meta empty", async () => {
+  const two = { ...ISSUE, body: "Text\n<!-- oz {\"key\":\"old\"} -->\n<!-- oz {\"key\":\"new\"} -->" };
+  const bad = { ...ISSUE, number: 8, body: "Text\n<!-- oz {broken -->" };
   const [a, b] = await fakeGithub({ list_issues: { issues: [two, bad] } }).tracker.list({ labels: ["oz:on"] });
   assert.deepEqual(a.meta, { key: "new" }); assert.equal(a.body, "Text");
   assert.deepEqual(b.meta, {}); assert.equal(b.body, "Text");
@@ -141,7 +141,7 @@ test("github: create writes the marker line, the issue fields and the assignee, 
     priority: "Urgent", targetDate: "2026-12-01", assignee: "bot", type: "Task", parent: 4 });
   assert.deepEqual(r, { id: 12, ref: "#12", url: "https://github.com/o/r/issues/12" });
   const c = calls[0].input;
-  assert.equal(c.body, "## Brief\nB\n\n<!-- dsh {\"key\":\"task_n\",\"section\":\"tasks\"} -->");
+  assert.equal(c.body, "## Brief\nB\n\n<!-- oz {\"key\":\"task_n\",\"section\":\"tasks\"} -->");
   assert.deepEqual(c.issue_fields, [{ field_name: "Priority", field_option_name: "Urgent" }, { field_name: "Target date", value: "2026-12-01" }]);
   assert.deepEqual(c.assignees, ["bot"]); assert.equal(c.type, "Task");
   assert.deepEqual(calls[1], { tool: "sub_issue_write", input: { method: "add", issue_number: 4, sub_issue_id: 555 } });

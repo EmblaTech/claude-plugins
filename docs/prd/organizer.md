@@ -66,7 +66,7 @@ The repo's agent-issue workflow (`docs/agents/issue-tracker.md`, triage labels) 
 
 **Card metadata.** Each issue body ends with one hidden line:
 
-`<!-- dsh {"key":…, "section":…, "group":…, "groupRank":…, "collapsed":…, "lead":…, "badges":…, "author":…, "repo":…, "updated":…} -->`
+`<!-- oz {"key":…, "section":…, "group":…, "groupRank":…, "collapsed":…, "lead":…, "badges":…, "author":…, "repo":…, "updated":…} -->`
 
 Routines write it, and the page reads it to place the card in its section and group and to drive the filter chips and counts. Within a group, cards are ordered by `oz:needs-you` first, then `Priority`, then `Target date`. *(My call.)*
 
@@ -158,7 +158,7 @@ One skill replaces `meeting-dashboard` and `dashboard-notes`. It was first named
 - A comment can change the card: rewrite the brief, close it, defer it, or create tasks.
 
 **Agent tasks** (inside sync, #138; *decided 2026-11-11*). The Sync run also takes open `oz:task` cards labelled `ready-for-agent` and assigned to `agent-assignee`, and carries each one out. The card is the assignment. How is the agent's call: a direct commit, a branch and PR, work in another repo, a clone when the task asks; merging and approving stay the user's.
-- Before work it posts a signed **claim** comment (hidden `<!-- dsh {"claim":…} -->` with the start time). A claimed card is never taken again: no retries, since a run cut off by a shut-down machine may resume and two runs on one repo would collide.
+- Before work it posts a signed **claim** comment (hidden `<!-- oz {"claim":…} -->` with the start time). A claimed card is never taken again: no retries, since a run cut off by a shut-down machine may resume and two runs on one repo would collide.
 - `ready-for-agent` comes off only when the work is finished and reported: a signed reply with links plus `oz:replied`, or `oz:needs-you` and one PushNotification when it needs the user.
 - A claim that looks stuck gets no special rule: the agent is trusted to notice it and draw the user's attention. A scenario test checks that before release; a general sentence is added to the skill only if the test fails.
 - A full factory pipeline (intake, spec, review and test gates, as in the 2026-11-11 video research) is not built; if one is needed, an existing one is adopted.

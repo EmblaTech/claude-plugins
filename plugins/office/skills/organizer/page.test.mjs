@@ -638,7 +638,7 @@ test("cloud context: a child gets its direct parent's brief and its open sibling
   const sibs = [iss(10, [], { title: "Me" }), iss(11, [], { title: "Sib", body: "SECRET BODY" }), iss(12, [], { title: "Gone", state: "closed" })];
   const t = OZ.hierarchyText(10, { rel: rel({ hasParent: true }), parent, sibs });
   assert.equal(t, "Parent #131 [Epic]: Epic\n## Brief\nThe epic.\nSiblings (open): #11 Sib");
-  assert.ok(!t.includes("SECRET") && !t.includes("dsh {") && !t.includes("Gone"));
+  assert.ok(!t.includes("SECRET") && !t.includes("oz {") && !t.includes("Gone"));
   assert.equal(OZ.hierarchyText(5, { rel: rel() }), "");
 });
 

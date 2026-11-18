@@ -18,13 +18,13 @@ const arr = (x, k) => Array.isArray(x) ? x : (x && Array.isArray(x[k]) ? x[k] : 
 export function githubTracker({ call, owner, repo, server = "github" }) {
   const base = `https://github.com/${owner}/${repo}`;
   // `\x3c` is `<`, kept so the code stays safe if it is ever inlined in a <script> (an HTML-comment opener there derails the parser).
-  const META = /\x3c!--\s*dsh\s+(\{[\s\S]*?\})\s*-->/g;
+  const META = /\x3c!--\s*oz\s+(\{[\s\S]*?\})\s*-->/g;
   // The key and meta ride in the body's marker line; the last one wins, a broken one gives none.
   const splitMeta = body => {
     const text = String(body || "").replace(/\r\n/g, "\n");
     let meta = {};
     for (const m of text.matchAll(META)) { try { meta = JSON.parse(m[1]); } catch { meta = {}; } }
-    return { meta, body: text.replace(META, "").replace(/\x3c!--\s*dsh[\s\S]*?-->/g, "").trim() };
+    return { meta, body: text.replace(META, "").replace(/\x3c!--\s*oz\b[\s\S]*?-->/g, "").trim() };
   };
   const FIELD = { priority: "Priority", targetDate: "Target date", startDate: "Start date" };
   const field = (i, name) => { const f = (i.field_values || []).find(x => String(x.field || x.name || "").toLowerCase() === name.toLowerCase()); return f ? String(f.value ?? "") : ""; };
@@ -69,7 +69,7 @@ export function githubTracker({ call, owner, repo, server = "github" }) {
     async create({ key, meta, title, body, labels, priority, targetDate, assignee, type, parent }) {
       const fields = [...(priority ? [{ field_name: FIELD.priority, field_option_name: priority }] : []), ...(targetDate ? [{ field_name: FIELD.targetDate, value: targetDate }] : [])];
       // `\x3c` is `<`, as in META above.
-      const text = String(body || "") + "\n\n\x3c!-- dsh " + JSON.stringify({ key, ...meta }) + " -->";
+      const text = String(body || "") + "\n\n\x3c!-- oz " + JSON.stringify({ key, ...meta }) + " -->";
       const r = await call("issue_write", Object.assign({ method: "create", title, body: text, labels }, fields.length ? { issue_fields: fields } : {},
         assignee ? { assignees: [assignee] } : {}, type ? { type } : {}));
       const url = r?.html_url || r?.url || "", n = r?.number || Number((String(url).match(/\/issues\/(\d+)/) || [])[1]);
