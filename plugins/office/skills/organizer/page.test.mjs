@@ -3,6 +3,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
 import { OZ } from "./logic.js";
 
 const BODY = `## Brief
@@ -447,11 +448,13 @@ function themeBlocks(css) {
     "dark (data-theme)": body(/:root\[data-theme="dark"\]\s*\{([^}]*)\}/),
   };
 }
-// Only the skill's own theme: a project's theme lives outside the plugin and is checked in that project.
-for (const path of ["./theme.css"]) {
+// The skill's own theme, and a project's theme when OZ_THEME names its path (relative to the working directory).
+const themes = [["./theme.css", read("./theme.css")]];
+if (process.env.OZ_THEME) themes.push([process.env.OZ_THEME, readFileSync(resolve(process.env.OZ_THEME), "utf8")]);
+for (const [path, css] of themes) {
   test("theme contract: " + path + " defines every required token in light, and every colour (only colours and elevation) in both dark blocks", () => {
     const req = required(), colours = req.filter(t => t.startsWith("--color-"));
-    for (const [name, block] of Object.entries(themeBlocks(read(path)))) {
+    for (const [name, block] of Object.entries(themeBlocks(css))) {
       assert.ok(block !== undefined, path + ": no " + name + " block");
       const defined = [...block.matchAll(/(--[\w-]+)\s*:/g)].map(m => m[1]), has = new Set(defined);
       if (name === "light") { assert.deepEqual(req.filter(t => !has.has(t)), [], path + " light misses"); continue; }
@@ -460,7 +463,7 @@ for (const path of ["./theme.css"]) {
     }
   });
   test("theme contract: " + path + " loads fonts from Google Fonts only", () => {
-    const urls = [...noComments(read(path)).matchAll(/(?:@import\s+(?:url\()?|url\()\s*["']?([^"')\s;]+)/g)].map(m => m[1]);
+    const urls = [...noComments(css).matchAll(/(?:@import\s+(?:url\()?|url\()\s*["']?([^"')\s;]+)/g)].map(m => m[1]);
     assert.deepEqual(urls.filter(u => !u.startsWith("https://fonts.googleapis.com/")), [], path);
   });
 }

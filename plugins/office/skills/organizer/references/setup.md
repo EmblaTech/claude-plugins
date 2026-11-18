@@ -86,4 +86,4 @@ The **Theme** is `theme.css`, token values only; the **Style source** is the DES
 - **Fonts** from Google Fonts only, the one font host the artifact loads, in one `@import` with every family and weight the Theme uses. A family missing there gets its nearest Google Fonts match, reported to the user.
 - **Shape** as the skill's `theme.css`: the import; a comment naming the Style source and every derived value and font substitution (a derived value also gets `/* derived */` beside it); the light `:root` block; the colours in both dark blocks.
 
-Done when `node --test "plugins/office/skills/organizer/*.test.mjs"` from the repo root passes (it checks the config's `theme.css`), every contrast pair holds, and the user has the list of derived values, contrast fixes and font substitutions.
+Done when `OZ_THEME=.claude/organizer/theme.css node --test "<this skill's folder>/page.test.mjs"`, run from the project root, passes (it checks the Theme contract on that file as well as on the skill's default), every contrast pair holds, and the user has the list of derived values, contrast fixes and font substitutions.
