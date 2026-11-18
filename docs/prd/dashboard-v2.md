@@ -19,7 +19,7 @@ v2 splits **presentation** (the page) from **data** (the tracker), and **mechani
 - When a routine changes the tracker, the open page shows it without a republish.
 - The user talks to Claude in two ways and picks by where they type ([ADR 0005](../dashboard-v2/adr/0005-cloud-and-local-surfaces.md)): **Cloud**, a dialogue with the assistant in the page, answered at once; **Local**, a comment on a card, a prompt that the next sync acts on with local tools and answers in the same thread, and the user can reply again.
 - ✓ / ✕ / ⏸ act on a card or task with one click and remove it from view: done and dismissed for good, snoozed until its date. ✕ on a task deletes it; ✕ on a PR card dismisses it. *(Confirmed 2026-11-05.)*
-- A skill anyone can install. Everything personal lives in `.claude/dashboard/`.
+- A skill anyone can install. Everything personal lives in `.claude/organizer/`.
 
 ## Non-goals
 
@@ -173,17 +173,17 @@ One skill replaces `meeting-dashboard` and `dashboard-notes`. It is named `dashb
 - **PR push:** when a PR newly needs the user's review or reply, send one PushNotification. Skip it while the PR card is snoozed.
 - **Failure push:** a run that hits a failure (unread section or source, a write that did not land) sends one PushNotification naming it. Successful runs stay silent: the Desktop "task complete" banner is off, since the hourly sync would fire it every cycle *(added 2026-11-06)*.
 
-## Configuration: `.claude/dashboard/`
+## Configuration: `.claude/organizer/`
 
 ```
-dashboard.toml
+organizer.toml
 sections/meetings.md
 sections/prs.md
 sections/tasks.md
 avatars/
 ```
 
-`dashboard.toml` holds:
+`organizer.toml` holds:
 - `storage` (`github` | `artifact-db` | `custom`; replaced `mode`, 2026-11-18, #257);
 - `title`, `artifact-url`;
 - `repo`, `server` (the claude.ai GitHub connector's name);
@@ -250,19 +250,19 @@ Comments and Cloud conversations of other tasks are never included. The one-docu
 - Any other write (a tool without `readOnlyHint`, outside the tracker: mail, chat, commits) needs a click on a preview of what will be sent. Text the assistant reads (mail, PRs) can carry injected instructions, so it never sends on its own.
 - Messages sent or drafted carry the AI marker, per the project's rules.
 
-**Built** *(2026-11-10, #127)*: one gate, `OZ.needsClick`, decides from the tool's annotations (MCP defaults, so a tool without them asks) and whether it is a tracker tool; every page tool goes through it. A click shows a preview with Allow / Deny in the chat (a tool without its own preview shows its input); Deny reaches Claude as a tool error. Stop, or the call ending any other way, denies every pending approval and removes its buttons. `delete_task` does what a task's ✕ does, only for task cards on the page, previewed with the page's own title. **AI marker** *(built 2026-11-12, #129)*: `ai-marker` in `dashboard.toml`. A connector write whose input carries the marker in none of its text fields is refused before any click (`OZ.hasMarker`); no marker configured refuses every connector write.
+**Built** *(2026-11-10, #127)*: one gate, `OZ.needsClick`, decides from the tool's annotations (MCP defaults, so a tool without them asks) and whether it is a tracker tool; every page tool goes through it. A click shows a preview with Allow / Deny in the chat (a tool without its own preview shows its input); Deny reaches Claude as a tool error. Stop, or the call ending any other way, denies every pending approval and removes its buttons. `delete_task` does what a task's ✕ does, only for task cards on the page, previewed with the page's own title. **AI marker** *(built 2026-11-12, #129)*: `ai-marker` in `organizer.toml`. A connector write whose input carries the marker in none of its text fields is refused before any click (`OZ.hasMarker`); no marker configured refuses every connector write.
 
-**Repo:** read-only for the assistant, even when a write tool is available. It reads the branch set in `dashboard.toml` (`[assistant] branch`: last active, a name, or ask in chat; setup asks, default last active); the user can switch it by saying so in the chat (`set_branch`, until the page reloads). Last active is worked out once per page open, over at most 20 branches (`OZ.lastActive`). Code search covers only the default branch (verified 2026-11-10, findings); reading files by path works on any branch and collects every content block (`OZ.fileText`). *Built 2026-11-12, #129:* the GitHub connector's raw tools never reach the model, only the page's own read and tracker tools. Project-specific sources (a wiki index, mail, chat) are `dashboard.toml` values, never skill text.
+**Repo:** read-only for the assistant, even when a write tool is available. It reads the branch set in `organizer.toml` (`[assistant] branch`: last active, a name, or ask in chat; setup asks, default last active); the user can switch it by saying so in the chat (`set_branch`, until the page reloads). Last active is worked out once per page open, over at most 20 branches (`OZ.lastActive`). Code search covers only the default branch (verified 2026-11-10, findings); reading files by path works on any branch and collects every content block (`OZ.fileText`). *Built 2026-11-12, #129:* the GitHub connector's raw tools never reach the model, only the page's own read and tracker tools. Project-specific sources (a wiki index, mail, chat) are `organizer.toml` values, never skill text.
 
 ## Skill boundary
 
-The skill's files (`SKILL.md`, `references/`, `sections/`, the page) hold only the mechanics and stay free of this project's and this user's facts: no names, clients, paths or language. Those come from the project's `CLAUDE.md` files and from `.claude/dashboard/`, which setup writes after exploring the project; where a section needs a fact the project does not state, setup recommends adding it to `CLAUDE.md` (when other work needs it too) or to the section's prompt. Setup ends by telling the user what runs, where problems show, and what to tune. The project-specific requirements below (e.g. the reminder for rarely met teams, the daily run joining daily-digest) are this repo's setup answers, not skill text. *(Agreed 2026-11-05.)*
+The skill's files (`SKILL.md`, `references/`, `sections/`, the page) hold only the mechanics and stay free of this project's and this user's facts: no names, clients, paths or language. Those come from the project's `CLAUDE.md` files and from `.claude/organizer/`, which setup writes after exploring the project; where a section needs a fact the project does not state, setup recommends adding it to `CLAUDE.md` (when other work needs it too) or to the section's prompt. Setup ends by telling the user what runs, where problems show, and what to tune. The project-specific requirements below (e.g. the reminder for rarely met teams, the daily run joining daily-digest) are this repo's setup answers, not skill text. *(Agreed 2026-11-05.)*
 
 ## Design intent
 
 How this skill is meant to be written. Check every change against it. *(Agreed 2026-11-05.)*
 
-- **Mechanics in the skill, facts in the project.** Skill files carry no names, clients, paths or language; they ship to other projects. Project facts live in the project's `CLAUDE.md`, dashboard-only facts in `.claude/dashboard/` (see Skill boundary). *(The `### <name>'s notes` heading and client names had leaked into `comments.md` and `sections/`.)*
+- **Mechanics in the skill, facts in the project.** Skill files carry no names, clients, paths or language; they ship to other projects. Project facts live in the project's `CLAUDE.md`, dashboard-only facts in `.claude/organizer/` (see Skill boundary). *(The `### <name>'s notes` heading and client names had leaked into `comments.md` and `sections/`.)*
 - **Setup explores before it asks.** It reads the project and what the session can reach, then asks only what is missing: one topic at a time, recommended answer first, checkboxes plus free text. A missing fact gets a recommended home, not a silent default. *(Source questions grouped by topic; setup suggests adding facts to `CLAUDE.md`.)*
 - **Setup hands over.** It ends by telling the user what runs, where problems show, and what to tune. The user owns the dashboard after setup, not the skill.
 - **Ready to start, free to change.** The skill ships templates the user edits in their project; nothing the user would want to change is buried in the skill. *(Ready section prompts.)*

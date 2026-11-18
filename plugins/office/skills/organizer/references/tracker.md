@@ -1,6 +1,6 @@
 # Tracker contract
 
-The tracker is the one store of record for cards, tasks, their comments and the status. Every run and the page reach it through the operations below, written in one `op(args)` notation, e.g. `list(labels: [oz:mtg/<series>], state: all)`. How each operation runs is in the **storage reference** that `storage` in `dashboard.toml` names: a built-in storage mode's is `storage/<storage>.md` in this folder; `custom` reads `.claude/dashboard/custom-storage.md`. Read it before the first tracker call.
+The tracker is the one store of record for cards, tasks, their comments and the status. Every run and the page reach it through the operations below, written in one `op(args)` notation, e.g. `list(labels: [oz:mtg/<series>], state: all)`. How each operation runs is in the **storage reference** that `storage` in `organizer.toml` names: a built-in storage mode's is `storage/<storage>.md` in this folder; `custom` reads `.claude/organizer/custom-storage.md`. Read it before the first tracker call.
 
 ## Record
 

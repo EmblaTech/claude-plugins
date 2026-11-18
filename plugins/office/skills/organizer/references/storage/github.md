@@ -1,6 +1,6 @@
 # Storage mode: github
 
-How the [tracker contract](../tracker.md) runs on GitHub issues, for `storage = "github"` in `dashboard.toml`. A record is one issue in `repo`. Read and write issues, their fields and comments with the claude.ai GitHub connector tools (`list_issues`, `issue_read`, `issue_write`, `add_issue_comment`), the same ones the page uses. Write the org's issue fields with `gh api graphql`: a connector `issue_write` carrying `issue_fields` opens a confirmation form that the Code tab never shows, so the call hangs. Use `gh` also for creating labels, relations and deleting.
+How the [tracker contract](../tracker.md) runs on GitHub issues, for `storage = "github"` in `organizer.toml`. A record is one issue in `repo`. Read and write issues, their fields and comments with the claude.ai GitHub connector tools (`list_issues`, `issue_read`, `issue_write`, `add_issue_comment`), the same ones the page uses. Write the org's issue fields with `gh api graphql`: a connector `issue_write` carrying `issue_fields` opens a confirmation form that the Code tab never shows, so the call hangs. Use `gh` also for creating labels, relations and deleting.
 
 ## Operations
 
@@ -51,7 +51,7 @@ One open issue labelled `oz:status`, pinned (`gh issue pin`). Its body is the ba
 - Check the org's issue fields `Priority`, `Start date` and `Target date` with `list_issue_fields`; ask before creating a missing one.
 - Create every missing label from [tracker.md](../tracker.md#labels), and one per track, with `gh label create "<name>"`; create a missing label the same way before a run uses it.
 - Create the `oz:status` issue when there is none, and pin it.
-- `dashboard.toml`: `repo` (`<owner>/<repo>`), `server` (the claude.ai GitHub connector's display name), `agent-assignee` (a GitHub login; recommend the current `gh` user, `gh api user -q .login`).
+- `organizer.toml`: `repo` (`<owner>/<repo>`), `server` (the claude.ai GitHub connector's display name), `agent-assignee` (a GitHub login; recommend the current `gh` user, `gh api user -q .login`).
 - The page's `mcp` capability declares the connector named in `server` with these tools: `["list_issues", "issue_read", "issue_write", "sub_issue_write", "add_issue_comment", "get_file_contents", "search_code", "list_branches", "list_commits"]`. The last four are the Assistant's repo reads. This connector is never on the Assistant's tool list: the page reaches it only through its own tools, so no repo write is ever exposed. The first time the page opens, claude.ai asks once to allow it.
 
 ## Quota

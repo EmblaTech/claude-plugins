@@ -20,7 +20,7 @@ Done when every collected comment has a signed reply after it and every closed m
 
 ## Agent tasks
 
-An open `oz:task` card labelled `ready-for-agent` and assigned to `agent-assignee` (`dashboard.toml`) is an **agent task**: its title and brief are the assignment, and you carry it out. The Assistant tab's Local input creates such cards; the user may also label one by hand.
+An open `oz:task` card labelled `ready-for-agent` and assigned to `agent-assignee` (`organizer.toml`) is an **agent task**: its title and brief are the assignment, and you carry it out. The Assistant tab's Local input creates such cards; the user may also label one by hand.
 
 **Collect** with `list(labels: [oz:task, ready-for-agent], state: open, assignee: <agent-assignee>)`; other assignees' cards belong to their own runs. Label and assignee alone decide, whether the card is on the page or not. Read each thread with `comments()`. A card whose thread holds a comment with the claim marker ([tracker.md](tracker.md)) is **claimed**: it is never taken again, by this run or any later one.
 

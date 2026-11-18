@@ -1,6 +1,6 @@
 # Storage mode: artifact-db
 
-How the [tracker contract](../tracker.md) runs on the dashboard page's own artifact db, for `storage = "artifact-db"` in `dashboard.toml`. A record is one document `records/<key>` in the db of the artifact at `artifact-url`; the Cloud conversations live in the same db under `cloud/`. Runs read and write with the `ArtifactData` tool, passing `artifact-url` as `url`; the page uses its own `db` capability. Live checks in [findings](https://github.com/EmblaTech/claude-plugins/blob/main/docs/dashboard-v2/findings.md) (2026-11-18).
+How the [tracker contract](../tracker.md) runs on the dashboard page's own artifact db, for `storage = "artifact-db"` in `organizer.toml`. A record is one document `records/<key>` in the db of the artifact at `artifact-url`; the Cloud conversations live in the same db under `cloud/`. Runs read and write with the `ArtifactData` tool, passing `artifact-url` as `url`; the page uses its own `db` capability. Live checks in [findings](https://github.com/EmblaTech/claude-plugins/blob/main/docs/dashboard-v2/findings.md) (2026-11-18).
 
 ## Writes
 
@@ -51,7 +51,7 @@ How the [tracker contract](../tracker.md) runs on the dashboard page's own artif
 
 ## Setup
 
-- `dashboard.toml`: `artifact-url` is the store; publish keeps the data. `agent-assignee` defaults to `"claude"`; no login to ask for.
+- `organizer.toml`: `artifact-url` is the store; publish keeps the data. `agent-assignee` defaults to `"claude"`; no login to ask for.
 - The page's capabilities: the tracker needs no `mcp` entry. `db` declares one rule, `records/**`: read and write `owner`, so all records sit on a shared path (not `data/users/`) that only the owner reaches; take the rule syntax from the `artifact-capabilities` skill.
 - **Order**: `records/status` lives in the artifact's db, so publish the page first, then create the status record.
 - **Routine**: a local Desktop scheduled task whose session holds `ArtifactData`, running the Sync and Local comments as one task. Cloud routines are unverified in this mode; schedule the local task.

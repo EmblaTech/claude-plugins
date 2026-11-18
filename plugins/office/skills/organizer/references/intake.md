@@ -1,6 +1,6 @@
 # Intake
 
-The Sync's first stage ([ADR 0009](https://github.com/EmblaTech/claude-plugins/blob/main/docs/dashboard-v2/adr/0009-one-change-driven-sync-with-intake.md)): new transcripts and mail become per-topic meeting notes, cross-references, the daily brief and the user's tasks. The project's facts (where notes, transcripts and the brief live, topics, routing rules, note format, exclusions) are in the prompt named by `[intake] prompt` in `dashboard.toml`; read it first. Intake runs in the middle of step 3 of a sync, after the first wave of sources, so it takes mail and calendar from that delta and reads transcripts itself.
+The Sync's first stage ([ADR 0009](https://github.com/EmblaTech/claude-plugins/blob/main/docs/dashboard-v2/adr/0009-one-change-driven-sync-with-intake.md)): new transcripts and mail become per-topic meeting notes, cross-references, the daily brief and the user's tasks. The project's facts (where notes, transcripts and the brief live, topics, routing rules, note format, exclusions) are in the prompt named by `[intake] prompt` in `organizer.toml`; read it first. Intake runs in the middle of step 3 of a sync, after the first wave of sources, so it takes mail and calendar from that delta and reads transcripts itself.
 
 ## Find out whether there is anything
 
