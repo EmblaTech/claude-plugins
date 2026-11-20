@@ -121,10 +121,13 @@ test("github: the body's last oz marker is the meta, and it never shows in the b
   assert.deepEqual(b.meta, {}); assert.equal(b.body, "Text");
 });
 
-test("github: a closed issue is done, or dismissed when not planned; links point to github.com", async () => {
-  const [d, x] = await fakeGithub({ list_issues: { issues: [{ ...ISSUE, state: "CLOSED", state_reason: "completed" },
-    { ...ISSUE, number: 8, state: "closed", state_reason: "not_planned" }] } }).tracker.list({ labels: ["oz:task"], state: "closed" });
-  assert.equal(d.state, "done"); assert.equal(x.state, "dismissed");
+test("github: list asks only for fields the connector accepts; a closed issue reads as done; links point to github.com", async () => {
+  // The connector's `fields` enum, and its list answer carries no `state_reason`: a list can not tell done from dismissed.
+  const ACCEPTED = ["number", "title", "body", "state", "user", "labels", "assignees", "comments", "created_at", "updated_at", "field_values"];
+  const { calls, tracker } = fakeGithub({ list_issues: { issues: [{ ...ISSUE, state: "CLOSED" }, { ...ISSUE, number: 8, state: "closed" }] } });
+  const [d, x] = await tracker.list({ labels: ["oz:task"], state: "closed" });
+  assert.deepEqual(calls[0].input.fields.filter(f => !ACCEPTED.includes(f)), []);
+  assert.equal(d.state, "done"); assert.equal(x.state, "done");
   assert.equal(d.url, "https://github.com/o/r/issues/7"); assert.equal(d.ref, "#7");
 });
 

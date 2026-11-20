@@ -44,7 +44,7 @@ export function githubTracker({ call, owner, repo, server = "github" }) {
   };
   // Reads only: one call can fail in a burst ("upstream_error"), so each is tried twice. Writes are never repeated.
   const again = async f => { try { return await f(); } catch { await new Promise(r => setTimeout(r, 600)); return f(); } };
-  const FIELDS = ["number", "title", "body", "labels", "state", "state_reason", "updated_at", "comments", "field_values"];
+  const FIELDS = ["number", "title", "body", "labels", "state", "updated_at", "comments", "field_values"];
   const t = {
     name: "GitHub", idType: "integer", canBlock: false, mdBase: base, quotaNote: "GitHub quota",
     parseId: x => Number.isInteger(Number(x)) && Number(x) > 0 ? Number(x) : null,
