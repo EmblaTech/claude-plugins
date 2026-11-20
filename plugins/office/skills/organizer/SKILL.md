@@ -8,6 +8,7 @@ description: Keeps one person's Organizer dashboard, a claude.ai artifact prep p
 The page is a claude.ai artifact that reads the **tracker** live and keeps no data of its own: it shows open records labelled `oz:on`, writes the user's ✓ / ✕ / ⏸ clicks and comments straight back, and is never republished for data. So a run's job is the tracker: the right cards, current briefs, comments answered.
 
 The skill holds only the mechanics. Everything about this project and this user comes from two places: the project's `CLAUDE.md` files (where notes live, how work splits into tracks, which language to use, how to send messages) and `.claude/organizer/` (`organizer.toml`, one prompt per section and one file per source, written by setup). Read `organizer.toml` first, then the storage reference its `storage` names ([references/tracker.md](references/tracker.md) says where). The tracker contract is in tracker.md, the card format in [references/card.md](references/card.md); the run rules in tracker.md (upsert by key, one writer, deletes first, failures reported) bind every command.
+
 ## Commands
 
 The first word after `/office:organizer` picks the command; text is a command only when that word is `sync` or `setup` ([ADR 0009](https://github.com/EmblaTech/claude-plugins/blob/main/docs/organizer/adr/0009-one-change-driven-sync-with-intake.md)).
