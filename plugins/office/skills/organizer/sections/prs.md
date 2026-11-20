@@ -13,7 +13,7 @@ One card per open pull request.
 
 ## Groups, by the user's next move
 
-A PR goes into the first group it matches, `groupRank` in this order; name the groups in the user's language:
+A PR goes into the first group it matches, `groupRank` in this order; `meta.group` is the group's name exactly as written here (setup writes the names in the user's language):
 0. **Replies and questions to me**: a live thread. The user commented and someone wrote after them (badge "new reply", `accent`); their comment is the newest ("no reply", `muted`); someone mentioned them and they have not written since ("question", `warn`). The brief quotes each exchange with the comment's link; a thread waiting on the user gets a prompt that drafts the reply.
 1. **My PRs**: the user is the author. The gist says who approved, who asked for changes, and whether it can merge.
 2. **Waiting for my review**: the user is a reviewer and has not approved. Review card, below.
