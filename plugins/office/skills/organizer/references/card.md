@@ -22,6 +22,10 @@ A card is one open record in the tracker: a meeting, a pull request or a task. C
 
 `parent`, `blockedBy` and `type` are optional and only for tasks, set when the source says so (see [tracker.md](tracker.md#relations)); `parent` and `blockedBy` name records as the storage reference does. `close: true` means the matter is over (the meeting happened, the PR merged); the run calls `setState(done)`.
 
+## A card the user asked for
+
+A card made at the user's request, as an action in a comment, an agent task or an instruction, is a task card shaped like one added on the page: key `task_<slug>`, `meta.section` the task section, labels `oz:task` and `oz:on`, linked from the card that asked for it. It shows on the page at once; from the next Sync run on, the tasks section's cap decides whether it stays.
+
 ## Key
 
 The identity that lets runs update a card instead of duplicating it:
