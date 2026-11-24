@@ -14,7 +14,7 @@ One card per meeting in the window, with its brief.
 - `target`: the meeting's date; labels `oz:meeting`, `oz:mtg/<series>` and the track label
 - `close: true` for an open card whose meeting is over
 
-**Regroup.** This section groups cards by day, so the first Sync run of a local day dispatches it even with nothing new. Every time it runs, recompute `meta.group` and `meta.groupRank` of every open meeting card from its `target` and the run's local date, and return the cards whose values changed. A regroup changes those two fields only: the body and `meta.built` stay.
+**Regroup.** This section groups cards by day. Every time it runs, recompute `meta.group` and `meta.groupRank` of every open meeting card from its `target` and the run's local date, and return each card whose values changed whole, with its labels and `oz:on`. A card that only regroups keeps its body and `meta.built`; one the rebuild rules below also reach is rebuilt.
 
 **Full brief** for today and the next working day (`full-brief-working-days`). Rebuild one only when its inputs changed since the card's `meta.built`, else keep the card as it is:
 - the event is new or changed;

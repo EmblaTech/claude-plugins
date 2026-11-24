@@ -69,13 +69,13 @@ Offer to run the first `/office:organizer sync` now, so the page does not open e
 
 A source is a place the Sync reads origin items from, declared once: a `[[source]]` entry in `organizer.toml` (`id`, `tools` as `{server, tool}` entries, `prompt` = `sources/<id>.md`) and that file, written as prose for the agent that reads the source:
 - **Ask:** how to ask the tools for what is new since a time, with the time as the one input, written in the zone and format the tool reads (a JQL date is in the zone of the Jira user's profile); every other argument the tool requires (a site or cloud id, a workspace) is written into the ask as its value. A pull request source holds two asks: the list since the cursor, and the full read of one PR (diff, comments, participants).
-- **Returns:** what an item holds, as SKILL.md step 3 names the fields. The zone of the times the tool returns, and that each `time` is converted from it to ISO with an offset. An empty result is a success: nothing new, never a failure. A source that returns its whole window every Sync run, such as a calendar, says so. A pull request source emits the **Pull request** terms of the [glossary](https://github.com/EmblaTech/claude-plugins/blob/main/docs/organizer/glossary.md) and names in one line which host fields they come from.
+- **Returns:** what an item holds, as SKILL.md step 3 names the fields. States the zone of the times the tool returns; each `time` is converted from it to ISO with an offset. An empty result is a success: nothing new. A source that returns its whole window every Sync run, such as a calendar, says so. A pull request source emits the **Pull request** terms of the [glossary](https://github.com/EmblaTech/claude-plugins/blob/main/docs/organizer/glossary.md) and names in one line which host fields they come from.
 - **Quirks:** a link to the provider's gotchas reference, kept in the project; the quirks themselves stay out of the file.
 - **Local only**, when a cloud run cannot reach it.
 
 A folder outside the repo is a git source when it is a repo, otherwise a folder source read by file modified time. A source only one section wants is declared the same way.
 
-**Probe** each source before writing it: one read with its ask, since a day ago. A source whose probe fails (an error, a missing permission, a tool that does not load) is not written: show the error, and let the user pick another source or drop it. Mark it local only instead only when the probe failed because this session is not on the user's machine. Done when every source a section wants has an entry and a file, and each passed its probe.
+**Probe** each source before writing it: one read with its ask, since a day ago. Write a source only after its probe passes. When it fails (an error, a missing permission, a tool that does not load), show the error and let the user pick another source or drop it. Mark it local only instead only when the probe failed because this session is not on the user's machine. Done when every source a section wants has an entry and a file, and each passed its probe.
 
 ## Theme
 

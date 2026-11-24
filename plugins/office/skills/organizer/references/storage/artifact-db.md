@@ -12,7 +12,7 @@ How the [tracker contract](../tracker.md) runs on the dashboard page's own artif
 
 | Contract operation | How |
 |---|---|
-| `list(labels, state, updatedSince, assignee)` | `query` on `records` ([Calls](#calls)), `where` holding `["state","==","open"]` (`closed`: `["state","in",["done","dismissed"]]`; none for `all`), `["updated",">=",<updatedSince>]`, `["assignee","==",…]`, and the first label as `["labels","array-contains",…]`; filter the other labels in memory. No `order_by`: page with `query.cursor` = the last `next_cursor`, `query.limit` 1000; the reader sorts. `updatedSince` filters on the record's own `updated` field, because the db's envelope `updatedAt` cannot be queried (findings). |
+| `list(labels, state, updatedSince, assignee)` | `query` on `records` ([Calls](#calls)), `where` holding `["state","==","open"]` (`closed`: `["state","in",["done","dismissed"]]`; none for `all`), `["updated",">=",<updatedSince>]`, `["assignee","==",…]`, and the first label as `["labels","array-contains",…]`; filter the other labels in memory. No `order_by`: page as in Calls; the reader sorts. `updatedSince` filters on the record's own `updated` field, because the db's envelope `updatedAt` cannot be queried (findings). |
 | `getByKey(key)` | `get records/<key>`: open and closed alike, no scan |
 | `create(record)` | `set records/<key>` with every field of [Encoding](#encoding) |
 | `update(title, body, meta)` | `update` with `if_version`, those fields plus `updated` |
@@ -29,8 +29,7 @@ How the [tracker contract](../tracker.md) runs on the dashboard page's own artif
 
 ## Calls
 
-Exact shapes of the `ArtifactData` calls the runs make; `U` is `artifact-url`. A record is addressed as collection + doc id: `records/<key>` is `"collection":"records","doc_id":"<key>"`, and its comments are the collection `records/<key>/comments`, with no `doc_id` when listed. `where`, `limit` and `cursor` go inside `query`, never at the top level. Every write to an existing document carries `if_version`, the `version` its last read returned ([Writes](#writes)).
-
+Exact shapes of the `ArtifactData` calls the runs make; `U` is `artifact-url`. A record is addressed as collection + doc id: `records/<key>` is `"collection":"records","doc_id":"<key>"`, and its comments are the collection `records/<key>/comments`, with no `doc_id` when listed. `where`, `limit` and `cursor` go inside `query`, never at the top level.
 | Action | Call |
 |---|---|
 | `get` | `{"action":"get","url":U,"collection":"records","doc_id":"status"}` |
@@ -41,7 +40,7 @@ Exact shapes of the `ArtifactData` calls the runs make; `U` is `artifact-url`. A
 | `delete` | `{"action":"delete","url":U,"collection":"records/<key>/comments","doc_id":"<comment id>","if_version":<version>}` |
 | `batch` | `{"action":"batch","url":U,"writes":[{"op":"set","collection":"records/<key>/comments","doc_id":"<ISO-ts>_<rand>","data":{"text":"…"}},{"op":"update","collection":"records","doc_id":"<key>","data":{"updated":"<ISO>"},"if_version":<version>}]}`: 1–50 writes, each existing document pinned |
 
-A refused call returns an error, not an empty page: map it by [Errors](#errors), never read it as "nothing there". The page's `db` capability is a different API (`page/tracker.js`); these shapes are the tool's only.
+A refused call returns an error, not an empty page: map it by [Errors](#errors). These shapes are for `ArtifactData` only; the page's `db` capability has its own API (`page/tracker.js`).
 
 ## Encoding
 
