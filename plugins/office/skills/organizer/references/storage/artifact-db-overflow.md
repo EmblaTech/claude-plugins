@@ -35,7 +35,7 @@ It is safe to stop at any point and resume on the next run, because of these rul
 
 - **Reading a thread** in time order: the merged, deduplicated list sorted by id (the ISO timestamp prefix). The page's comment query must not filter or order on a field that chunk documents lack, or chunks drop out; sort on the page instead.
 - **"Updated" on a new comment** moves as now, because new comments are still singles written the usual way. Folding is silent: it leaves the record's `updated` as it is, and the page's live listener treats a modified chunk or a removed single as no news (new is only an id it has not seen before).
-- **Signature, unanswered and claim.** These rules work on the merged thread: unanswered is every user comment after the last signed one; the re-read before posting and the claim check (claim marker before the signature) read the merged thread too. Claims and replies are written as singles like any comment.
+- **Signature, unanswered and claim.** These rules work on the merged thread: unanswered is every owner-made comment after the last owner-made signed one; the re-read before posting and the claim and refusal checks (markers before the signature) read the merged thread too. Claims and replies are written as singles like any comment.
 - **Cleanup.** The 90-day cleanup already deletes every document under `records/<key>/comments`; chunks live there, so they go too. Deleting a record does not delete its nested documents by itself, so the cleanup must keep listing them.
 
 ## Undo

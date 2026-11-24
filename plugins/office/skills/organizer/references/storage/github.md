@@ -18,7 +18,19 @@ How the [tracker contract](../tracker.md) runs on GitHub issues, for `storage = 
 | `children()` / `parent()` / `setParent(record)` | native sub-issues: read `issue_read` `get_sub_issues` / `get_parent`; set with `gh issue create --parent <n>`, or `gh issue edit <parent> --add-sub-issue <child>` |
 | `addBlockedBy(record)` | native dependency: `gh api --method POST repos/<owner>/<repo>/issues/<n>/dependencies/blocked_by -F issue_id=<blocker-db-id>` (the blocker's database id, `gh api repos/<owner>/<repo>/issues/<b> --jq .id`) |
 | `comments()` / `addComment(text)` | `issue_read` `method: "get_comments"`; `add_issue_comment` |
+| `authorship()` | one `gh api graphql` query, below; the owner is the `gh` login ([Quota](#quota) shows how to read it) |
 | `quota()` | [Quota](#quota) |
+
+`authorship()` reads, for issue `<n>` (page comments with `after` past 100):
+
+```graphql
+{ repository(owner: "<owner>", name: "<repo>") { issue(number: <n>) {
+  author { login } editor { login }
+  timelineItems(last: 1, itemTypes: [RENAMED_TITLE_EVENT]) { nodes { ... on RenamedTitleEvent { actor { login } } } }
+  comments(first: 100) { nodes { databaseId author { login } editor { login } } } } } }
+```
+
+The body's last editor is `editor`, the title's the latest rename's `actor`, each falling back to `author` when empty; the same per comment. `databaseId` is the comment `id` that `get_comments` returns.
 
 The field mutation takes node IDs. Read the field and option IDs once per run, and an issue's ID from `repository { issue(number: <n>) { id } }`:
 
@@ -40,7 +52,7 @@ Field values: `Start date` and `Target date` as `dateValue: "YYYY-MM-DD"`; `Prio
 - **Relations**: native sub-issues, blocked-by dependencies and issue types.
 - **Record links**: a record is `#<n>`, which renders as a link to `https://github.com/<owner>/<repo>/issues/<n>`; a card gist that points to an issue or PR writes `[#42](…)`.
 - **Assignee**: a GitHub login.
-- **Agent claim marker** ([comments.md](../comments.md#agent-tasks)): plain comment text; GitHub hides the `<!-- -->` line when rendering.
+- **Markers** ([tracker.md](../tracker.md#markers)): plain comment text; GitHub hides the `<!-- -->` line when rendering.
 
 ## Status record
 
@@ -50,7 +62,7 @@ One open issue labelled `oz:status`, pinned (`gh issue pin`). Its body is the ba
 
 - Check the org's issue fields `Priority`, `Start date` and `Target date` with `list_issue_fields`; ask before creating a missing one.
 - Create every missing label from [tracker.md](../tracker.md#labels), and one per track, with `gh label create "<name>"`; create a missing label the same way before a run uses it.
-- Create the `oz:status` issue when there is none, and pin it.
+- Create the `oz:status` issue with `issue_write` when there is none, and pin it. Its author must be the `gh` login: runs post comments and markers through the connector and check them against the `gh` login, so the two must be one account. When they differ, stop and ask the user to connect the same account to both.
 - `organizer.toml`: `repo` (`<owner>/<repo>`: the repo the user named under Storage mode in [setup.md](../setup.md)), `server` (the claude.ai GitHub connector's display name), `agent-assignee` (a GitHub login; recommend the current `gh` user, `gh api user -q .login`).
 - The page's `mcp` capability declares the connector named in `server` with these tools: `["list_issues", "issue_read", "issue_write", "sub_issue_write", "add_issue_comment", "get_file_contents", "search_code", "list_branches", "list_commits"]`. The last four are the Assistant's repo reads. This connector is never on the Assistant's tool list: the page reaches it only through its own tools, so no repo write is ever exposed. The first time the page opens, claude.ai asks once to allow it.
 

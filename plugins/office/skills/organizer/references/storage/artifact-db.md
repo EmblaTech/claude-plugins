@@ -24,6 +24,7 @@ How the [tracker contract](../tracker.md) runs on the dashboard page's own artif
 | `setParent(record)` / `addBlockedBy(record)` | `update` `parent` = the parent's key; `update` `blockedBy` with the blocker's key added |
 | `comments()` | `list records/<key>/comments`, paged; sort by doc id (time order) |
 | `addComment(text)` | one `batch`: `set records/<key>/comments/<ISO-ts>_<rand>` = `{text}` and `update` the record's `updated` with `if_version` |
+| `authorship()` | no call: the `records/**` rule lets only the owner write, so every record and comment is owner-made: the owner is the artifact's owner, the account `artifact-url` belongs to |
 | `quota()` | [Quota](#quota) |
 
 ## Encoding
@@ -35,7 +36,7 @@ How the [tracker contract](../tracker.md) runs on the dashboard page's own artif
 - **Relations**: `parent`, `blockedBy` and `type` fields; `children` is a query, not stored.
 - **Record links**: a card has no external URL. A record is `#<key>` in the page URL and opens in place; a gist pointing to another record writes `[…](#<key>)`. `#N` rendering is github-mode only.
 - **Assignee**: `agent-assignee` (`"claude"` by default); the page's Local input on the Assistant tab writes it into `assignee`.
-- **Agent claim marker** ([comments.md](../comments.md#agent-tasks)): plain comment text, posted check-then-post as the contract says; at-most-once rests on the one writer.
+- **Markers** ([tracker.md](../tracker.md#markers)): plain comment text, posted check-then-post as the contract says; at-most-once rests on the one writer.
 - **Moved meeting**: the old record goes `dismissed` with a comment linking `#<new key>`.
 
 ## Status record
