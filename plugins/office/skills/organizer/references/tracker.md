@@ -28,7 +28,7 @@ A card, a task or the status is a **record**:
 - `delete()`: tasks only, no history
 - `children()`, `parent()`, `setParent(record)`, `addBlockedBy(record)`
 - `comments()`; `addComment(text)`
-- `authorship()`: who created the record and who last edited its title and its body; for each comment, who wrote it and who last edited it ([Owner-made](#owner-made))
+- `authorship()`: who created the record, who last edited its title and its body, and who last added each label; for each comment, who wrote it and who last edited it ([Owner-made](#owner-made))
 - `quota()`, optional: remaining calls and reset time ([SKILL.md](../SKILL.md#quota-gate))
 
 **Snooze** is `Start date` on an open record: hidden while `Start date` is after today, back by itself after; not a state. **Due and order** are `Target date` and `Priority`.

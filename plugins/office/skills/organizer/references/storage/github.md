@@ -26,11 +26,12 @@ How the [tracker contract](../tracker.md) runs on GitHub issues, for `storage = 
 ```graphql
 { repository(owner: "<owner>", name: "<repo>") { issue(number: <n>) {
   author { login } editor { login }
-  timelineItems(last: 1, itemTypes: [RENAMED_TITLE_EVENT]) { nodes { ... on RenamedTitleEvent { actor { login } } } }
+  renamed: timelineItems(last: 1, itemTypes: [RENAMED_TITLE_EVENT]) { nodes { ... on RenamedTitleEvent { actor { login } } } }
+  labeled: timelineItems(last: 100, itemTypes: [LABELED_EVENT]) { nodes { ... on LabeledEvent { actor { login } label { name } } } }
   comments(first: 100) { nodes { databaseId author { login } editor { login } } } } } }
 ```
 
-The body's last editor is `editor`, the title's the latest rename's `actor`, each falling back to `author` when empty; the same per comment. `databaseId` is the comment `id` that `get_comments` returns.
+The body's last editor is `editor`, the title's the latest rename's `actor`, each falling back to `author` when empty; the same per comment. Who last added a label is the `actor` of its latest `labeled` node. `databaseId` is the comment `id` that `get_comments` returns.
 
 The field mutation takes node IDs. Read the field and option IDs once per run, and an issue's ID from `repository { issue(number: <n>) { id } }`:
 
