@@ -12,7 +12,7 @@ How the [tracker contract](../tracker.md) runs on the dashboard page's own artif
 
 | Contract operation | How |
 |---|---|
-| `list(labels, state, updatedSince, assignee)` | `query` on `records`: `where state == …` (`closed` = `state in [done, dismissed]`; omit for `all`), `updated >= <updatedSince>`, `assignee == …`, and the first label as `labels array-contains`; filter the other labels in memory. No `order_by`: page with `cursor`/`next_cursor`, `limit` 1000; the reader sorts. `updatedSince` filters on the record's own `updated` field, because the db's envelope `updatedAt` cannot be queried (findings). |
+| `list(labels, state, updatedSince, assignee)` | `query` on `records` ([Calls](#calls)), `where` holding `["state","==","open"]` (`closed`: `["state","in",["done","dismissed"]]`; none for `all`), `["updated",">=",<updatedSince>]`, `["assignee","==",…]`, and the first label as `["labels","array-contains",…]`; filter the other labels in memory. No `order_by`: page with `query.cursor` = the last `next_cursor`, `query.limit` 1000; the reader sorts. `updatedSince` filters on the record's own `updated` field, because the db's envelope `updatedAt` cannot be queried (findings). |
 | `getByKey(key)` | `get records/<key>`: open and closed alike, no scan |
 | `create(record)` | `set records/<key>` with every field of [Encoding](#encoding) |
 | `update(title, body, meta)` | `update` with `if_version`, those fields plus `updated` |
@@ -26,6 +26,22 @@ How the [tracker contract](../tracker.md) runs on the dashboard page's own artif
 | `addComment(text)` | one `batch`: `set records/<key>/comments/<ISO-ts>_<rand>` = `{text}` and `update` the record's `updated` with `if_version` |
 | `authorship()` | no call: the `records/**` rule lets only the owner write, so every record and comment is owner-made: the owner is the artifact's owner, the account `artifact-url` belongs to |
 | `quota()` | [Quota](#quota) |
+
+## Calls
+
+Exact shapes of the `ArtifactData` calls the runs make; `U` is `artifact-url`. A record is addressed as collection + doc id: `records/<key>` is `"collection":"records","doc_id":"<key>"`, and its comments are the collection `records/<key>/comments`, with no `doc_id` when listed. `where`, `limit` and `cursor` go inside `query`, never at the top level. Every write to an existing document carries `if_version`, the `version` its last read returned ([Writes](#writes)).
+
+| Action | Call |
+|---|---|
+| `get` | `{"action":"get","url":U,"collection":"records","doc_id":"status"}` |
+| `list` | `{"action":"list","url":U,"collection":"records/<key>/comments","query":{"limit":1000}}`; the next page adds `"cursor":"<next_cursor>"` to `query`; done when a result has no `next_cursor` |
+| `query` | `{"action":"query","url":U,"collection":"records","query":{"where":[["state","==","open"],["labels","array-contains","oz:on"]],"limit":1000}}`, paged as `list` |
+| `set` (create) | `{"action":"set","url":U,"collection":"records","doc_id":"<key>","data":{<every Encoding field>}}`, no `if_version` |
+| `update` | `{"action":"update","url":U,"collection":"records","doc_id":"<key>","data":{"state":"done","updated":"<ISO>"},"if_version":<version>}` |
+| `delete` | `{"action":"delete","url":U,"collection":"records/<key>/comments","doc_id":"<comment id>","if_version":<version>}` |
+| `batch` | `{"action":"batch","url":U,"writes":[{"op":"set","collection":"records/<key>/comments","doc_id":"<ISO-ts>_<rand>","data":{"text":"…"}},{"op":"update","collection":"records","doc_id":"<key>","data":{"updated":"<ISO>"},"if_version":<version>}]}`: 1–50 writes, each existing document pinned |
+
+A refused call returns an error, not an empty page: map it by [Errors](#errors), never read it as "nothing there". The page's `db` capability is a different API (`page/tracker.js`); these shapes are the tool's only.
 
 ## Encoding
 
@@ -41,7 +57,7 @@ How the [tracker contract](../tracker.md) runs on the dashboard page's own artif
 
 ## Status record
 
-`records/status`, encoded like any record: the contract's `updated` is the top-level `updated`; `meta` holds `answered` and `cursors`, plus `docCount` and `commentStore` while [overflow](artifact-db-overflow.md) is in use. The Sync reads it with `get` at the start and writes it once at the end with `update` + `if_version`; the page only reads it. Setup creates it when `get` finds none.
+`records/status`, encoded like any record. Its `meta` holds the contract's status fields: `updated` (the run time: the heartbeat the page reads), `answered` and `cursors`, plus `docCount` and `commentStore` while [overflow](artifact-db-overflow.md) is in use. The top-level `updated` moves on every write, as on any record; it is not the heartbeat. The Sync reads the record with `get` at the start and writes it once at the end with `update` + `if_version`, sending the whole `meta`: the one it read, with `updated` set to the run time and the entries it changed. A partial `meta` can drop the fields it leaves out. The page only reads it. Setup creates it when `get` finds none.
 
 ## Limits
 

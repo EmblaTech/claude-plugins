@@ -10,14 +10,17 @@ One card per meeting in the window, with its brief.
 
 **Every card:**
 - `title`: the subject, cleaned up; `meta.lead`: the time, e.g. `09:30–10:00`
-- `meta.group`: the day ("Today", "Tomorrow, Fri 6.11", "Mon 9.11"); `meta.groupRank`: days from today
+- `meta.group`: the day ("Today", "Tomorrow, Fri 6.11", "Mon 9.11"); `meta.groupRank`: days from the run's local date (today 0, tomorrow 1)
 - `target`: the meeting's date; labels `oz:meeting`, `oz:mtg/<series>` and the track label
 - `close: true` for an open card whose meeting is over
+
+**Regroup.** This section groups cards by day, so the first Sync run of a local day dispatches it even with nothing new. Every time it runs, recompute `meta.group` and `meta.groupRank` of every open meeting card from its `target` and the run's local date, and return the cards whose values changed. A regroup changes those two fields only: the body and `meta.built` stay.
 
 **Full brief** for today and the next working day (`full-brief-working-days`). Rebuild one only when its inputs changed since the card's `meta.built`, else keep the card as it is:
 - the event is new or changed;
 - the series' notes file got a commit since `meta.built`, including a cross-reference section the intake wrote from another meeting (`git log --since=<built> -- <notes file>`);
-- a `oz:task` with the series' `oz:mtg/<series>` label was added or changed since `meta.built`.
+- a `oz:task` with the series' `oz:mtg/<series>` label was added or changed since `meta.built`;
+- the card is collapsed and its day has entered the full-brief range.
 
 A commit to one series' notes rebuilds that series' next brief only. Steps of a rebuild:
 1. **Find the notes** of this meeting's earlier occurrences and read the latest one or two. When there are none, build the brief from the invite alone and say so in the gist.
